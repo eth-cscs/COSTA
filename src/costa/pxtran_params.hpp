@@ -153,7 +153,7 @@ struct pxtran_params {
                    a, b);
         std::string info;
         if (!valid(info)) {
-            std::runtime_error("WRONG PXGEMM PARAMETER: " + info);
+            std::runtime_error("WRONG PXTRAN PARAMETER: " + info);
         }
     }
 
@@ -170,7 +170,7 @@ struct pxtran_params {
                    a, b);
         std::string info;
         if (!valid(info)) {
-            std::runtime_error("WRONG PXGEMM PARAMETER: " + info);
+            std::runtime_error("WRONG PXTRAN PARAMETER: " + info);
         }
     }
 
@@ -228,7 +228,7 @@ struct pxtran_params {
     {
         std::string info;
         if (!valid(info)) {
-            std::runtime_error("WRONG PXGEMM PARAMETER: " + info);
+            std::runtime_error("WRONG PXTRAN PARAMETER: " + info);
         }
     }
 

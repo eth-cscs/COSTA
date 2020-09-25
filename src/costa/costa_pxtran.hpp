@@ -23,13 +23,5 @@ void pxtran(
            const int ic,
            const int jc,
            const int *descc);
-
-// scales the submatrix of C by beta
-// The submatrix is defined by (ic-1, jc-1) and (ic-1+m, jc-1+n)
-template <typename T>
-void scale_matrix(const int* descc, T* c,
-                  const int ic, const int jc,
-                  const int m, const int n,
-                  const T beta);
 } // namespace costa
 

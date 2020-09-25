@@ -28,13 +28,6 @@ void pxtran(
     // edge cases, which are allowed by the standard
     if (m == 0 || n == 0) return;
 
-    // afterwards we are sure m != 0 and n != 0
-    // scale matrix C by beta
-    // starting from (ic-1, jc-1)
-    if (std::abs(beta - T{1}) > 1e-12) {
-        scale_matrix(descc, c, ic, jc, m, n, beta);
-    }
-
     // **********************************
     //           MAIN CODE
     // **********************************
@@ -173,10 +166,13 @@ void pxtran(
 #endif
 
     // transform A to C
-    grid2grid::transformer<T> transf(comm);
-    transf.schedule(scalapack_layout_a, scalapack_layout_c);
-
-    transf.transform();
+    if (alpha != T{1} || beta != T{0}) {
+        // scale while transforming
+        grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, alpha, beta, comm);
+    } else {
+        // use a more efficient copy since C can be overwritten
+        grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
+    }
 
 #ifdef DEBUG
     if (rank == 0) {

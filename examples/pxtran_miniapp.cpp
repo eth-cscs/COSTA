@@ -63,34 +63,11 @@ int main(int argc, char **argv) {
 
     auto m = result["m_dim"].as<int>();
     auto n = result["n_dim"].as<int>();
-    auto k = result["k_dim"].as<int>();
 
     auto block_a = result["block_a"].as<std::vector<int>>();
-    auto block_b = result["block_b"].as<std::vector<int>>();
     auto block_c = result["block_c"].as<std::vector<int>>();
 
     auto p_grid = result["p_grid"].as<std::vector<int>>();
-
-    auto transpose = result["transpose"].as<std::string>();
-    // transform to upper-case
-    std::transform(transpose.begin(), transpose.end(), transpose.begin(), 
-        [&](char c) {
-            return std::toupper(c);
-        }
-    );
-    std::unordered_set<std::string> transpose_options = {
-        "NN", "TT", "NT", "TN"
-    };
-    // check if transpose takes a correct value
-    if (std::find(transpose_options.begin(), transpose_options.end(), transpose) == transpose_options.end()) {
-        std::cout << "COSTA (pxtran_miniapp.cpp): ERROR: --transpose option \
-        can only take the following values: " << std::endl;
-        for (const auto& el : transpose_options) {
-            std::cout << el << ", ";
-        }
-        std::cout << std::endl;
-        return 0;
-    }
 
     auto al = result["alpha"].as<int>();
     auto be = result["beta"].as<int>();
@@ -128,9 +105,6 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
         return 0;
     }
-
-    char ta = transpose[0];
-    char tb = transpose[1];
 
     // make lower-space
     auto algorithm = result["algorithm"].as<std::string>();

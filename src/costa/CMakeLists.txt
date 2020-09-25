@@ -15,6 +15,26 @@ if(NOT TARGET costa)
     list(APPEND INSTALLED_TARGETS_LIST "costa")
 endif()
 
+if(NOT TARGET costa_pxtran)
+    add_library(costa_pxtran pxtran.cpp)
+
+    target_link_libraries(costa_pxtran PUBLIC costa 
+                                              ${BLAS_TARET}
+                                              ${ScaLAPACK_TARGET}
+    )
+    list(APPEND INSTALLED_TARGETS_LIST "costa_pxtran")
+endif()
+
+if(NOT TARGET costa_prefixed_pxtran)
+    add_library(costa_prefixed_pxtran prefixed_pxtran.cpp)
+
+    target_link_libraries(costa_prefixed_pxtran PUBLIC costa 
+                                              ${BLAS_TARET}
+                                              ${ScaLAPACK_TARGET}
+    )
+    list(APPEND INSTALLED_TARGETS_LIST "costa_prefixed_pxtran")
+endif()
+
 if(COSTA_WITH_INSTALL AND INSTALLED_TARGETS_LIST)
     install(TARGETS ${INSTALLED_TARGETS_LIST}
             EXPORT costa_targets

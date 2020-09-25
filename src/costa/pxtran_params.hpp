@@ -8,7 +8,7 @@
 
 namespace costa {
 template <typename T>
-struct pxgemm_params {
+struct pxtran_params {
     // ****************************************
     // *       INPUT PARAMETERS BEGIN         *
     // ****************************************
@@ -84,7 +84,7 @@ struct pxgemm_params {
     // ****************************************
     // *         INPUT PARAMETERS END         *
     // ****************************************
-    pxgemm_params() = default;
+    pxtran_params() = default;
 
     void initialize(int mm, int nn,
                     int block_a1, int block_a2,
@@ -146,7 +146,7 @@ struct pxgemm_params {
         bmc = bm;
         bnc = bn;
 
-        initialize(m, n, k,
+        initialize(m, n,
                    bma, bna,
                    bmc, bnc,
                    prows, pcols,
@@ -174,7 +174,7 @@ struct pxgemm_params {
         }
     }
 
-    pxgemm_params(
+    pxtran_params(
         // global sizes
         int ma, int na, // matrix A
         int mc, int nc, // matrix C
@@ -296,7 +296,7 @@ struct pxgemm_params {
         // is inside the global matrix
         // *************************************************
         // matrix A
-        int ma_sub = transpose_if(trans_a, k, m);
+        int ma_sub = n;
         // guaranteed to be >= ia
         // (since we previously checked ma_sub >= 1 and ia >= 1)
         int ma_sub_end = ia - 1 + ma_sub;
@@ -304,7 +304,7 @@ struct pxgemm_params {
             info = "ia - 1 + (m or k) = " + std::to_string(ma_sub_end);
             return false;
         }
-        int na_sub = transpose_if(trans_a, m, k);
+        int na_sub = m;
         // guaranteed to be >= ja
         // (since we previously checked na_sub >= 1 and ja >= 1)
         int na_sub_end = ja - 1 + na_sub;
@@ -374,7 +374,7 @@ struct pxgemm_params {
     }
 
     friend std::ostream &operator<<(std::ostream &os,
-                                    const pxgemm_params &obj) {
+                                    const pxtran_params &obj) {
         os << "=============================" << std::endl;
         os << "      GLOBAL MAT. SIZES" << std::endl;
         os << "=============================" << std::endl;

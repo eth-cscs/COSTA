@@ -1,4 +1,4 @@
-// a container class, containing all the parameters of pxtran
+// a container class, containing all the parameters of pxgemr2d
 #pragma once
 #include <algorithm>
 #include <cmath>
@@ -8,7 +8,7 @@
 
 namespace costa {
 template <typename T>
-struct pxtran_params {
+struct pxgemr2d_params {
     // ****************************************
     // *       INPUT PARAMETERS BEGIN         *
     // ****************************************
@@ -78,7 +78,7 @@ struct pxtran_params {
     // ****************************************
     // *         INPUT PARAMETERS END         *
     // ****************************************
-    pxtran_params() = default;
+    pxgemr2d_params() = default;
 
     void initialize(int mm, int nn,
                     int block_a1, int block_a2,
@@ -124,7 +124,7 @@ struct pxtran_params {
         src_mc = 0; src_nc = 0;
     }
 
-    pxtran_params(int m, int n,
+    pxgemr2d_params(int m, int n,
                   int bm, int bn,
                   int prows, int pcols,
                   T a, T b) {
@@ -148,7 +148,7 @@ struct pxtran_params {
     }
 
 
-    pxtran_params(int m, int n,
+    pxgemr2d_params(int m, int n,
                   int block_a1, int block_a2,
                   int block_c1, int block_c2,
                   int prows, int pcols,
@@ -164,7 +164,7 @@ struct pxtran_params {
         }
     }
 
-    pxtran_params(
+    pxgemr2d_params(
         // global sizes
         int ma, int na, // matrix A
         int mc, int nc, // matrix C
@@ -359,7 +359,7 @@ struct pxtran_params {
     }
 
     friend std::ostream &operator<<(std::ostream &os,
-                                    const pxtran_params &obj) {
+                                    const pxgemr2d_params &obj) {
         os << "=============================" << std::endl;
         os << "      GLOBAL MAT. SIZES" << std::endl;
         os << "=============================" << std::endl;

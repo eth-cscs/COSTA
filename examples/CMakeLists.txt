@@ -10,7 +10,7 @@ foreach(exec ${executables})
 endforeach()
 
 # COSTA without scalapack executable
-set(scalapack_executables "pxtran_miniapp")
+set(scalapack_executables "pxtran_miniapp" "pxgemr2d_miniapp")
 
 foreach(exec ${scalapack_executables})
     add_executable(${exec} "${exec}.cpp")

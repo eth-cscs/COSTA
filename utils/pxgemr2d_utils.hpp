@@ -10,8 +10,8 @@
 // from costa
 #include <costa/blacs.hpp>
 #include <costa/scalapack.hpp>
-#include <costa/costa_pxtran.hpp>
-#include <costa/pxtran_params.hpp>
+#include <costa/costa_pxgemr2d.hpp>
+#include <costa/pxgemr2d_params.hpp>
 #include <costa/random_generator.hpp>
 
 // random number generator
@@ -32,37 +32,41 @@ extern "C" {
     void descinit_(int* desc, const int* m, const int* n, const int* mb, const int* nb,
            const int* irsrc, const int* icsrc, const int* ictxt, const int* lld, int* info);
 
-    void pstran_(const int *m , const int *n , 
-                const float *alpha , const float *a , 
-                const int *ia , const int *ja , 
-                const int *desca , 
-                const float *beta , float *c , 
-                const int *ic , const int *jc ,
-                const int *descc );
+    void psgemr2d_(const int *m , const int *n , 
+                   const float *a , 
+                   const int *ia , const int *ja , 
+                   const int *desca , 
+                   float *c , 
+                   const int *ic , const int *jc ,
+                   const int *descc,
+                   const int *ctxt);
 
-    void pdtran_(const int *m , const int *n , 
-                const double *alpha , const double *a , 
-                const int *ia , const int *ja , 
-                const int *desca , 
-                const double *beta , double *c , 
-                const int *ic , const int *jc ,
-                const int *descc );
+    void pdgemr2d_(const int *m , const int *n , 
+                   const double *a , 
+                   const int *ia , const int *ja , 
+                   const int *desca , 
+                   double *c , 
+                   const int *ic , const int *jc ,
+                   const int *descc,
+                   const int *ctxt);
 
-    void pctranu_(const int *m , const int *n , 
-                  const float *alpha , const float *a , 
-                  const int *ia , const int *ja , 
-                  const int *desca , 
-                  const float *beta , float *c , 
-                  const int *ic , const int *jc ,
-                  const int *descc );
+    void pcgemr2d_(const int *m , const int *n , 
+                   const float *a , 
+                   const int *ia , const int *ja , 
+                   const int *desca , 
+                   float *c , 
+                   const int *ic , const int *jc ,
+                   const int *descc,
+                   const int *ctxt);
 
-    void pztranu_(const int *m , const int *n , 
-                  const double *alpha , const double *a , 
-                  const int *ia , const int *ja , 
-                  const int *desca , 
-                  const double *beta , double *c , 
-                  const int *ic , const int *jc ,
-                  const int *descc );
+    void pzgemr2d_(const int *m , const int *n , 
+                   const double *a , 
+                   const int *ia , const int *ja , 
+                   const int *desca , 
+                   double *c ,
+                   const int *ic , const int *jc ,
+                   const int *descc,
+                   const int *ctxt);
 #ifdef __cplusplus
 }
 #endif
@@ -73,77 +77,82 @@ extern "C" {
 // *************************************
 // this is just for the convenience
 template <typename T>
-struct scalapack_pxtran {
-  static inline void pxtran(
+struct scalapack_pxgemr2d {
+  static inline void pxgemr2d(
               const int* m, const int* n,
-              const T* alpha, const T* a,
+              const T* a,
               const int* ia, const int* ja, const int* desca,
-              const T* beta, T* c, 
-              const int* ic, const int* jc, const int* descc);
+              T* c, 
+              const int* ic, const int* jc, const int* descc,
+              const int *ctxt);
 };
 
 template <>
-inline void scalapack_pxtran<float>::pxtran(
+inline void scalapack_pxgemr2d<float>::pxgemr2d(
               const int* m, const int* n,
-              const float* alpha, const float* a, 
+              const float* a, 
               const int* ia, const int* ja, const int* desca,
-              const float* beta, float* c, 
-              const int* ic, const int* jc, const int* descc) {
-    scalapack::pstran_(
+              float* c, 
+              const int* ic, const int* jc, const int* descc,
+              const int *ctxt) {
+    scalapack::psgemr2d_(
                        m, n,
-                       alpha, a,
+                       a,
                        ia, ja, desca,
-                       beta, c,
-                       ic, jc, descc);
+                       c,
+                       ic, jc, descc,
+                       ctxt);
 }
 
 template <>
-inline void scalapack_pxtran<double>::pxtran(
+inline void scalapack_pxgemr2d<double>::pxgemr2d(
               const int* m, const int* n,
-              const double* alpha, const double* a, 
+              const double* a, 
               const int* ia, const int* ja, const int* desca,
-              const double* beta, double* c, 
-              const int* ic, const int* jc, const int* descc) {
-    scalapack::pdtran_(
+              double* c, 
+              const int* ic, const int* jc, const int* descc,
+              const int *ctxt) {
+    scalapack::pdgemr2d_(
                        m, n,
-                       alpha, a,
+                       a,
                        ia, ja, desca,
-                       beta, c,
-                       ic, jc, descc);
+                       c,
+                       ic, jc, descc,
+                       ctxt);
 }
 
 template <>
-inline void scalapack_pxtran<std::complex<float>>::pxtran(
+inline void scalapack_pxgemr2d<std::complex<float>>::pxgemr2d(
               const int* m, const int* n,
-              const std::complex<float>* alpha, const std::complex<float>* a,
+              const std::complex<float>* a,
               const int* ia, const int* ja, const int* desca,
-              const std::complex<float>* beta, std::complex<float>* c,
-              const int* ic, const int* jc, const int* descc) {
-    scalapack::pctranu_(
+              std::complex<float>* c,
+              const int* ic, const int* jc, const int* descc,
+              const int *ctxt) {
+    scalapack::pcgemr2d_(
                        m, n,
-                       reinterpret_cast<const float*>(alpha),
                        reinterpret_cast<const float*>(a),
                        ia, ja, desca,
-                       reinterpret_cast<const float*>(beta),
                        reinterpret_cast<float*>(c),
-                       ic, jc, descc);
+                       ic, jc, descc,
+                       ctxt);
 }
 
 template <>
-inline void scalapack_pxtran<std::complex<double>>::pxtran(
+inline void scalapack_pxgemr2d<std::complex<double>>::pxgemr2d(
               const int* m, const int* n,
-              const std::complex<double>* alpha, const std::complex<double>* a,
+              const std::complex<double>* a,
               const int* ia, const int* ja, const int* desca,
-              const std::complex<double>* beta, std::complex<double>* c,
-              const int* ic, const int* jc, const int* descc) {
-    scalapack::pztranu_(
+              std::complex<double>* c,
+              const int* ic, const int* jc, const int* descc,
+              const int *ctxt) {
+    scalapack::pzgemr2d_(
                        m, n,
-                       reinterpret_cast<const double*>(alpha),
                        reinterpret_cast<const double*>(a),
                        ia, ja, desca,
-                       reinterpret_cast<const double*>(beta),
                        reinterpret_cast<double*>(c),
-                       ic, jc, descc);
+                       ic, jc, descc,
+                       ctxt);
 }
 
 // compares two vectors up to eps precision, returns true if they are equal
@@ -165,10 +174,10 @@ bool validate_results(std::vector<T>& v1, std::vector<T>& v2, double epsilon=1e-
     return correct;
 }
 
-// runs costa or scalapack pdtran wrapper for n_rep times and returns
+// runs costa or scalapack pxgemr2d wrapper for n_rep times and returns
 // a vector of timings (in milliseconds) of size n_rep
 template <typename T>
-bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
+bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_rep,
                     const std::string& algorithm,
                     std::vector<long>& costa_times, std::vector<long>& scalapack_times, 
                     bool test_correctness = false, bool exit_blacs = false) {
@@ -247,19 +256,19 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
             c_scalapack = std::vector<T>(size_c);
         }
     } catch (const std::bad_alloc& e) {
-        std::cout << "COSTA (pxtran_utils): not enough space to store the initial local matrices. The problem size is too large. Either decrease the problem size or run it on more nodes/ranks." << std::endl;
+        std::cout << "COSTA (pxgemr2d_utils): not enough space to store the initial local matrices. The problem size is too large. Either decrease the problem size or run it on more nodes/ranks." << std::endl;
         costa::blacs::Cblacs_gridexit(ctxt);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::length_error& e) {
-        std::cout << "COSTA (pxtran_utils): the initial local size of matrices >= vector::max_size(). Try using std::array or similar in costa/utils/pxgemm_utils.cpp instead of vectors to store the initial matrices." << std::endl;
+        std::cout << "COSTA (pxgemr2d_utils): the initial local size of matrices >= vector::max_size(). Try using std::array or similar in costa/utils/pxgemm_utils.cpp instead of vectors to store the initial matrices." << std::endl;
         costa::blacs::Cblacs_gridexit(ctxt);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::exception& e) {
-        std::cout << "COSTA (pxtran_utils): unknown exception, potentially a bug. Please inform us of the test-case." << std::endl;
+        std::cout << "COSTA (pxgemr2d_utils): unknown exception, potentially a bug. Please inform us of the test-case." << std::endl;
         costa::blacs::Cblacs_gridexit(ctxt);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
@@ -282,16 +291,16 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
 
         if (algorithm == "both" || algorithm == "costa") {
             // ***********************************
-            //       run COSTA PXTRAN
+            //       run COSTA PXGEMR2D
             // ***********************************
             // running COSTA wrapper
             long time = 0;
             MPI_Barrier(comm);
             auto start = std::chrono::steady_clock::now();
-            costa::pxtran<T>(
+            costa::pxgemr2d<T>(
                 params.m, params.n,
-                params.alpha, a.data(), params.ia, params.ja, &desca[0],
-                params.beta, c_costa.data(), params.ic, params.jc, &descc[0]);
+                a.data(), params.ia, params.ja, &desca[0],
+                c_costa.data(), params.ic, params.jc, &descc[0], ctxt);
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -306,10 +315,10 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
             long time = 0;
             MPI_Barrier(comm);
             auto start = std::chrono::steady_clock::now();
-            scalapack_pxtran<T>::pxtran(
+            scalapack_pxgemr2d<T>::pxgemr2d(
                 &params.m, &params.n,
-                &params.alpha, a.data(), &params.ia, &params.ja, &desca[0],
-                &params.beta, c_scalapack.data(), &params.ic, &params.jc, &descc[0]);
+                a.data(), &params.ia, &params.ja, &desca[0],
+                c_scalapack.data(), &params.ic, &params.jc, &descc[0], &ctxt);
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -341,10 +350,10 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
 }
 
 template <typename T>
-bool test_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm,
+bool test_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm,
                  bool test_correctness = true, bool exit_blacs = false) {
     std::vector<long> t1;
     std::vector<long> t2;
     int n_rep = 1;
-    return benchmark_pxtran(params, comm, n_rep, "both", t1, t2, true, exit_blacs);
+    return benchmark_pxgemr2d(params, comm, n_rep, "both", t1, t2, true, exit_blacs);
 }

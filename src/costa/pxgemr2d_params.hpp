@@ -83,8 +83,7 @@ struct pxgemr2d_params {
     void initialize(int mm, int nn,
                     int block_a1, int block_a2,
                     int block_c1, int block_c2,
-                    int prows, int pcols,
-                    T a, T b) {
+                    int prows, int pcols) {
         m = mm;
         n = nn;
 
@@ -126,8 +125,7 @@ struct pxgemr2d_params {
 
     pxgemr2d_params(int m, int n,
                   int bm, int bn,
-                  int prows, int pcols,
-                  T a, T b) {
+                  int prows, int pcols) {
         // block sizes
         // blocks BEFORE transposing (if transposed)
         bma = bm;
@@ -139,8 +137,7 @@ struct pxgemr2d_params {
         initialize(m, n,
                    bma, bna,
                    bmc, bnc,
-                   prows, pcols,
-                   a, b);
+                   prows, pcols);
         std::string info;
         if (!valid(info)) {
             std::runtime_error("WRONG PXGEMR2D PARAMETER: " + info);
@@ -151,13 +148,11 @@ struct pxgemr2d_params {
     pxgemr2d_params(int m, int n,
                   int block_a1, int block_a2,
                   int block_c1, int block_c2,
-                  int prows, int pcols,
-                  T a, T b) {
+                  int prows, int pcols) {
         initialize(m, n,
                    block_a1, block_a2,
                    block_c1, block_c2,
-                   prows, pcols,
-                   a, b);
+                   prows, pcols);
         std::string info;
         if (!valid(info)) {
             std::runtime_error("WRONG PXGEMR2D PARAMETER: " + info);

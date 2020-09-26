@@ -26,7 +26,7 @@ bool is_subcommunicator(MPI_Comm comm, MPI_Comm subcomm) {
     int comp;
     MPI_Group_compare(intersection, subgroup, &comp);
 
-    return comp == MPI_SIMILAR;
+    return comp != MPI_UNEQUAL;
 }
 
 template <typename T>
@@ -64,6 +64,7 @@ void pxgemr2d(
     MPI_Comm comm_a = scalapack::get_communicator(ctxt_a);
     MPI_Comm comm_c = scalapack::get_communicator(ctxt_c);
     MPI_Comm comm = scalapack::get_communicator(ctxt);
+    // MPI_Comm comm = blacs::Cblacs2sys_handle(ctxt);
     // check if comm is at least the union of comm_a and comm_c
     assert(is_subcommunicator(comm, comm_a));
     assert(is_subcommunicator(comm, comm_c));
@@ -225,7 +226,7 @@ template void pxgemr2d<double>(
                             const int ic,
                             const int jc,
                             const int *descc,
-                            int ctxt);
+                            const int ctxt);
 
 template void pxgemr2d<float>(
                            const int m,
@@ -238,7 +239,7 @@ template void pxgemr2d<float>(
                            const int ic,
                            const int jc,
                            const int *descc,
-                           int ctxt);
+                           const int ctxt);
 
 template void pxgemr2d<zdouble_t>(
                                const int m,
@@ -251,7 +252,7 @@ template void pxgemr2d<zdouble_t>(
                                const int ic,
                                const int jc,
                                const int *descc,
-                               int ctxt);
+                               const int ctxt);
 
 template void pxgemr2d<zfloat_t>(
                               const int m,
@@ -264,5 +265,5 @@ template void pxgemr2d<zfloat_t>(
                               const int ic,
                               const int jc,
                               const int *descc,
-                              int ctxt);
+                              const int ctxt);
 } // namespace costa

@@ -1,9 +1,9 @@
 #include <costa/costa_pxgemr2d.hpp>
 
 extern "C" {
-#include <costa/pxgemr2d.h>
+#include <costa/prefixed_pxgemr2d.h>
 
-void pigemr2d(int *m, int *n,
+void costa_pigemr2d(int *m, int *n,
               int *a,
               int *ia, int *ja,
               int *desca,
@@ -25,7 +25,7 @@ void pigemr2d(int *m, int *n,
                   *ictxt);
 }
 
-void psgemr2d(int *m, int *n,
+void costa_psgemr2d(int *m, int *n,
               float *a,
               int *ia, int *ja,
               int *desca,
@@ -47,7 +47,7 @@ void psgemr2d(int *m, int *n,
                   *ictxt);
 }
 
-void pdgemr2d(int *m, int *n,
+void costa_pdgemr2d(int *m, int *n,
               double *a,
               int *ia, int *ja,
               int *desca,
@@ -69,7 +69,7 @@ void pdgemr2d(int *m, int *n,
                   *ictxt);
 }
 
-void pcgemr2d(int *m, int *n,
+void costa_pcgemr2d(int *m, int *n,
               float *a,
               int *ia, int *ja,
               int *desca,
@@ -91,7 +91,7 @@ void pcgemr2d(int *m, int *n,
                   *ictxt);
 }
 
-void pzgemr2d(int *m, int *n,
+void costa_pzgemr2d(int *m, int *n,
               double *a,
               int *ia, int *ja,
               int *desca,
@@ -117,7 +117,7 @@ void pzgemr2d(int *m, int *n,
 // Same as previously, but with added underscore at the end.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void psgemr2d_(int *m, int *n,
+void costa_psgemr2d_(int *m, int *n,
                float *a,
                int *ia, int *ja,
                int *desca,
@@ -125,10 +125,10 @@ void psgemr2d_(int *m, int *n,
                int *ib, int *jb,
                int *descb,
                int *ictxt) {
-    psgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_psgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pdgemr2d_(int *m, int *n,
+void costa_pdgemr2d_(int *m, int *n,
                double *a,
                int *ia, int *ja,
                int *desca,
@@ -136,10 +136,10 @@ void pdgemr2d_(int *m, int *n,
                int *ib, int *jb,
                int *descb,
                int *ictxt) {
-    pdgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pdgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pcgemr2d_(int *m, int *n,
+void costa_pcgemr2d_(int *m, int *n,
                float *a,
                int *ia, int *ja,
                int *desca,
@@ -147,10 +147,10 @@ void pcgemr2d_(int *m, int *n,
                int *ib, int *jb,
                int *descb,
                int *ictxt) {
-    pcgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pcgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pzgemr2d_(int *m, int *n,
+void costa_pzgemr2d_(int *m, int *n,
                double *a,
                int *ia, int *ja,
                int *desca,
@@ -158,10 +158,10 @@ void pzgemr2d_(int *m, int *n,
                int *ib, int *jb,
                int *descb,
                int *ictxt) {
-    pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pigemr2d_(int *m, int *n,
+void costa_pigemr2d_(int *m, int *n,
                int *a,
                int *ia, int *ja,
                int *desca,
@@ -169,14 +169,14 @@ void pigemr2d_(int *m, int *n,
                int *ib, int *jb,
                int *descb,
                int *ictxt) {
-    pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
 // *********************************************************************************
 // Same as previously, but with added double underscores at the end.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void psgemr2d__(int *m, int *n,
+void costa_psgemr2d__(int *m, int *n,
                 float *a,
                 int *ia, int *ja,
                 int *desca,
@@ -184,10 +184,10 @@ void psgemr2d__(int *m, int *n,
                 int *ib, int *jb,
                 int *descb,
                 int *ictxt) {
-    psgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_psgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pdgemr2d__(int *m, int *n,
+void costa_pdgemr2d__(int *m, int *n,
                 double *a,
                 int *ia, int *ja,
                 int *desca,
@@ -195,10 +195,10 @@ void pdgemr2d__(int *m, int *n,
                 int *ib, int *jb,
                 int *descb,
                 int *ictxt) {
-    pdgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pdgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pcgemr2d__(int *m, int *n,
+void costa_pcgemr2d__(int *m, int *n,
                 float *a,
                 int *ia, int *ja,
                 int *desca,
@@ -206,10 +206,10 @@ void pcgemr2d__(int *m, int *n,
                 int *ib, int *jb,
                 int *descb,
                 int *ictxt) {
-    pcgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pcgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pzgemr2d__(int *m, int *n,
+void costa_pzgemr2d__(int *m, int *n,
                 double *a,
                 int *ia, int *ja,
                 int *desca,
@@ -217,10 +217,10 @@ void pzgemr2d__(int *m, int *n,
                 int *ib, int *jb,
                 int *descb,
                 int *ictxt) {
-    pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pigemr2d__(int *m, int *n,
+void costa_pigemr2d__(int *m, int *n,
                 int *a,
                 int *ia, int *ja,
                 int *desca,
@@ -228,14 +228,14 @@ void pigemr2d__(int *m, int *n,
                 int *ib, int *jb,
                 int *descb,
                 int *ictxt) {
-    pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
 // *********************************************************************************
 // Same as previously, but CAPITALIZED.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void PSGEMR2D(int *m, int *n,
+void COSTA_PSGEMR2D(int *m, int *n,
               float *a,
               int *ia, int *ja,
               int *desca,
@@ -243,10 +243,10 @@ void PSGEMR2D(int *m, int *n,
               int *ib, int *jb,
               int *descb,
               int *ictxt) {
-    psgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_psgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void PDGEMR2D(int *m, int *n,
+void COSTA_PDGEMR2D(int *m, int *n,
               double *a,
               int *ia, int *ja,
               int *desca,
@@ -254,10 +254,10 @@ void PDGEMR2D(int *m, int *n,
               int *ib, int *jb,
               int *descb,
               int *ictxt) {
-    pdgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pdgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void PCGEMR2D(int *m, int *n,
+void COSTA_PCGEMR2D(int *m, int *n,
               float *a,
               int *ia, int *ja,
               int *desca,
@@ -265,10 +265,10 @@ void PCGEMR2D(int *m, int *n,
               int *ib, int *jb,
               int *descb,
               int *ictxt) {
-    pcgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pcgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void PZGEMR2D(int *m, int *n,
+void COSTA_PZGEMR2D(int *m, int *n,
               double *a,
               int *ia, int *ja,
               int *desca,
@@ -276,10 +276,10 @@ void PZGEMR2D(int *m, int *n,
               int *ib, int *jb,
               int *descb,
               int *ictxt) {
-    pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void PIGEMR2D(int *m, int *n,
+void COSTA_PIGEMR2D(int *m, int *n,
               int *a,
               int *ia, int *ja,
               int *desca,
@@ -287,6 +287,7 @@ void PIGEMR2D(int *m, int *n,
               int *ib, int *jb,
               int *descb,
               int *ictxt) {
-    pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
+    costa_pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
+
 }

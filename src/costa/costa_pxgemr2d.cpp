@@ -20,7 +20,7 @@ bool is_subcommunicator(MPI_Comm comm, MPI_Comm subcomm) {
 
     // get the intersection of the two groups
     MPI_Group intersection;
-    MPI_Comm_intersection(group, subgroup, &intersection);
+    MPI_Group_intersection(group, subgroup, &intersection);
 
     // check if intersection == subcomm (meaning that subcomm is a subset of comm)
     int comp;
@@ -41,7 +41,7 @@ void pxgemr2d(
            const int ic,
            const int jc,
            const int *descc,
-           int ctxt);
+           int ctxt) {
     // **********************************
     //           CORNER CASES
     // **********************************

@@ -41,7 +41,7 @@ void pxgemr2d(
            const int ic,
            const int jc,
            const int *descc,
-           int ctxt) {
+           const int ctxt) {
     // **********************************
     //           CORNER CASES
     // **********************************

@@ -21,6 +21,6 @@ void pxgemr2d(
            const int ib,
            const int jb,
            const int *descb,
-           int ictxt);
+           const int ictxt);
 } // namespace costa
 

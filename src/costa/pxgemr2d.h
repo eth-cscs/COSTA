@@ -4,197 +4,197 @@ extern "C" {
 #endif
 
 // scalapack api
-void psgemr2d(int *m, int *n,
-              float *a,
-              int *ia, int *ja,
-              int *desca,
+void psgemr2d(const int *m, const int *n,
+              const float *a,
+              const int *ia, const int *ja,
+              const int *desca,
               float *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void pdgemr2d(int *m, int *n,
-              double *a,
-              int *ia, int *ja,
-              int *desca,
+void pdgemr2d(const int *m, const int *n,
+              const double *a,
+              const int *ia, const int *ja,
+              const int *desca,
               double *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void pcgemr2d(int *m, int *n,
-              float *a,
-              int *ia, int *ja,
-              int *desca,
+void pcgemr2d(const int *m, const int *n,
+              const float *a,
+              const int *ia, const int *ja,
+              const int *desca,
               float *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void pzgemr2d(int *m, int *n,
-              double *a,
-              int *ia, int *ja,
-              int *desca,
+void pzgemr2d(const int *m, const int *n,
+              const double *a,
+              const int *ia, const int *ja,
+              const int *desca,
               double *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void pigemr2d(int *m, int *n,
-              int *a,
-              int *ia, int *ja,
-              int *desca,
+void pigemr2d(const int *m, const int *n,
+              const int *a,
+              const int *ia, const int *ja,
+              const int *desca,
               int *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
 // *********************************************************************************
 // Same as previously, but with added underscore at the end.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void psgemr2d_(int *m, int *n,
-               float *a,
-               int *ia, int *ja,
-               int *desca,
+void psgemr2d_(const int *m, const int *n,
+               const float *a,
+               const int *ia, const int *ja,
+               const int *desca,
                float *b,
-               int *ib, int *jb,
-               int *descb,
-               int *ictxt);
+               const int *ib, const int *jb,
+               const int *descb,
+               const int *ictxt);
 
-void pdgemr2d_(int *m, int *n,
-               double *a,
-               int *ia, int *ja,
-               int *desca,
+void pdgemr2d_(const int *m, const int *n,
+               const double *a,
+               const int *ia, const int *ja,
+               const int *desca,
                double *b,
-               int *ib, int *jb,
-               int *descb,
-               int *ictxt);
+               const int *ib, const int *jb,
+               const int *descb,
+               const int *ictxt);
 
-void pcgemr2d_(int *m, int *n,
-               float *a,
-               int *ia, int *ja,
-               int *desca,
+void pcgemr2d_(const int *m, const int *n,
+               const float *a,
+               const int *ia, const int *ja,
+               const int *desca,
                float *b,
-               int *ib, int *jb,
-               int *descb,
-               int *ictxt);
+               const int *ib, const int *jb,
+               const int *descb,
+               const int *ictxt);
 
-void pzgemr2d_(int *m, int *n,
-               double *a,
-               int *ia, int *ja,
-               int *desca,
+void pzgemr2d_(const int *m, const int *n,
+               const double *a,
+               const int *ia, const int *ja,
+               const int *desca,
                double *b,
-               int *ib, int *jb,
-               int *descb,
-               int *ictxt);
+               const int *ib, const int *jb,
+               const int *descb,
+               const int *ictxt);
 
-void pigemr2d_(int *m, int *n,
-               int *a,
-               int *ia, int *ja,
-               int *desca,
+void pigemr2d_(const int *m, const int *n,
+               const int *a,
+               const int *ia, const int *ja,
+               const int *desca,
                int *b,
-               int *ib, int *jb,
-               int *descb,
-               int *ictxt);
+               const int *ib, const int *jb,
+               const int *descb,
+               const int *ictxt);
 
 // *********************************************************************************
 // Same as previously, but with added double underscores at the end.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void psgemr2d__(int *m, int *n,
-                float *a,
-                int *ia, int *ja,
-                int *desca,
+void psgemr2d__(const int *m, const int *n,
+                const float *a,
+                const int *ia, const int *ja,
+                const int *desca,
                 float *b,
-                int *ib, int *jb,
-                int *descb,
-                int *ictxt);
+                const int *ib, const int *jb,
+                const int *descb,
+                const int *ictxt);
 
-void pdgemr2d__(int *m, int *n,
-                double *a,
-                int *ia, int *ja,
-                int *desca,
+void pdgemr2d__(const int *m, const int *n,
+                const double *a,
+                const int *ia, const int *ja,
+                const int *desca,
                 double *b,
-                int *ib, int *jb,
-                int *descb,
-                int *ictxt);
+                const int *ib, const int *jb,
+                const int *descb,
+                const int *ictxt);
 
-void pcgemr2d__(int *m, int *n,
-                float *a,
-                int *ia, int *ja,
-                int *desca,
+void pcgemr2d__(const int *m, const int *n,
+                const float *a,
+                const int *ia, const int *ja,
+                const int *desca,
                 float *b,
-                int *ib, int *jb,
-                int *descb,
-                int *ictxt);
+                const int *ib, const int *jb,
+                const int *descb,
+                const int *ictxt);
 
-void pzgemr2d__(int *m, int *n,
-                double *a,
-                int *ia, int *ja,
-                int *desca,
+void pzgemr2d__(const int *m, const int *n,
+                const double *a,
+                const int *ia, const int *ja,
+                const int *desca,
                 double *b,
-                int *ib, int *jb,
-                int *descb,
-                int *ictxt);
+                const int *ib, const int *jb,
+                const int *descb,
+                const int *ictxt);
 
-void pigemr2d__(int *m, int *n,
-                int *a,
-                int *ia, int *ja,
-                int *desca,
+void pigemr2d__(const int *m, const int *n,
+                const int *a,
+                const int *ia, const int *ja,
+                const int *desca,
                 int *b,
-                int *ib, int *jb,
-                int *descb,
-                int *ictxt);
+                const int *ib, const int *jb,
+                const int *descb,
+                const int *ictxt);
 
 // *********************************************************************************
 // Same as previously, but CAPITALIZED.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void PSGEMR2D(int *m, int *n,
-              float *a,
-              int *ia, int *ja,
-              int *desca,
+void PSGEMR2D(const int *m, const int *n,
+              const float *a,
+              const int *ia, const int *ja,
+              const int *desca,
               float *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void PDGEMR2D(int *m, int *n,
-              double *a,
-              int *ia, int *ja,
-              int *desca,
+void PDGEMR2D(const int *m, const int *n,
+              const double *a,
+              const int *ia, const int *ja,
+              const int *desca,
               double *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void PCGEMR2D(int *m, int *n,
-              float *a,
-              int *ia, int *ja,
-              int *desca,
+void PCGEMR2D(const int *m, const int *n,
+              const float *a,
+              const int *ia, const int *ja,
+              const int *desca,
               float *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void PZGEMR2D(int *m, int *n,
-              double *a,
-              int *ia, int *ja,
-              int *desca,
+void PZGEMR2D(const int *m, const int *n,
+              const double *a,
+              const int *ia, const int *ja,
+              const int *desca,
               double *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
-void PIGEMR2D(int *m, int *n,
-              int *a,
-              int *ia, int *ja,
-              int *desca,
+void PIGEMR2D(const int *m, const int *n,
+              const int *a,
+              const int *ia, const int *ja,
+              const int *desca,
               int *b,
-              int *ib, int *jb,
-              int *descb,
-              int *ictxt);
+              const int *ib, const int *jb,
+              const int *descb,
+              const int *ictxt);
 
 #ifdef __cplusplus
 }

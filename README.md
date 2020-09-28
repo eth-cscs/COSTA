@@ -20,7 +20,7 @@ export OMP_NUM_THREADS=18
 # if using CPU version with MKL backend, set MKL_NUM_THREADS as well
 export MKL_NUM_THREADS=18 
 # run the miniapp
-mpirun -np 4 ./build/miniapp/pxgemr2d_miniapp -m 1000 -n 1000 \
+mpirun -np 4 ./build/examples/pxgemr2d_miniapp -m 1000 -n 1000 \
                                             --block_a=128,128 \ 
                                             --block_c=128,128 \
                                             --p_grid=2,2 \
@@ -54,7 +54,7 @@ export OMP_NUM_THREADS=18
 # if using CPU version with MKL backend, set MKL_NUM_THREADS as well
 export MKL_NUM_THREADS=18 
 # run the miniapp
-mpirun -np 4 ./build/miniapp/pxtran_miniapp -m 1000 -n 1000 -k 1000 \
+mpirun -np 4 ./build/examples/pxtran_miniapp -m 1000 -n 1000 -k 1000 \
                                             --block_a=128,128 \ 
                                             --block_c=128,128 \
                                             --p_grid=2,2 \

@@ -166,6 +166,7 @@ void pxgemr2d(
         c,
         rank);
 
+    /*
     // total communication volume for transformation of layouts
     auto comm_vol = grid2grid::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
 
@@ -189,10 +190,12 @@ void pxgemr2d(
         }
     }
 #endif
+    */
 
     // transform A to C
     grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
 
+    /*
 #ifdef DEBUG
     if (rank == 0) {
         auto reordered_vol = grid2grid::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
@@ -212,6 +215,7 @@ void pxgemr2d(
     if (reordered) {
         MPI_Comm_free(&reordered_comm);
     }
+    */
 }
 
 // explicit instantiation for pxtran

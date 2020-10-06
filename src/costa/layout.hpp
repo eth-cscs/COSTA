@@ -24,20 +24,29 @@ struct block {
  * colblocks: number of gobal blocks
  * rowsplit: [rowsplit[i], rowsplit[i+1]) is range of rows of block i
  * colsplit: [colsplit[i], colsplit[i+1]) is range of columns of block i
- * nlocalblock: number of blocks owned by the current rank
- * localblcoks: an array of block descriptions of the current rank
  */
-struct layout {
+struct grid {
+    // global view
     int rowblocks;
     int colblocks;
     const int *rowsplit;
     const int *colsplit;
     const int *owners;
+};
+
+/**
+ * Description of a distributed layout of a matrix
+ * global_view: describes the global matrix grid
+ * nlocalblock: number of blocks owned by the current rank
+ * localblcoks: an array of block descriptions of the current rank
+ */
+struct layout {
+    // global_view
+    grid* global_view;
+    // local view (local blocks)
     int nlocalblocks;
     block* localblocks;
 };
-
-layout block_cyclic_layout();
 
 #ifdef __cplusplus
 }

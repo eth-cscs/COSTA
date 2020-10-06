@@ -11,27 +11,19 @@
  * transpose_or_conjugate ('N', 'T' or 'C'): describes whether the input
  * matrix should be left unchanged ('N'), transposed ('T') or conjugated ('C')
  */
+
 namespace costa {
-
-using zdouble_t = std::complex<double>;
-using zfloat_t = std::complex<float>;
-
 // applies the transformation: B = alpha * (A^T) + beta * B
-// if relabel = true, the ranks are relabeled to minimize the communication
-// and the new communicator is returned
-// if relabel = false, the ranks are not relabelled and 
-// the input communicator is returned without relabelling
 template <typename T>
-MPI_Comm transform(
+void transform(
+               // A = input layout, B = output layout
                const layout* A,
                const layout* B,
                // scaling parameters
                const T alpha, const T beta,
                // transpose flags
                const char transpose_or_conjugate,
-               // if true, ranks will be relabelled to minimize the communication
-               // and the new communicator will be returned
-               const bool relabel,
+               // communicator
                const MPI_Comm comm
               );
 
@@ -43,14 +35,18 @@ MPI_Comm transform(
 // this is potentially more efficient than invoking
 // single transform for each layout separately.
 template <typename T>
-MPI_Comm transform_multiple(
+void transform_multiple(
+               // number of layouts to transform
+               const int nlayouts,
+               // array of input layouts of size nlayouts
                const layout* A,
+               // array of output layouts of size nlayouts
                const layout* B,
-               // scaling parameters
+               // scaling parameter array of size nlayouts
                const T* alpha, const T* beta,
-               // transpose flags
+               // transpose flags array of size nlayouts
                const char* transpose_or_conjugate,
-               const bool relabel,
+               // communicator
                const MPI_Comm comm
               );
-} // namespace costa
+}

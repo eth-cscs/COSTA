@@ -1,7 +1,10 @@
 #include <costa/transform.hpp>
+#include <grid2grid/grid_layout.hpp>
+#include <grid2grid/transform.hpp>
+#include <grid2grid/transformer.hpp>
 
 namespace costa {
-template <class T>
+template <typename T>
 grid2grid::grid_layout<T> get_layout(int n_ranks,
                                      const ::layout *layout) {
 
@@ -26,16 +29,16 @@ grid2grid::grid_layout<T> get_layout(int n_ranks,
 
     // Grid specification
     std::vector<int> rows_split(layout->global_view->rowblocks + 1);
-    std::copy_n(layout->rowsplit, rows_split.size(), rows_split.begin());
+    std::copy_n(layout->global_view->rowsplit, rows_split.size(), rows_split.begin());
 
     std::vector<int> cols_split(layout->global_view->colblocks + 1);
-    std::copy_n(layout->colsplit, cols_split.size(), cols_split.begin());
+    std::copy_n(layout->global_view->colsplit, cols_split.size(), cols_split.begin());
 
     std::vector<std::vector<int>> owners_matrix(layout->global_view->rowblocks);
     for (int i = 0; i < layout->global_view->rowblocks; ++i) {
         owners_matrix[i].resize(layout->global_view->colblocks);
         for (int j = 0; j < layout->global_view->colblocks; ++j)
-            owners_matrix[i][j] = layout->global_view->owners[j * layout->rowblocks + i];
+            owners_matrix[i][j] = layout->global_view->owners[j * layout->global_view->rowblocks + i];
     }
 
     return {{{std::move(rows_split), std::move(cols_split)},
@@ -58,12 +61,12 @@ void transform(
     char trans = std::toupper(transpose_or_conjugate);
 
     // communicator info
-    int rank;
+    int P;
     MPI_Comm_size(comm, &P);
 
     // create grid2grid::grid_layout object from the frontend description
-    auto in_layout = get_layout(P, A);
-    auto out_layout = get_layout(P, B);
+    auto in_layout = get_layout<T>(P, A);
+    auto out_layout = get_layout<T>(P, B);
 
     // schedule transpose of conjugate operation to be performed
     in_layout.transpose_or_conjugate(trans);
@@ -85,7 +88,7 @@ void transform_multiple(
               ) {
 
     // communicator info
-    int rank;
+    int P;
     MPI_Comm_size(comm, &P);
 
     // transformer
@@ -97,8 +100,8 @@ void transform_multiple(
         char trans = std::toupper(transpose_or_conjugate[i]);
 
         // create grid2grid::grid_layout object from the frontend description
-        auto in_layout = get_layout(P, A[i]);
-        auto out_layout = get_layout(P, B[i]);
+        auto in_layout = get_layout<T>(P, &A[i]);
+        auto out_layout = get_layout<T>(P, &B[i]);
 
         // schedule transpose of conjugate operation to be performed
         in_layout.transpose_or_conjugate(trans);

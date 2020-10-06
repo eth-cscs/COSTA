@@ -1,6 +1,7 @@
 #pragma once
-#include <complex>
 #include <costa/layout.hpp>
+#include <complex>
+#include <mpi.h>
 
 /**
  * The general transformation looks as follows (A = input, B = output):

@@ -3,6 +3,7 @@ if(NOT TARGET costa)
     set(costa_src_files scalapack.cpp
                         costa_pxtran.cpp
                         costa_pxgemr2d.cpp
+                        transform.cpp
     )
 
     add_library(costa ${costa_src_files})

@@ -167,14 +167,7 @@ void pxtran(
 #endif
     */
 
-    // transform A to C
-    if (alpha != T{1} || beta != T{0}) {
-        // scale while transforming
-        grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, alpha, beta, comm);
-    } else {
-        // use a more efficient copy since C can be overwritten
-        grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
-    }
+    grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, 'T', alpha, beta, comm);
 
     /*
 #ifdef DEBUG

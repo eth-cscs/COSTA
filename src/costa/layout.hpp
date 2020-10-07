@@ -11,7 +11,7 @@ extern "C" {
  * row: the global block row index
  * col: the global block colum index
  */
-struct block {
+struct block_t {
     void *data;
     const int ld;
     const int row;
@@ -25,7 +25,7 @@ struct block {
  * rowsplit: [rowsplit[i], rowsplit[i+1]) is range of rows of block i
  * colsplit: [colsplit[i], colsplit[i+1]) is range of columns of block i
  */
-struct grid {
+struct grid_t {
     // global view
     int rowblocks;
     int colblocks;
@@ -40,12 +40,12 @@ struct grid {
  * nlocalblock: number of blocks owned by the current rank
  * localblcoks: an array of block descriptions of the current rank
  */
-struct layout {
+struct layout_t {
     // global_view
-    grid* global_view;
+    grid_t* grid;
     // local view (local blocks)
     int nlocalblocks;
-    block* localblocks;
+    block_t* localblocks;
 };
 
 #ifdef __cplusplus

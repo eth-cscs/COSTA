@@ -18,8 +18,8 @@ namespace costa {
 template <typename T>
 void transform(
                // A = input layout, B = output layout
-               const layout* A,
-               const layout* B,
+               const layout_t* A,
+               const layout_t* B,
                // scaling parameters
                const T alpha, const T beta,
                // transpose flags
@@ -40,9 +40,9 @@ void transform_multiple(
                // number of layouts to transform
                const int nlayouts,
                // array of input layouts of size nlayouts
-               const layout* A,
+               const layout_t* A,
                // array of output layouts of size nlayouts
-               const layout* B,
+               const layout_t* B,
                // scaling parameter array of size nlayouts
                const T* alpha, const T* beta,
                // transpose flags array of size nlayouts

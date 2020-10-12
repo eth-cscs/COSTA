@@ -10,8 +10,8 @@
 // from costa
 #include <costa/blacs.hpp>
 #include <costa/scalapack.hpp>
-#include <costa/costa_pxtran.hpp>
-#include <costa/pxtran_params.hpp>
+#include <costa/pxtran/costa_pxtran.hpp>
+#include <costa/pxtran/pxtran_params.hpp>
 #include <costa/random_generator.hpp>
 
 // random number generator

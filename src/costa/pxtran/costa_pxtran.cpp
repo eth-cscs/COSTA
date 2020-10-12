@@ -2,10 +2,10 @@
 #include <mpi.h>
 
 #include <costa/blacs.hpp>
-#include <costa/costa_pxtran.hpp>
+#include <costa/pxtran/costa_pxtran.hpp>
 
-#include <grid2grid/ranks_reordering.hpp>
-#include <grid2grid/transformer.hpp>
+#include <costa/grid2grid/ranks_reordering.hpp>
+#include <costa/grid2grid/transformer.hpp>
 
 namespace costa {
 template <typename T>
@@ -73,7 +73,7 @@ void pxtran(
     // check whether rank grid is row-major or col-major
     auto ordering = scalapack::rank_ordering(ctxt, P);
     char grid_order =
-        ordering == grid2grid::scalapack::ordering::column_major ? 'C' : 'R';
+        ordering == costa::scalapack::ordering::column_major ? 'C' : 'R';
 
 #ifdef DEBUG
     if (rank == 0) {
@@ -115,7 +115,7 @@ void pxtran(
 #endif
 
     // get abstract layout descriptions for ScaLAPACK layout
-    auto scalapack_layout_a = grid2grid::get_scalapack_grid<T>(
+    auto scalapack_layout_a = costa::get_scalapack_grid<T>(
         lld_a,
         {mat_dim_a.rows, mat_dim_a.cols},
         {ia, ja},
@@ -123,12 +123,11 @@ void pxtran(
         {b_dim_a.rows, b_dim_a.cols},
         {procrows, proccols},
         ordering,
-        'T',
         {rank_src_a.row_src, rank_src_a.col_src},
         a,
         rank);
 
-    auto scalapack_layout_c = grid2grid::get_scalapack_grid<T>(
+    auto scalapack_layout_c = costa::get_scalapack_grid<T>(
         lld_c,
         {mat_dim_c.rows, mat_dim_c.cols},
         {ic, jc},
@@ -136,7 +135,6 @@ void pxtran(
         {b_dim_c.rows, b_dim_c.cols},
         {procrows, proccols},
         ordering,
-        'N',
         {rank_src_c.row_src, rank_src_c.col_src},
         c,
         rank);
@@ -167,7 +165,7 @@ void pxtran(
 #endif
     */
 
-    grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, 'T', alpha, beta, comm);
+    costa::transform<T>(scalapack_layout_a, scalapack_layout_c, 'T', alpha, beta, comm);
 
     /*
 #ifdef DEBUG

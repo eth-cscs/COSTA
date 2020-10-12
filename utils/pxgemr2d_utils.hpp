@@ -10,8 +10,8 @@
 // from costa
 #include <costa/blacs.hpp>
 #include <costa/scalapack.hpp>
-#include <costa/costa_pxgemr2d.hpp>
-#include <costa/pxgemr2d_params.hpp>
+#include <costa/pxgemr2d/costa_pxgemr2d.hpp>
+#include <costa/pxgemr2d/pxgemr2d_params.hpp>
 #include <costa/random_generator.hpp>
 
 // random number generator

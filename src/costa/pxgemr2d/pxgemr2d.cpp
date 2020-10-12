@@ -1,7 +1,7 @@
-#include <costa/costa_pxgemr2d.hpp>
+#include <costa/pxgemr2d/costa_pxgemr2d.hpp>
 
 extern "C" {
-#include <costa/pxgemr2d.h>
+#include <costa/pxgemr2d/pxgemr2d.h>
 
 void pigemr2d(const int *m, const int *n,
               const int *a,

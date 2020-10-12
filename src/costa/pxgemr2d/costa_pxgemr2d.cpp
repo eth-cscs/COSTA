@@ -2,11 +2,10 @@
 #include <mpi.h>
 
 #include <costa/blacs.hpp>
-#include <costa/pxgemr2d_params.hpp>
-#include <costa/costa_pxgemr2d.hpp>
+#include <costa/pxgemr2d/pxgemr2d_params.hpp>
+#include <costa/pxgemr2d/costa_pxgemr2d.hpp>
 
-#include <grid2grid/ranks_reordering.hpp>
-#include <grid2grid/transformer.hpp>
+#include <costa/grid2grid/transform.hpp>
 
 namespace costa {
 // returns true if subcomm is a subcommunicator of comm
@@ -100,7 +99,7 @@ void pxgemr2d(
     // check whether rank grid is row-major or col-major
     auto ordering = scalapack::rank_ordering(ctxt, P);
     char grid_order =
-        ordering == grid2grid::scalapack::ordering::column_major ? 'C' : 'R';
+        ordering == costa::scalapack::ordering::column_major ? 'C' : 'R';
 
 #ifdef DEBUG
     if (rank == 0) {
@@ -140,7 +139,7 @@ void pxgemr2d(
 #endif
 
     // get abstract layout descriptions for ScaLAPACK layout
-    auto scalapack_layout_a = grid2grid::get_scalapack_grid<T>(
+    auto scalapack_layout_a = costa::get_scalapack_grid<T>(
         lld_a,
         {mat_dim_a.rows, mat_dim_a.cols},
         {ia, ja},
@@ -148,12 +147,11 @@ void pxgemr2d(
         {b_dim_a.rows, b_dim_a.cols},
         {procrows, proccols},
         ordering,
-        'N',
         {rank_src_a.row_src, rank_src_a.col_src},
         a,
         rank);
 
-    auto scalapack_layout_c = grid2grid::get_scalapack_grid<T>(
+    auto scalapack_layout_c = costa::get_scalapack_grid<T>(
         lld_c,
         {mat_dim_c.rows, mat_dim_c.cols},
         {ic, jc},
@@ -161,7 +159,6 @@ void pxgemr2d(
         {b_dim_c.rows, b_dim_c.cols},
         {procrows, proccols},
         ordering,
-        'N',
         {rank_src_c.row_src, rank_src_c.col_src},
         c,
         rank);
@@ -193,7 +190,7 @@ void pxgemr2d(
     */
 
     // transform A to C
-    grid2grid::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
+    costa::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
 
     /*
 #ifdef DEBUG

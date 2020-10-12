@@ -5,46 +5,10 @@
 
 namespace costa {
 template <typename T>
-grid2grid::grid_layout<T> get_layout(int n_ranks,
-                                     const ::layout_t *layout) {
-
-    // Create the local blocks
-    std::vector<grid2grid::block<T>> loc_blks;
-
-    // Create blocks
-    for (int i = 0; i < layout->nlocalblocks; ++i) {
-        auto &block = layout->localblocks[i];
-        auto row = block.row;
-        auto col = block.col;
-        auto ptr = reinterpret_cast<T *>(block.data);
-        auto stride = block.ld;
-
-        grid2grid::block_coordinates coord{row, col};
-        grid2grid::interval rows{layout->grid->rowsplit[row],
-                                 layout->grid->rowsplit[row + 1]};
-        grid2grid::interval cols{layout->grid->colsplit[col],
-                                 layout->grid->colsplit[col + 1]};
-        loc_blks.emplace_back(rows, cols, coord, ptr, stride);
-    }
-
-    // Grid specification
-    std::vector<int> rows_split(layout->grid->rowblocks + 1);
-    std::copy_n(layout->grid->rowsplit, rows_split.size(), rows_split.begin());
-
-    std::vector<int> cols_split(layout->grid->colblocks + 1);
-    std::copy_n(layout->grid->colsplit, cols_split.size(), cols_split.begin());
-
-    std::vector<std::vector<int>> owners_matrix(layout->grid->rowblocks);
-    for (int i = 0; i < layout->grid->rowblocks; ++i) {
-        owners_matrix[i].resize(layout->grid->colblocks);
-        for (int j = 0; j < layout->grid->colblocks; ++j)
-            owners_matrix[i][j] = layout->grid->owners[j * layout->grid->rowblocks + i];
-    }
-
-    return {{{std::move(rows_split), std::move(cols_split)},
-             std::move(owners_matrix),
-             n_ranks},
-            {std::move(loc_blks)}};
+grid2grid::grid_layout<T> get_layout(const ::layout_t *layout) {
+    return custom_layout<T>(layout->grid,
+                            layout->nlocalblocks, 
+                            layout->localblocks);
 }
 
 template <typename T>
@@ -62,8 +26,8 @@ void transform(
     MPI_Comm_size(comm, &P);
 
     // create grid2grid::grid_layout object from the frontend description
-    auto in_layout = get_layout<T>(P, A);
-    auto out_layout = get_layout<T>(P, B);
+    auto in_layout = get_layout<T>(A);
+    auto out_layout = get_layout<T>(B);
 
     // transform A to B
     grid2grid::transform<T>(in_layout, out_layout, 
@@ -92,8 +56,8 @@ void transform_multiple(
     // schedule all transforms
     for (int i = 0; i < nlayouts; ++i) {
         // create grid2grid::grid_layout object from the frontend description
-        auto in_layout = get_layout<T>(P, &A[i]);
-        auto out_layout = get_layout<T>(P, &B[i]);
+        auto in_layout = get_layout<T>(&A[i]);
+        auto out_layout = get_layout<T>(&B[i]);
 
         // schedule the transformation
         transf.schedule(in_layout, out_layout, trans[i], alpha[i], beta[i]);

@@ -67,24 +67,20 @@ option(CXXOPTS_BUILD_TESTS OFF)
 option(CXXOPTS_ENABLE_INSTALL OFF)
 add_subdirectory(libs/cxxopts)
 
-option(GRID2GRID_WITH_INSTALL "" ${COSTA_WITH_INSTALL})
-option(GRID2GRID_WITH_PROFILING "" ${COSTA_WITH_PROFILING})
-add_subdirectory(libs/grid2grid)
-
 # ScaLAPACK providers
 #
-set(ScaLAPACK_TARGET "")
+set(SCALAPACK_TARGET "")
 if (${COSTA_SCALAPACK} STREQUAL "MKL")
     find_package(MKL REQUIRED COMPONENTS SCALAPACK_32BIT_OMP)
-    set(ScaLAPACK_TARGET "mkl::scalapack_32bit_omp")
+    set(SCALAPACK_TARGET "mkl::scalapack_32bit_omp")
 elseif (${COSTA_SCALAPACK} STREQUAL "CRAY_LIBSCI")
     find_package(CRAY_LIBSCI REQUIRED)
-    set(ScaLAPACK_TARGET "${CRAY_LIBSCI_LIBRARIES}")
+    set(SCALAPACK_TARGET "${CRAY_LIBSCI_LIBRARIES}")
 elseif (${COSTA_SCALAPACK} STREQUAL "CUSTOM")
     find_package(SCALAPACK REQUIRED)
-    set(ScaLAPACK_TARGET "${SCALAPACK_LIBRARIES}")
+    set(SCALAPACK_TARGET "${SCALAPACK_LIBRARIES}")
 else  ()
-    message(FATAL_ERROR "No ScaLAPACK interface found.")
+    message(WARNING "No ScaLAPACK interface is specified. Building COSTA without SCALAPACK wrappers.")
 endif ()
 
 # COSTA

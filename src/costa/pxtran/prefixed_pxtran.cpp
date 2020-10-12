@@ -1,7 +1,7 @@
-#include <costa/costa_pxtran.hpp>
+#include <costa/pxtran/costa_pxtran.hpp>
 
 extern "C" {
-#include <costa/prefixed_pxtran.h>
+#include <costa/pxtran/prefixed_pxtran.h>
 
 // Reimplement ScaLAPACK signatures functions
 void costa_pdtran(const int *m , const int *n , 

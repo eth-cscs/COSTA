@@ -12,7 +12,6 @@
  * transpose_or_conjugate ('N', 'T' or 'C'): describes whether the input
  * matrix should be left unchanged ('N'), transposed ('T') or conjugated ('C')
  */
-
 namespace costa {
 // applies the transformation: B = alpha * (A^T) + beta * B
 template <typename T>

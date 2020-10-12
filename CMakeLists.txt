@@ -13,17 +13,17 @@ include(cmake/adjust_mpiexec_flags.cmake)
 
 # Options
 #
+set(COSTA_SCALAPACK "OFF" CACHE STRING
+    "Blas backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+set_property(CACHE COSTA_SCALAPACK PROPERTY STRINGS
+    "OFF" "MKL" "CRAY_LIBSCI" "CUSTOM")
+
 option(COSTA_WITH_TESTS "Generate the test target." ${MASTER_PROJECT})
 option(COSTA_WITH_APPS "Generate the miniapp targets." ${MASTER_PROJECT})
 option(COSTA_WITH_BENCHMARKS "Generate the benchmark targets." ${MASTER_PROJECT})
 option(COSTA_WITH_INSTALL "Enable installation." ${MASTER_PROJECT})
 option(COSTA_WITH_PROFILING "Enable profiling." OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
-
-set(COSTA_SCALAPACK "OFF" CACHE STRING
-    "Blas backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
-set_property(CACHE COSTA_SCALAPACK PROPERTY STRINGS
-    "OFF" "MKL" "CRAY_LIBSCI" "CUSTOM")
 
 # check if scalapack backend is valid
 message(STATUS "Selected ScaLAPACK backend for COSTA: ${COSTA_SCALAPACK}")
@@ -33,7 +33,7 @@ if(COSTA_SCALAPACK AND NOT COSTA_SCALAPACK IN_LIST BACKEND_LIST)
   message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK!")
 endif()
 
-project(costa VERSION 2.3.0 LANGUAGES CXX)
+project(costa VERSION 1.0.0 LANGUAGES CXX)
 
 # preserve rpaths when installing and make the install folder relocatable
 # use `CMAKE_SKIP_INSTALL_RPATH` to skip this

@@ -87,6 +87,11 @@ endif ()
 #
 add_subdirectory(src/costa)
 
+if(COSTA_WITH_PROFILING)
+    option(SEMIPROF_WITH_INSTALL "" ${COSTA_WITH_INSTALL})
+    add_subdirectory(libs/semiprof)
+endif()
+
 if(COSTA_WITH_INSTALL)
     include(CMakePackageConfigHelpers)
     include(GNUInstallDirs)

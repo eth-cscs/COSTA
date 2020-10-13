@@ -7,6 +7,8 @@
 #include <costa/grid2grid/ranks_reordering.hpp>
 #include <costa/grid2grid/transformer.hpp>
 
+#include <costa/grid2grid/profiler.hpp>
+
 namespace costa {
 template <typename T>
 void pxtran(
@@ -22,6 +24,10 @@ void pxtran(
            const int ic,
            const int jc,
            const int *descc) {
+    // clear the profiler
+    // empty if compiled without profiler
+    PC();
+
     // **********************************
     //           CORNER CASES
     // **********************************
@@ -188,6 +194,10 @@ void pxtran(
         MPI_Comm_free(&reordered_comm);
     }
     */
+    // print the profiling data
+    if (rank == 0) {
+        PP();
+    }
 }
 
 // explicit instantiation for pxtran

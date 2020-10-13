@@ -7,6 +7,8 @@
 
 #include <costa/grid2grid/transform.hpp>
 
+#include <costa/grid2grid/profiler.hpp>
+
 namespace costa {
 // returns true if subcomm is a subcommunicator of comm
 // i.e. checks if intersection(comm, subcomm) == subcomm
@@ -41,6 +43,10 @@ void pxgemr2d(
            const int jc,
            const int *descc,
            const int ctxt) {
+    // clear the profiler
+    // empty if compiled without profiler
+    PC();
+
     // **********************************
     //           CORNER CASES
     // **********************************
@@ -213,6 +219,10 @@ void pxgemr2d(
         MPI_Comm_free(&reordered_comm);
     }
     */
+    // print the profiling data
+    if (rank == 0) {
+        PP();
+    }
 }
 
 // explicit instantiation for pxtran

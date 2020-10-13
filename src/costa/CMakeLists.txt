@@ -42,6 +42,15 @@ if(NOT TARGET costa)
     target_compile_features(costa PUBLIC cxx_std_14)
     target_link_libraries(costa PUBLIC MPI::MPI_CXX)
 
+    if(COSTA_WITH_PROFILING)
+        target_link_libraries(costa PRIVATE
+            $<BUILD_INTERFACE:semiprof>
+        )
+        target_compile_definitions(costa PRIVATE
+            $<BUILD_INTERFACE:COSTA_WITH_PROFILING>
+        )
+    endif()
+
     list(APPEND INSTALLED_TARGETS_LIST "costa")
 endif()
 
@@ -51,6 +60,14 @@ if(NOT TARGET costa_scalapack)
     target_link_libraries(costa_scalapack PUBLIC costa 
         ${SCALAPACK_TARGET}
     )
+    if(COSTA_WITH_PROFILING)
+        target_link_libraries(costa_scalapack PRIVATE
+            $<BUILD_INTERFACE:semiprof>
+        )
+        target_compile_definitions(costa_scalapack PRIVATE
+            $<BUILD_INTERFACE:COSTA_WITH_PROFILING>
+        )
+    endif()
     list(APPEND INSTALLED_TARGETS_LIST "costa_scalapack")
 endif()
 
@@ -60,6 +77,14 @@ if(NOT TARGET costa_prefixed_scalapack)
     target_link_libraries(costa_prefixed_scalapack PUBLIC costa 
         ${SCALAPACK_TARGET}
     )
+    if(COSTA_WITH_PROFILING)
+        target_link_libraries(costa_prefixed_scalapack PRIVATE
+            $<BUILD_INTERFACE:semiprof>
+        )
+        target_compile_definitions(costa_prefixed_scalapack PRIVATE
+            $<BUILD_INTERFACE:COSTA_WITH_PROFILING>
+        )
+    endif()
     list(APPEND INSTALLED_TARGETS_LIST "costa_prefixed_scalapack")
 endif()
 

@@ -121,7 +121,7 @@ void pxtran(
 #endif
 
     // get abstract layout descriptions for ScaLAPACK layout
-    auto scalapack_layout_a = costa::get_scalapack_grid<T>(
+    auto scalapack_layout_a = costa::get_scalapack_layout<T>(
         lld_a,
         {mat_dim_a.rows, mat_dim_a.cols},
         {ia, ja},
@@ -133,7 +133,7 @@ void pxtran(
         a,
         rank);
 
-    auto scalapack_layout_c = costa::get_scalapack_grid<T>(
+    auto scalapack_layout_c = costa::get_scalapack_layout<T>(
         lld_c,
         {mat_dim_c.rows, mat_dim_c.cols},
         {ic, jc},

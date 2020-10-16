@@ -382,7 +382,7 @@ bool validate(Function f,
 //
 template <typename T>
 grid_layout<T>
-get_scalapack_grid(int lld_m_dim,                  // local leading dim
+get_scalapack_layout(int lld_m_dim,                  // local leading dim
                    scalapack::matrix_dim m_dim,    // global matrix size
                    scalapack::elem_grid_coord ij,  // start of submatrix
                    scalapack::matrix_dim subm_dim, // dim of submatrix
@@ -395,7 +395,7 @@ get_scalapack_grid(int lld_m_dim,                  // local leading dim
 
 template <typename T>
 grid_layout<T>
-get_scalapack_grid(int lld_m_dim,                  // local leading dim
+get_scalapack_layout(int lld_m_dim,                  // local leading dim
                    scalapack::matrix_dim m_dim,    // global matrix size
                    scalapack::elem_grid_coord ij,  // start of submatrix
                    scalapack::matrix_dim subm_dim, // dim of submatrix
@@ -406,10 +406,22 @@ get_scalapack_grid(int lld_m_dim,                  // local leading dim
                    const T *ptr,
                    const int rank);
 
+// get only the grid, not the full layout
+// the grid does not own the local data
+assigned_grid2D
+get_scalapack_grid(
+                   scalapack::matrix_dim m_dim,    // global matrix size
+                   scalapack::elem_grid_coord ij,  // start of submatrix
+                   scalapack::matrix_dim subm_dim, // dim of submatrix
+                   scalapack::block_dim b_dim,     // block dimension
+                   scalapack::rank_decomposition r_grid,
+                   scalapack::ordering rank_grid_ordering,
+                   scalapack::rank_grid_coord rank_src);
+
 // There is not submatrix support here.
 //
 template <typename T>
-grid_layout<T> get_scalapack_grid(scalapack::matrix_dim m_dim,
+grid_layout<T> get_scalapack_layout(scalapack::matrix_dim m_dim,
                                   scalapack::block_dim b_dim,
                                   scalapack::rank_decomposition r_grid,
                                   scalapack::ordering rank_grid_ordering,
@@ -421,6 +433,6 @@ grid_layout<T> get_scalapack_grid(scalapack::matrix_dim m_dim,
 //
 template <typename T>
 grid_layout<T>
-get_scalapack_grid(scalapack::data_layout &layout, T *ptr, int rank);
+get_scalapack_layout(scalapack::data_layout &layout, T *ptr, int rank);
 
 } // namespace costa

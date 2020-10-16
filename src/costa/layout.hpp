@@ -1,11 +1,6 @@
 #pragma once
 #include <costa/grid2grid/grid_layout.hpp>
 #include <costa/grid2grid/scalapack_layout.hpp>
-/*
-#ifdef __cplusplus
-extern "C" {
-#endif
-*/
 
 namespace costa {
 /**
@@ -28,41 +23,26 @@ struct block_t {
  * colblocks: number of gobal blocks
  * rowsplit: [rowsplit[i], rowsplit[i+1]) is range of rows of block i
  * colsplit: [colsplit[i], colsplit[i+1]) is range of columns of block i
- */
-struct grid_t {
-    // global view
-    int rowblocks;
-    int colblocks;
-    const int *rowsplit;
-    const int *colsplit;
-    const int *owners;
-};
-
-/**
- * Description of a distributed layout of a matrix
- * grid: describes the global matrix grid
- * nlocalblock: number of blocks owned by the current rank
- * localblcoks: an array of block descriptions of the current rank
- */
-struct layout_t {
-    // global_view
-    grid_t* grid;
-    // local view (local blocks)
-    int nlocalblocks;
-    block_t* localblocks;
-};
-
-
-/**
- * Description of a distributed layout of a matrix
- * grid: describes the global matrix grid
+ * owners: owners[i][j] is the rank owning block (i,j). 
+ *         Owners are given in row-major order as assumed by C++.
  * nlocalblock: number of blocks owned by the current rank
  * localblcoks: an array of block descriptions of the current rank
  */
 template <typename T>
-costa::grid_layout<T> custom_layout(grid_t* grid,
-                                     int n_local_blocks,
-                                     block_t* local_blocks);
+grid_layout<T> custom_layout(int rowblocks,
+                             int colblocks,
+                             const int* rowsplit,
+                             const int* colsplit,
+                             const int* owners,
+                             int nlocalblocks,
+                             block_t* localblocks);
+
+// contains only the global grid, without local data
+assigned_grid2D custom_grid(int rowblocks,
+                            int colblocks,
+                            const int* rowsplit,
+                            const int* colsplit,
+                            const int* owners);
 
 /**
  * creates a block cyclic layout (scalapack data layout) of some matrix A
@@ -82,7 +62,7 @@ costa::grid_layout<T> custom_layout(grid_t* grid,
  * rank: MPI rank
  */
 template <typename T>
-costa::grid_layout<T> block_cyclic_layout(
+grid_layout<T> block_cyclic_layout(
         const int m, const int n, // global matrix dimensions
         const int block_m, const int block_n, // block dimensions
         const int i, const int j, // submatrix start
@@ -96,10 +76,18 @@ costa::grid_layout<T> block_cyclic_layout(
         const int lld, // local leading dimension
         const int rank // processor rank
 );
-}
 
-/*
-#ifdef __cplusplus
+// same as block_cyclic_layout but without local data,
+// so just the global grid
+assigned_grid2D block_cyclic_grid(
+        const int m, const int n, // global matrix dimensions
+        const int block_m, const int block_n, // block dimensions
+        const int i, const int j, // submatrix start
+        const int sub_m, const int sub_n, // submatrix size
+        const int proc_m, const int proc_n, // processor grid dimension
+        const char rank_grid_ordering, // rank grid ordering ('R' or 'C')
+        const int ia, const int ja // coordinates of ranks oweing 
+                                    // the first row 
+                                    // (1-based, scalapack-compatible)
+);
 }
-#endif
-*/

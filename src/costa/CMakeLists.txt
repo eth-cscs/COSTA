@@ -2,6 +2,7 @@ set(INSTALLED_TARGETS_LIST "")
 if(NOT TARGET costa)
     # original grid2grid files
     set(costa_src_files 
+                      grid2grid/grid_layout.hpp
                       grid2grid/block.cpp
                       grid2grid/grid2D.cpp
                       grid2grid/interval.cpp
@@ -40,7 +41,8 @@ if(NOT TARGET costa)
         $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxtran>
     )
     target_compile_features(costa PUBLIC cxx_std_14)
-    target_link_libraries(costa PUBLIC MPI::MPI_CXX)
+    target_link_libraries(costa PUBLIC MPI::MPI_CXX
+                                       OpenMP::OpenMP_CXX)
 
     if(COSTA_WITH_PROFILING)
         target_link_libraries(costa PRIVATE

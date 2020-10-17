@@ -246,6 +246,37 @@ T& block<T>::local_element(int li, int lj) {
     return data[offset];
 }
 
+template <typename T>
+std::pair<int, int> block<T>::local_to_global(int li, int lj) const {
+    if (transpose_on_copy)
+        std::swap(li, lj);
+    assert(li >= 0 && li < n_rows());
+    assert(lj >= 0 && lj < n_cols());
+
+    int gi = rows_interval.start + li;
+    int gj = cols_interval.start + lj;
+
+    return std::pair<int, int>{gi, gj};
+}
+
+template <typename T>
+std::pair<int, int> block<T>::global_to_local(int gi, int gj) const {
+    if (transpose_on_copy)
+        std::swap(gi, gj);
+
+    int li = -1;
+    int lj = -1;
+
+    if (rows_interval.contains(gi)) {
+        li = gi - rows_interval.start;
+    }
+    if (cols_interval.contains(gj)) {
+        lj = gj - cols_interval.start;
+    }
+
+    return std::pair<int, int>{li, lj};
+}
+
 // transpose and conjugate if necessary local block
 template <typename T>
 void block<T>::transpose_or_conjugate(char flag) {

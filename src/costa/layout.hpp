@@ -12,9 +12,9 @@ namespace costa {
  */
 struct block_t {
     void *data;
-    const int ld;
-    const int row;
-    const int col;
+    int ld;
+    int row;
+    int col;
 };
 
 /**
@@ -25,24 +25,24 @@ struct block_t {
  * colsplit: [colsplit[i], colsplit[i+1]) is range of columns of block i
  * owners: owners[i][j] is the rank owning block (i,j). 
  *         Owners are given in row-major order as assumed by C++.
- * nlocalblock: number of blocks owned by the current rank
+ * nlocalblocks: number of blocks owned by the current rank
  * localblcoks: an array of block descriptions of the current rank
  */
 template <typename T>
 grid_layout<T> custom_layout(int rowblocks,
                              int colblocks,
-                             const int* rowsplit,
-                             const int* colsplit,
-                             const int* owners,
+                             int* rowsplit,
+                             int* colsplit,
+                             int* owners,
                              int nlocalblocks,
                              block_t* localblocks);
 
 // contains only the global grid, without local data
 assigned_grid2D custom_grid(int rowblocks,
                             int colblocks,
-                            const int* rowsplit,
-                            const int* colsplit,
-                            const int* owners);
+                            int* rowsplit,
+                            int* colsplit,
+                            int* owners);
 
 /**
  * creates a block cyclic layout (scalapack data layout) of some matrix A
@@ -72,7 +72,7 @@ grid_layout<T> block_cyclic_layout(
         const int ia, const int ja, // coordinates of ranks oweing 
                                     // the first row 
                                     // (1-based, scalapack-compatible)
-        const T* ptr, // local data of matrix A (not the submatrix)
+        T* ptr, // local data of matrix A (not the submatrix)
         const int lld, // local leading dimension
         const int rank // processor rank
 );

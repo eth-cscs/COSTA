@@ -22,6 +22,11 @@ int interval::length() const { return end - start; }
 bool interval::contains(interval other) const {
     return start <= other.start && end >= other.end;
 }
+//
+// an interval contains an index
+bool interval::contains(int index) const {
+    return start <= index && index < end;
+}
 
 bool interval::non_empty() const { return end > start; }
 

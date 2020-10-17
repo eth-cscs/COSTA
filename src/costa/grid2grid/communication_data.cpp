@@ -225,7 +225,7 @@ template <typename T>
 void copy_local_blocks(std::vector<message<T>>& from,
                        std::vector<message<T>>& to) {
     assert(from.size() == to.size());
-    if (from.size()) {
+    if (from.size() > 0) {
 #pragma omp parallel for
         for (unsigned i = 0u; i < from.size(); ++i) {
             assert(from[i].alpha == to[i].alpha);

@@ -19,6 +19,7 @@ struct interval {
 
     // an interval contains
     bool contains(interval other) const;
+    bool contains(int index) const;
 
     bool non_empty() const;
     bool empty() const;

@@ -130,6 +130,9 @@ struct block {
     const T &local_element(int li, int lj) const;
     T &local_element(int li, int lj);
 
+    std::pair<int, int> local_to_global(int li, int lj) const;
+    std::pair<int, int> global_to_local(int gi, int gj) const;
+
     void transpose_or_conjugate(char flag);
 
     // scales the local block by beta

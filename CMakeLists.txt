@@ -125,4 +125,5 @@ endif()
 
 if(COSTA_WITH_APPS)
     add_subdirectory(miniapps)
+    add_subdirectory(examples)
 endif()

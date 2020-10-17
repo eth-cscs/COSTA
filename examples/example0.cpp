@@ -57,10 +57,8 @@
            5           5
 
 
- Both layouts are block-cyclic. However, for the illustration purposes,
- we represent the initial layout with a function costa::custom_layout
- to illustrate how arbitrary layouts can be handled.
- The final layout is represented with a function costa::block_cyclic_layout
+ Both layouts are block-cyclic.
+ Both layouts are represented with a function costa::block_cyclic_layout
  which is much simpler since it's specialized for the scalapack block-cyclic layout.
  */
 int main(int argc, char **argv) {
@@ -87,55 +85,26 @@ int main(int argc, char **argv) {
     // number of blocks in a row/col
     int n_blocks = mat_dim / block_size;
 
-    // ticks where rows are split
-    std::vector<int> rowsplit = {0, mat_dim / 2, mat_dim};
-    // ticks where cols are split
-    std::vector<int> colsplit = {0, mat_dim / 2, mat_dim};
-
-    // which MPI rank owns which block
-    std::vector<int> owners = {0, 1,
-                               2, 3};
-
-    // ***************************************
-    // DESCRIBING THE LOCAL DATA
-    // ***************************************
-
-    // local block owned by the current rank
-    costa::block_t local_block;
-    // each rank owns just a single block
-    int nlocalblocks = 1;
-    // pointer to local data
-    std::vector<double> elements(block_size * block_size);
-    local_block.data = &elements[0];
-    // local leading dimension of this block
-    local_block.ld = block_size;
-
-    // set the block coordinates for each local block:
-    // rank 0 owns block with coordinates (0, 0)
-    // rank 1 owns block with coordinates (0, 1)
-    // rank 2 owns block with coordinates (1, 0)
-    // rank 3 owns block with coordinates (1, 1)
-    local_block.row = rank / n_blocks;
-    local_block.col = rank % n_blocks;
-
-    // an array of all local blocks for the current rank
-    // since each rank owns just a single blocks
-    // this array has only one element
-    std::vector<costa::block_t> local_blocks;
-    local_blocks.push_back(local_block);
-
     // ***************************************
     // CREATING THE INITIAL LAYOUT OBJECT
     // ***************************************
-    auto init_layout = costa::custom_layout<double>(
-                                            n_blocks, // num of blocks in a row
-                                            n_blocks, // num of blocks in a col
-                                            &rowsplit[0], // where rows are split
-                                            &colsplit[0], // where cols are split
-                                            &owners[0], // owner rank of each block
-                                            nlocalblocks, // num of local blocks
-                                            &local_blocks[0] // local blocks
-                                            );
+    // local data
+    std::vector<double> initial_data(block_size * block_size);
+    // data layout
+    auto init_layout = costa::block_cyclic_layout(
+            mat_dim, mat_dim, // global matrix dimension
+            block_size, block_size, // block sizes
+            1, 1, // submatrix start 
+                  // (1-based, because of scalapack.
+                  // Since we take full matrix, it's 1,1)
+            mat_dim, mat_dim, // submatrix size (since full matrix, it's mat dims)
+            2, 2, // processor grid
+            'R', // processor grid ordering row-major
+            0, 0, // coords or ranks oweing the first row (0-based)
+            &initial_data[0], // local data of full matrix
+            block_size, // local leading dimension
+            rank // current rank
+    );
 
     // ***************************************
     // INITIALIZE THE INITIAL MATRIX
@@ -151,7 +120,7 @@ int main(int argc, char **argv) {
     // CREATING THE FINAL LAYOUT OBJECT
     // ***************************************
     // local data
-    std::vector<double> local_data(block_size * block_size);
+    std::vector<double> final_data(block_size * block_size);
     // data layout
     auto final_layout = costa::block_cyclic_layout(
             mat_dim, mat_dim, // global matrix dimension
@@ -163,7 +132,7 @@ int main(int argc, char **argv) {
             2, 2, // processor grid
             'C', // processor grid ordering col-major
             0, 0, // coords or ranks oweing the first row (0-based)
-            &local_data[0], // local data of full matrix
+            &final_data[0], // local data of full matrix
             block_size, // local leading dimension
             rank // current rank
     );

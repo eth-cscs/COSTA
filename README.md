@@ -2,6 +2,8 @@
 
 ## Table of Contents
 - [Overview](#overview)
+- [Features](#features)
+- [Installing](#installing-in-30-seconds)
 - [Examples](#examples)
     - [Block-cyclic (Scalapack) Layout](#block-cyclic-scalapack-layout)
     - [Custom (Arbitrary) Layout](#custom-arbitrary-layout)
@@ -25,6 +27,25 @@ COSTA is a communication-optimal, highly-optimised algorithm for data redistribu
 What makes COSTA more general than scalapack routines is that it is not limited only to block-cyclic data distributions, but can deal with completely arbitrary and irregular matrix distributions and can be easily generalized for n-dimensional tensors. 
 
 Thanks to its scalapack wrappers, scalapack users do not need to change their code in order to use COSTA: it is enough to link your library to COSTA before linking to scalapack and all `pxtran, pxtranu` and `pxgemr2d` routines will automatically be using the COSTA algorithm.
+
+## Features
+
+COSTA has the following features:
+- apart from reshuffling, can also transpose, scale and sum initial and final layouts:
+```
+sub(op(B)) = beta * sub(op(B)) + alpha * sub(op(B)) ; op=N, T or C; sub = submatrix 
+```
+- can transform multiple layouts at once (in the same communication round)
+- highly-optimized in distributed and multithreaded settings.
+- proposes (but does not enforce) the optimal rank relabelling to minimize communication
+- provides scalapack wrappers for `pxgemr2d` and `pxtran(u)`
+- it is not limited to block cyclic matrix layouts 
+- used in communication-optimal matrix multiplication algorithm [COSMA](https://github.com/eth-cscs/COSMA), which is used in Quantum Chemistry Simulator [CP2K](https://www.cp2k.org).
+- detailed documentation provided in this README.
+
+## Installing in 30 seconds
+
+Please refer to [INSTALL.md](INSTALL.md).
 
 ## Examples
 

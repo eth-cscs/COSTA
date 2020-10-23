@@ -195,7 +195,7 @@ assigned_grid2D costa::block_cyclic_grid<double>(
                     const int p_m, const int p_n,     // processor grid dimension
                     const char order,                 // rank grid ordering ('R' or 'C')
                     const int rsrc, const int csrc,   // coordinates of ranks oweing 
-                                                     // the first row (0-based)
+                                                      // the first row (0-based)
                 );
 ```
 Observe that this is the same as the `block_cyclic_layout` function, where the last three parameters are omitted. 

@@ -51,31 +51,32 @@ assigned_grid2D custom_grid(int rowblocks,
  * The detailed arguments are described below:
  * (m, n): global matrix dimensions of matrix A
  * (block_m, block_n): block dimensions
- * (i, j): submatrix start, 0-based. By default can be set to (0, 0).
+ * (i, j): submatrix start, 1-based. By default should be set to (1, 1).
  * (sub_m, sub_n): size of the submatrix sub(A). By default can be set to (m, n).
  * (proc_m, proc_n): processor, i.e. MPI ranks grid
- * (ia, ja): coordinates of ranks owning the first row/col of the global matrix.
- *           This is 1-based, due to scalapack compatibility. 
- *           By default, should be set to (1, 1)
+ * (rsrc, crsrc): coordinates of ranks owning 
+ *                the first row/col of the global matrix
+ *                By default, should be set to (0, 0)
  * ptr: pointer to local data of the global matrix A.
  * lld: local leading dimension
  * rank: MPI rank
  */
 template <typename T>
-grid_layout<T> block_cyclic_layout(
-        const int m, const int n, // global matrix dimensions
-        const int block_m, const int block_n, // block dimensions
-        const int i, const int j, // submatrix start
-        const int sub_m, const int sub_n, // submatrix size
-        const int proc_m, const int proc_n, // processor grid dimension
-        const char rank_grid_ordering, // rank grid ordering ('R' or 'C')
-        const int ia, const int ja, // coordinates of ranks oweing 
-                                    // the first row 
-                                    // (1-based, scalapack-compatible)
-        T* ptr, // local data of matrix A (not the submatrix)
-        const int lld, // local leading dimension
-        const int rank // processor rank
-);
+grid_layout<T> block_cyclic_layout<double>(
+                   const int m, const int n, // global matrix dimensions
+                   const int block_m, const int block_n, // block dimensions
+                   const int i, const int j, // submatrix start
+                                             // (1-based, scalapack-compatible)
+                   const int sub_m, const int sub_n, // submatrix size
+                   const int p_m, const int p_n, // processor grid dimension
+                   const char order, // rank grid ordering ('R' or 'C')
+                   const int rsrc, const int csrc, // coordinates of ranks oweing
+                                                   // the first row (0-based)
+                   T* ptr, // local data of matrix A
+                           // (not the submatrix)
+                   const int lld, // local leading dimension
+                   const int rank // processor rank
+               );
 
 // same as block_cyclic_layout but without local data,
 // so just the global grid
@@ -86,8 +87,7 @@ assigned_grid2D block_cyclic_grid(
         const int sub_m, const int sub_n, // submatrix size
         const int proc_m, const int proc_n, // processor grid dimension
         const char rank_grid_ordering, // rank grid ordering ('R' or 'C')
-        const int ia, const int ja // coordinates of ranks oweing 
-                                    // the first row 
-                                    // (1-based, scalapack-compatible)
+        const int rsrc, const int csrc // coordinates of ranks oweing 
+                                       // the first row 
 );
 }

@@ -1,4 +1,4 @@
-<p align="center"><img src="./docs/costa-logo.svg" width="50%"></p>
+<p align="center"><img src="./docs/costa-logo.svg" width="55%"></p>
 
 ## Table of Contents
 - [Overview](#overview)

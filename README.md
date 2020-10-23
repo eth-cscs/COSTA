@@ -1,5 +1,24 @@
 <p align="center"><img src="./docs/costa-logo.svg" width="50%"></p>
 
+## Table of Contents
+- [Overview](#overview)
+- [Examples](#examples)
+    - [Block-cyclic (Scalapack) Layout](#block-cyclic-scalapack-layout)
+    - [Custom (Arbitrary) Layout](#custom-arbitrary-layout)
+    - [Initializing Layouts](#initializing-layouts)
+    - [Transforming Matrix Layouts](#transforming-matrix-layouts)
+    - [Scalapack Wrappers](#scalapack-wrappers)
+- [Advanced Features](#advanced-features)
+    - [Transforming Multiple Layouts](#transforming-multiple-layouts)
+    - [Achieving Communication-Optimality](#achieving-communication-optimality)
+- [Performance Results](#performance-results)
+- [Miniapps (for testing and benchmarking)](#miniapps-for-testing-and-benchmarking)
+    - [Data-redistribution with pxgemr2d](#data-redistribution-with-pxgemr2d)
+    - [Scale and Transpose with pxtran and pxtranu](#scale-and-transpose-with-pxtran-and-pxtranu)
+- [Questions?](#questions)
+
+## Overview
+
 COSTA is a communication-optimal, highly-optimised algorithm for data redistribution accross multiple processors, using `MPI` and `OpenMP` and offering the possibility to transpose and scale some or all data. It implements scalapack routines for matrix scale & transpose operations (`sub(C) = alpha * sub(A)^T + beta * C`, provided by `pxtran(u)`) and data redistribution (`sub(C) = sub(A)`, provided by `pxgemr2d`) and outperforms other scalapack implementations by orders of magnitude in some cases. Unlike previous redistribution algorithms, COSTA will also propose the relabelling of MPI ranks that minimizes the data reshuffling cost, leaving to users to decide if they want to use it. This way, if the initial and the target data distributions differ up to a rank permutation, COSTA will perform no communication, whereas other algorithms will reshuffle all the data. Thanks to its optimizations, significant speedups will be achieved even if the proposed rank relabelling is not used.
 
 What makes COSTA more general than scalapack routines is that it is not limited only to block-cyclic data distributions, but can deal with completely arbitrary and irregular matrix distributions and can be easily generalized for n-dimensional tensors. 
@@ -78,7 +97,7 @@ The arguments can be nicely visualized with the following figure:
 
 For a complete example of transforming between a block-cyclic and a custom matrix layout, please refer to `examples/example1.cpp`.
 
-### Initializing the Layouts
+### Initializing Layouts
 
 Once the layouts are created as previously described, we can initialize them by providing a simple lambda function that maps global element coordinates `(i,j)` to the value to which the element should be initialized:
 

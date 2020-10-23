@@ -62,7 +62,7 @@ assigned_grid2D custom_grid(int rowblocks,
  * rank: MPI rank
  */
 template <typename T>
-grid_layout<T> block_cyclic_layout<double>(
+grid_layout<T> block_cyclic_layout(
                    const int m, const int n, // global matrix dimensions
                    const int block_m, const int block_n, // block dimensions
                    const int i, const int j, // submatrix start

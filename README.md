@@ -15,7 +15,7 @@ To represent an arbitrary block-cyclic (scalapack) layout, we can use the follow
 #include <costa/layout.hpp>
 // ...
 template <typename T>
-grid_layout<T> block_cyclic_layout<double>(
+grid_layout<T> costa::block_cyclic_layout<double>(
                    const int m, const int n,         // global matrix dimensions
                    const int b_m, const int b_n,     // block dimensions
                    const int i, const int j,         // submatrix start
@@ -31,7 +31,7 @@ grid_layout<T> block_cyclic_layout<double>(
                    const int rank                    // processor rank
                );
 ```
-The arguments meaning can be nicely visualized with the following figure, where the red submatrix is represented:
+The arguments can be nicely visualized with the following figure, where the red submatrix is represented:
 <p align="center"><img src="./docs/block-cyclic.svg" width="100%"></p>
 
 In case we want to represent the full matrix (instead of a submatrix), it suffices to put:
@@ -44,6 +44,39 @@ int sub_m = m; int sub_n = n
 
 For a complete example of transforming between two block-cyclic matrix layouts, please refer to `examples/example0.cpp`.
 
+### Custom (Arbitrary) Layout
+
+To represent an arbitrary block-cyclic (scalapack) layout, we can use the following function defined in `costa/layout.hpp` header:
+```cpp
+#include <costa/layout.hpp>
+// ...
+template <typename T>
+grid_layout<T> costa::custom_layout(
+                   int rowblocks,       // number of global blocks (N_rb)
+                   int colblocks,       // number of global blocks (N_rc)
+                   int* rowsplit,       // [rowsplit[i], rowsplit[i+1]) is range of rows of block i
+                   int* colsplit,       // [colsplit[i], colsplit[i+1]) is range of columns of block i
+                   int* owners,         // owners[i][j] is the rank owning block (i,j). 
+                                        // Owners are given in row-major order as assumed by C++.
+                   int nlocalblocks,    // number of blocks owned by the current rank
+                   block_t* localblocks // an array of block descriptions for the current rank
+               );
+```
+where `block_t` is a simple struct defined in the same header:
+```cpp
+// each local block is assumed to be stored in col-major order
+struct costa::block_t {
+    void *data; // a pointer to the start of the local matrix
+    int ld;     // leading dimension or distance between two consecutive local columns
+    int row;    // the global block row index
+    int col;    // the global block colum index
+};
+```
+
+The arguments can be nicely visualized with the following figure:
+<p align="center"><img src="./docs/custom-layout.svg" width="90%"></p>
+
+For a complete example of transforming between a block-cyclic and a custom matrix layout, please refer to `examples/example1.cpp`.
 
 ## Miniapps (for testing and benchmarking)
 

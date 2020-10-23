@@ -160,7 +160,7 @@ double alpha = 1.0; // do not scale initial layouts
 double beta = 0.0; // (do not scale final layouts
 
 // create the transformer class
-costa::transformer transf(comm);
+costa::transformer<double> transf(comm);
 
 // schedule A1->B1
 transf.schedule(A1, B1, trans, alpha, beta);

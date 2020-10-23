@@ -3,7 +3,7 @@
 ## Table of Contents
 - [Overview](#overview)
 - [Features](#features)
-- [Installing](#installing-in-30-seconds)
+- [Installing in 30 seconds](#installing-in-30-seconds)
 - [Examples](#examples)
     - [Block-cyclic (Scalapack) Layout](#block-cyclic-scalapack-layout)
     - [Custom (Arbitrary) Layout](#custom-arbitrary-layout)

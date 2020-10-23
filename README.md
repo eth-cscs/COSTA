@@ -168,14 +168,121 @@ transf.schedule(A1, B1, trans, alpha, beta);
 // schedule A2->B2
 transf.schedule(A2, B2, trans, alpha, beta);
 
-// transform all at once
+// trigger the transformations
 transf.transform();
 ```
 
 This is more efficient than transforming each of those separately, because all layouts are transformed within the same communication round. However, it might use more memory because the messages might be larger. 
 
-### Using Rank Relabelling
+### Achieving Communication-Optimality
 
+In order to achieve communication-optimality, we would need to use the rank relabelling, that will be described step-by-step below.
+
+So far, we have been only using `costa::grid_layout<T>` objects and we showed how we can transform between different layouts. This object contains two important pieces of information: the global matrix grid and also the local blocks for the current rank. The global matrix grid object is called `costa::assigned_grid2D` and is a simpler object than the layout, since it does not contain any information about the local data. For illustration purposes, we could write: `layout = grid + local_data`, or translated to classes, we could write: `grid_layout<T> = assigned_grid2D + local_data<T>`.
+
+The global matrix grid (`costa::assigned_grid2D`) can be created in the same way as the layout object, we only need to exclude the information about the local data:
+- block-cyclic grid can be created using the function:
+```cpp
+#include <costa/layout.hpp>
+// ...
+template <typename T>
+assigned_grid2D costa::block_cyclic_grid<double>(
+                    const int m, const int n,         // global matrix dimensions
+                    const int b_m, const int b_n,     // block dimensions
+                    const int i, const int j,         // submatrix start
+                                                      // (1-based, scalapack-compatible)
+                    const int sub_m, const int sub_n, // submatrix size
+                    const int p_m, const int p_n,     // processor grid dimension
+                    const char order,                 // rank grid ordering ('R' or 'C')
+                    const int rsrc, const int csrc,   // coordinates of ranks oweing 
+                                                     // the first row (0-based)
+                );
+```
+Observe that this is the same as the `block_cyclic_layout` function, where the last three parameters are omitted. 
+
+- custom grid
+```cpp
+#include <costa/layout.hpp>
+// ...
+// contains only the global grid, without local data
+template <typename T>
+assigned_grid2D costa::custom_grid(
+                    int rowblocks, // number of global blocks (N_rb)
+                    int colblocks, // number of global blocks (N_cb)
+                    int* rowsplit, // [rowsplit[i], rowsplit[i+1]) is range of rows of block i
+                    int* colsplit, // [colsplit[i], colsplit[i+1]) is range of columns of block i
+                    int* owners,   // owners[i][j] is the rank owning block (i,j). 
+                                   // Owners are given in row-major order as assumed by C++.
+               );
+```
+Observe that this is the same as the `custom_layout` function, where the last two parameters are omitted.
+
+In order to propose the communication-optimal rank relabelling, COSTA first has to analyse the global grids in all transformations we want to perform. Therefore, the first step is to create the grid objects. 
+
+Assume we want to transform `A1->B1` and `A2->B2`. In the first step, we create the grid objects:
+
+```cpp
+#include <costa/layout.hpp>
+
+// create grids (arbitrary, user-defined)
+auto A1_grid = costa::custom_grid(...);
+auto B1_grid = costa::block_cyclic_grid(...);
+
+auto A2_grid = costa::block_cyclic_grid(...);
+auto B2_grid = costa::custom_grid(...);
+```
+Now we want COSTA to analyse these grids, by computing the necessary communication volume:
+```cpp
+// compute the comm volume for A1->B1
+auto comm_vol = costa::communication_volume(A1_grid, B1_grid);
+
+// add the comm volume for A2->B2
+comm_volume += costa::communication_volume(A2_grid, B2_grid);
+```
+
+Next, we can get the optimal rank relabelling:
+```cpp
+#include <costa/grid2grid/ranks_reordering.hpp>
+// ...
+bool reorder = false;
+// input parameters:
+// - comm_vol := communication volume object, created previously
+// - P := communicator size
+// output parameters:
+// - rank_relabelling: ranks permutation yielding communication-optimal transformation
+// - reordered: if true, the returned rank relabelling is not the identity permutation
+std::vector<int> rank_relabelling = costa::optimal_reordering(comm_vol, P, &reordered);
+```
+
+Finally, we can use this rank relabelling as follows:
+```cpp
+#include <costa/grid2grid/transformer.hpp>
+// ...
+// get the current rank
+int rank;
+MPI_Comm_rank(comm, &rank);
+
+// create the transformer object:
+costa::transformer<T> transf(comm);
+
+create full layout objects
+auto A1 = costa::custom_layout(...); // local blocks should correspond to rank `rank`
+auto B1 = costa::block_cyclic_layout(...); // local blocks should correspond to rank `rank_relabelling[rank]`
+
+// schedule A1->B1
+transf.schedule(A1, B1); // trans, alpha and beta parameters are optional
+
+auto A2 = costa::block_cyclic_layout(...); // local blocks should correspond to rank `rank`
+auto B2 = costa::custom_layout(...); // local blocks should correspond to rank `rank_relabelling[rank]`
+
+// schedule A2->B2
+transf.schedule(A2, B2); // trans, alpha and beta parameters are optional
+
+// trigger the transformations which are now communication optimal
+transf.transform();
+```
+
+## Performance Results
 
 ## Miniapps (for testing and benchmarking)
 
@@ -248,3 +355,7 @@ The overview of all supported options is given below:
 - `--test` (optional): if present, the result of COSTA will be verified with the result of the available SCALAPACK.
 - `--algorithm` (optional, default: `both`): defines which algorithm (`costa`, `scalapack` or `both`) to run.
 - `-h (--help) (optional)`: print available options.
+
+## Questions?
+
+For questions, feel free to contact us at (marko.kabic@cscs.ch), and we will soon get back to you. 

@@ -78,6 +78,57 @@ The arguments can be nicely visualized with the following figure:
 
 For a complete example of transforming between a block-cyclic and a custom matrix layout, please refer to `examples/example1.cpp`.
 
+### Initializing the Layouts
+
+Once the layouts are created as previously described, we can initialize them by providing a simple lambda function that maps global element coordinates `(i,j)` to the value to which the element should be initialized:
+
+```cpp
+// some user-defined layout
+grid_layout<double> layout; 
+
+// function f(i, j) := value of element (i, j) in the global matrix
+// an arbitrary function
+auto f = [](int i, int j) -> double {
+    return i + j; 
+};
+
+// initialize it
+layout.initialize(f);
+```
+
+In exactly the same way, we can check if the elements in the layout are equal to the values provided by the lambda function:
+```cpp
+// check if the values in the final layout correspond to function f
+// that was used for the initialization of the initial layout
+bool ok = layout.validate(f, 1e-12); // the second argument is the tolerance
+```
+
+### Transforming Matrix Layouts
+
+Once the layouts are created as previously described, we can transform between two layouts in the following way (defined in header `<costa/grid2grid/transform.hpp>`):
+
+- Redistribute with optional scaling and/or transpose. Performs `B = beta * B + alpha * op(A)`, where `op` can be transpose, conjugate or none (i.e. identity).
+```cpp 
+#include <costa/grid2grid/transform.hpp>
+// ...
+// redistribute a single layout with scaling:
+// final_layout = beta * final_layout + alpha * initial_layout
+template <typename T>
+void transform(grid_layout<T> &initial_layout, // initial layout, A
+               grid_layout<T> &final_layout,   // final layout, B
+               const char trans,               // defines operation on A, op(A), can be:
+                                               // 'N' for none, i.e. identity, 
+                                               // 'T' for transpose
+                                               // 'C' for conjugate
+               const T alpha, const T beta,    // defines the scaling parameters alpha and beta
+               MPI_Comm comm);                 // MPI communicator containing at least 
+                                               // a union of communicators of both (initial and final) layouts
+```
+
+Observe that matrices do not necessarily have to be distributed over the same communicator. But the communicator passed to this function, must be at least a union of communicators containing each (initial and final) matrices.
+
+For complete examples please refer to `examples`.
+
 ## Miniapps (for testing and benchmarking)
 
 ### Data-redistribution with pxgemr2d

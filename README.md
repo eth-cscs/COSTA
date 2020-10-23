@@ -8,6 +8,45 @@ Thanks to its scalapack wrappers, scalapack users do not need to change their co
 
 ## Examples
 
+### Block-cyclic (Scalapack) Layout
+
+To represent an arbitrary block-cyclic (scalapack) layout, we can use the following function defined in `costa/layout.hpp` header:
+```cpp
+#include <costa/layout.hpp>
+// ...
+template <typename T>
+grid_layout<T> block_cyclic_layout<double>(
+                   const int m, const int n,             // global matrix dimensions
+                   const int block_m, const int block_n, // block dimensions
+                   const int i, const int j,             // submatrix start
+                                                         // (1-based, scalapack-compatible)
+                   const int sub_m, const int sub_n,     // submatrix size
+                   const int p_m, const int p_n,         // processor grid dimension
+                   const char order,                     // rank grid ordering ('R' or 'C')
+                   const int rsrc, const int csrc,       // coordinates of ranks oweing 
+                                                         // the first row (0-based)
+                   T* ptr,                               // local data of matrix A 
+                                                         // (not the submatrix)
+                   const int lld,                        // local leading dimension
+                   const int rank                        // processor rank
+               );
+```
+The arguments meaning can be nicely visualized with the following figure, where the red submatrix is represented:
+<p align="center"><img src="./docs/block-cyclic.svg" width="100%"></p>
+
+In case we want to represent the full matrix (instead of a submatrix), it suffices to put:
+```cpp
+// start of the submatrix is the start of the full matrix
+int i = 1; int j = 1 // 1-based due to scalapack-compatibility
+// size of the submatrix is that size of the full matrix
+int sub_m = m; int sub_n = n
+```
+
+For a complete example of transforming between two block-cyclic matrix layouts, please refer to `examples/example0.cpp`.
+
+
+## Miniapps (for testing and benchmarking)
+
 ### Data-redistribution with pxgemr2d
 
 COSTA implements ScaLAPACK `pxgemr2d` routines that transforms the matrix between two block-cyclic data layouts (`sub(C) = sub(A)`) where the two matrices do not necessarily have to belong to the same MPI communicators. In addition, COSTA will propose the MPI rank relabelling that minimizes the data reshuffling cost and that user is free to choose whether to use it. 

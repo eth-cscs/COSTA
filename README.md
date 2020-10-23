@@ -12,6 +12,7 @@
     - [Transforming Multiple Layouts](#transforming-multiple-layouts)
     - [Achieving Communication-Optimality](#achieving-communication-optimality)
 - [Performance Results](#performance-results)
+- [COSTA in Production](#costa-in-production)
 - [Miniapps (for testing and benchmarking)](#miniapps-for-testing-and-benchmarking)
     - [Data-redistribution with pxgemr2d](#data-redistribution-with-pxgemr2d)
     - [Scale and Transpose with pxtran and pxtranu](#scale-and-transpose-with-pxtran-and-pxtranu)
@@ -302,6 +303,20 @@ transf.transform();
 ```
 
 ## Performance Results
+
+The performance of COSTA was compared with MKL SCALAPACK v19.1 on the [Piz Daint supercomputer](https://www.cscs.ch/computers/piz-daint/) (Cray XC40) from Swiss National Supercomputing Centre (CSCS). To make a fair comparison, we compared the performance of the scalapack routine `pdgemr2d` redistributing the matrices between different layouts, that is also provided by COSTA. In addition, we did not use communication-optimal rank relabelling in COSTA nor hidden memory pools or memory resuse between the calls. The benchmark code is available in the provided [miniapp](#data-redistribution-with-pxgemr2d).
+
+We ran the benchmark on `8` nodes (each having 36 cores) and `16=4x4` MPI ranks. The square matrices are used which sizes were varied. When both initial and final matrices had exactly the same block-cyclic layout, with block sizes being 128x128, the following results have been achieved:
+<p align="center"><img src="./docs/costa-same.svg" width="70%"></p>
+
+When initial and final layouts had different block sizes, i.e. the initial block sizes are `36x36` whereas the final block size is `128x128`, then the following results have been achieved:
+<p align="center"><img src="./docs/costa-diff.svg" width="70%"></p>
+
+Therefore, COSTA is highly-optimised even when no rank relabelling is used. If rank relabelling was used, even further speedups would be possible.
+
+## COSTA in Production
+
+COSTA is used by communication-optimal matrix-multiplication algorithm [COSMA](https://github.com/eth-cscs/COSMA) which is used in the Quantum Chemistry Simulator [CP2K](https://www.cp2k.org).
 
 ## Miniapps (for testing and benchmarking)
 

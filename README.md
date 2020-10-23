@@ -129,6 +129,54 @@ Observe that matrices do not necessarily have to be distributed over the same co
 
 For complete examples please refer to `examples`.
 
+### Scalapack Wrappers
+
+If installed with cmake option `COSTA_SCALAPACK` (e.g. with `cmake -DCOSTA_SCALAPACK=MKL ..`, which can also have values `CRAY_LIBSCI` or `CUSTOM`), then also the scalapack wrappers will be available for `pxgemr2d` (redistribute) and for `pxtran(u)` (transpose) routines. In this case, it is enough to link your library to `costa_scalapack` before linking to scalapack and these functions (for all types) will be overwritten by the COSTA implementation. Therefore, if you code is already using scalapack, there is no need to change your code, just linking is enough!
+
+## Advanced Features
+
+### Transforming Multiple Layouts
+
+If multiple layouts should be transformed, COSTA is able to transform all of them at once, in the same communication round! This can be done using the `transformer` class defined in `costa/grid2grid/transformer.hpp>`, as illustrated below:
+
+```cpp
+#include <costa/grid2grid/transformer.hpp>
+#include <costa/layout.hpp>
+// ...
+// a user-defined MPI communicator
+MPI_Comm comm = MPI_COMM_WORLD;
+
+// *******************************
+// user-defined layouts
+// *******************************
+grid_layout<double> A1, B1;
+grid_layout<double> A2, B2;
+
+// *******************************
+// transforming A1->B1 and A2->B2
+// *******************************
+char trans = 'N'; // do not transpose
+double alpha = 1.0; // do not scale initial layouts
+double beta = 0.0; // (do not scale final layouts
+
+// create the transformer class
+costa::transformer transf(comm);
+
+// schedule A1->B1
+transf.schedule(A1, B1, trans, alpha, beta);
+
+// schedule A2->B2
+transf.schedule(A2, B2, trans, alpha, beta);
+
+// transform all at once
+transf.transform();
+```
+
+This is more efficient than transforming each of those separately, because all layouts are transformed within the same communication round. However, it might use more memory because the messages might be larger. 
+
+### Using Rank Relabelling
+
+
 ## Miniapps (for testing and benchmarking)
 
 ### Data-redistribution with pxgemr2d

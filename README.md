@@ -53,12 +53,12 @@ To represent an arbitrary block-cyclic (scalapack) layout, we can use the follow
 template <typename T>
 grid_layout<T> costa::custom_layout(
                    int rowblocks,       // number of global blocks (N_rb)
-                   int colblocks,       // number of global blocks (N_rc)
+                   int colblocks,       // number of global blocks (N_cb)
                    int* rowsplit,       // [rowsplit[i], rowsplit[i+1]) is range of rows of block i
                    int* colsplit,       // [colsplit[i], colsplit[i+1]) is range of columns of block i
                    int* owners,         // owners[i][j] is the rank owning block (i,j). 
                                         // Owners are given in row-major order as assumed by C++.
-                   int nlocalblocks,    // number of blocks owned by the current rank
+                   int nlocalblocks,    // number of blocks owned by the current rank (N_lb)
                    block_t* localblocks // an array of block descriptions for the current rank
                );
 ```

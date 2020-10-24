@@ -6,6 +6,7 @@
 
 #include <costa/grid2grid/ranks_reordering.hpp>
 #include <costa/grid2grid/transformer.hpp>
+#include <costa/grid2grid/cantor_mapping.hpp>
 
 #include <costa/grid2grid/profiler.hpp>
 
@@ -145,55 +146,30 @@ void pxtran(
         c,
         rank);
 
-    /*
-    // total communication volume for transformation of layouts
-    auto comm_vol = grid2grid::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
-
-    // compute the optimal rank reordering that minimizes the communication volume
-    bool reordered = false;
-    std::vector<int> rank_permutation = grid2grid::optimal_reordering(comm_vol, P, reordered);
-
-    // create reordered communicator, which has same ranks
-    // but relabelled as given by the rank_permutation
-    // (to avoid the communication during layout transformation)
-    MPI_Comm reordered_comm = comm;
-    if (reordered) {
-        MPI_Comm_split(comm, 0, rank_permutation[rank], &reordered_comm);
-    }
-
+/*
 #ifdef DEBUG
-    if (rank == 0) {
-        std::cout << "Optimal rank relabeling:" << std::endl;
-        for (int i = 0; i < P; ++i) {
-            std::cout << i << "->" << rank_permutation[i] << std::endl;
-        }
-    }
+    auto values = [=](int i, int j) -> T {
+        int el = cantor_pairing(i, j);
+        return static_cast<T>(el);
+    };
+
+    scalapack_layout_a.initialize(values);
 #endif
-    */
+*/
 
     costa::transform<T>(scalapack_layout_a, scalapack_layout_c, 'T', alpha, beta, comm);
 
-    /*
+/*
 #ifdef DEBUG
-    if (rank == 0) {
-        auto reordered_vol = grid2grid::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
+    auto transposed_values = [=](int i, int j) -> T {
+        int el = cantor_pairing(j, i);
+        return static_cast<T>(el);
+    };
 
-        // std::cout << "Detailed comm volume: " << comm_vol << std::endl;
-        // std::cout << "Detailed comm volume reordered: " << reordered_vol << std::endl;
-
-        auto comm_vol_total = comm_vol.total_volume();
-        auto reordered_vol_total = reordered_vol.total_volume();
-        std::cout << "Initial comm volume = " << comm_vol_total << std::endl;
-        std::cout << "Reduced comm volume = " << reordered_vol_total << std::endl;
-        auto diff = (long long) comm_vol_total - (long long) reordered_vol_total;
-        std::cout << "Comm volume reduction [%] = " << 100.0 * diff / comm_vol_total << std::endl;
-
-    }
+    scalapack_layout_c.validate(transposed_values, 1e-6);
 #endif
-    if (reordered) {
-        MPI_Comm_free(&reordered_comm);
-    }
-    */
+*/
+
     // print the profiling data
     if (rank == 0) {
         PP();

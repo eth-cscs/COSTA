@@ -140,8 +140,8 @@ struct pxtran_params {
                   T a, T b) {
         // block sizes
         // blocks BEFORE transposing (if transposed)
-        bma = bn;
-        bna = bm;
+        bma = bm;
+        bna = bn;
 
         bmc = bm;
         bnc = bn;

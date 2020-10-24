@@ -149,16 +149,14 @@ inline void scalapack_pxtran<std::complex<double>>::pxtran(
 // compares two vectors up to eps precision, returns true if they are equal
 template <typename T>
 bool validate_results(std::vector<T>& v1, std::vector<T>& v2, double epsilon=1e-6) {
-    double lower_threshold = 1e-3;
-
     if (v1.size() != v2.size())
         return false;
     if (v1.size() == 0)
         return true;
     bool correct = true;
     for (size_t i = 0; i < v1.size(); ++i) {
-        if (std::abs(v1[i] - v2[i]) / std::max(std::max(lower_threshold, (double) std::abs(v1[i])), (double) std::abs(v2[i])) > epsilon) {
-            std::cout << "epsilon = " << epsilon << ", v1 = " << v1[i] << ", which is != " << v2[i] << std::endl;
+        if (std::abs(v1[i] - v2[i]) > epsilon) {
+            std::cout << "v1 = " << v1[i] << ", which is != " << v2[i] << std::endl;
             correct = false;
         }
     }

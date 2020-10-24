@@ -2,7 +2,7 @@
 #  Build test  #
 ################
 # COSTA-only executables
-set(executables "")
+set(executables "block_cyclic")
 foreach(exec ${executables})
     add_executable(${exec} "${exec}.cpp")
     target_link_libraries(${exec} PRIVATE costa cxxopts)

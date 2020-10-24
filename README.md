@@ -31,7 +31,7 @@ Thanks to its scalapack wrappers, scalapack users do not need to change their co
 ## Features
 
 COSTA has the following features:
-- **scale, shuffle \& reshuffle:** apart from reshuffling, can also transpose, scale, reshuffle and sum initial and final layouts:
+- **scale, transpose \& reshuffle:** apart from redistribution, can also transpose, scale and sum initial and final layouts:
 ```
 sub(B) = beta * sub(B) + alpha * sub(op(A)) ; op=N, T or C; sub = submatrix 
 ```

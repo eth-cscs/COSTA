@@ -39,7 +39,20 @@ External dependencies are:
 
 ## Using COSTA
 
-In order to use COSTA in your project, your code has to be linked to COSTA, i.e. to be linked to:
+There are two ways how you can use COSTA in your own project:
+
+a) Using COSTA within another CMake project:
+
+COSTA is CMake friends and provides a costaConfig.cmake module for easy integration into 3rd-party CMake projects with:
+```cmake
+find_package(costa REQUIRED)
+target_link_libraries(... costa::costa)
+```
+COSTA's dependencies are taken care of internally, nothing else needs to be linked. Make sure to set CMAKE_INSTALL_PREFIX to COSTA's installation directory when building.
+
+b) Using COSTA in a general project:
+
+If your project is not a CMake project, then your code has to be linked to COSTA, i.e. to be linked to:
 ```bash
 -L<installation dir>/costa/lib64 -lcosta
 ```

@@ -33,14 +33,13 @@ Thanks to its scalapack wrappers, scalapack users do not need to change their co
 COSTA has the following features:
 - **scale, shuffle \& reshuffle:** apart from reshuffling, can also transpose, scale, reshuffle and sum initial and final layouts:
 ```
-sub(op(B)) = beta * sub(op(B)) + alpha * sub(op(B)) ; op=N, T or C; sub = submatrix 
+sub(B) = beta * sub(B) + alpha * sub(op(A)) ; op=N, T or C; sub = submatrix 
 ```
 - **Arbitrary Layouts:** COSTA is not limited to block cyclic matrix layouts and can handle complitely irregular and arbitrary matrix distributions.
 - **Multiple Layouts:** can transform multiple layouts at once (in the same communication round).
 - **Highly-optimized:** it is highly-optimized in distributed and multithreaded settings.
 - **Communication-Optimal:** proposes (but does not enforce) the optimal rank relabelling to minimize communication.
 - **SCALAPACK wrappers:** provides scalapack wrappers for `pxgemr2d` and `pxtran(u)`.
-- **Getting Popular:** already used in communication-optimal matrix multiplication algorithm [COSMA](https://github.com/eth-cscs/COSMA), which is used in Quantum Chemistry Simulator [CP2K](https://www.cp2k.org).
 - **Well Documented:** a detailed documentation is provided in this README.
 
 ## Installing in 30 seconds

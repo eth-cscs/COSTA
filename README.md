@@ -19,6 +19,7 @@
     - [Data-redistribution with pxgemr2d](#data-redistribution-with-pxgemr2d)
     - [Scale and Transpose with pxtran and pxtranu](#scale-and-transpose-with-pxtran-and-pxtranu)
 - [Questions?](#questions)
+- [Acknowledgements](#acknowledgements)
 
 ## Overview
 
@@ -413,3 +414,11 @@ The overview of all supported options is given below:
 ## Questions?
 
 For questions, feel free to contact us at (marko.kabic@cscs.ch), and we will soon get back to you. 
+
+## Acknowledgements
+
+This work was funded in part by:  
+
+<img align="left" height="50" src="./docs/eth-logo.svg"> | [**ETH Zurich**](https://ethz.ch/en.html)**: Swiss Federal Institute of Technology in Zurich**
+| :------------------- | :------------------- |
+<img align="left" height="50" src="./docs/cscs-logo.jpg"> | [**CSCS**](https://www.cscs.ch)**: Swiss National Supercomputing Centre**

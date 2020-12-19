@@ -13,7 +13,7 @@ if(NOT TARGET costa)
                       grid2grid/transform.cpp
                       grid2grid/transformer.hpp
                       layout.cpp
-                      hungarian/hungarian.cpp
+                      hungarian/Hungarian.cpp
     )
     set(costa_prefixed_scalapack_src_files 
                         scalapack.cpp

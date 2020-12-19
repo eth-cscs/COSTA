@@ -179,8 +179,16 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
     // ************************************
     // *    scalapack processor grid      *
     // ************************************
-    int ctxt = costa::blacs::Csys2blacs_handle(comm);
-    costa::blacs::Cblacs_gridinit(&ctxt, &params.order, params.p_rows, params.p_cols);
+    int ctxt_a = costa::blacs::Csys2blacs_handle(comm);
+    costa::blacs::Cblacs_gridinit(&ctxt_a, &params.order_a, params.p_rows_a, params.p_cols_a);
+    int ctxt_c = costa::blacs::Csys2blacs_handle(comm);
+    costa::blacs::Cblacs_gridinit(&ctxt_c, &params.order_c, params.p_rows_c, params.p_cols_c);
+
+    int Pa = params.p_rows_a * params.p_cols_a;
+    int Pc = params.p_rows_c * params.p_cols_c;
+
+    // union context
+    int ctxt_union = Pa > Pc ? ctxt_a : ctxt_c;
 
     // ************************************
     // *   scalapack array descriptors    *
@@ -192,7 +200,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
                          &params.ma, &params.na,
                          &params.bma, &params.bna,
                          &params.src_ma, &params.src_na,
-                         &ctxt,
+                         &ctxt_a,
                          &params.lld_a,
                          &info);
     if (rank == 0 && info != 0) {
@@ -205,7 +213,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
                          &params.mc, &params.nc,
                          &params.bmc, &params.bnc,
                          &params.src_mc, &params.src_nc,
-                         &ctxt,
+                         &ctxt_c,
                          &params.lld_c,
                          &info);
     if (rank == 0 && info != 0) {
@@ -232,19 +240,22 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
         }
     } catch (const std::bad_alloc& e) {
         std::cout << "COSTA (pxgemr2d_utils): not enough space to store the initial local matrices. The problem size is too large. Either decrease the problem size or run it on more nodes/ranks." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::length_error& e) {
         std::cout << "COSTA (pxgemr2d_utils): the initial local size of matrices >= vector::max_size(). Try using std::array or similar in costa/utils/pxgemm_utils.cpp instead of vectors to store the initial matrices." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::exception& e) {
         std::cout << "COSTA (pxgemr2d_utils): unknown exception, potentially a bug. Please inform us of the test-case." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
@@ -275,7 +286,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
             costa::pxgemr2d<T>(
                 params.m, params.n,
                 a.data(), params.ia, params.ja, &desca[0],
-                c_costa.data(), params.ic, params.jc, &descc[0], ctxt);
+                c_costa.data(), params.ic, params.jc, &descc[0], ctxt_union);
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -293,7 +304,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
             scalapack_pxgemr2d<T>::pxgemr2d(
                 &params.m, &params.n,
                 a.data(), &params.ia, &params.ja, &desca[0],
-                c_scalapack.data(), &params.ic, &params.jc, &descc[0], &ctxt);
+                c_scalapack.data(), &params.ic, &params.jc, &descc[0], &ctxt_union);
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -315,7 +326,8 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
                    || validate_results(c_costa, c_scalapack);
 
     // exit blacs context
-    costa::blacs::Cblacs_gridexit(ctxt);
+    costa::blacs::Cblacs_gridexit(ctxt_a);
+    costa::blacs::Cblacs_gridexit(ctxt_c);
     if (exit_blacs) {
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);

@@ -15,6 +15,15 @@ comm_volume communication_volume(assigned_grid2D& g_init,
 
     std::unordered_map<edge_t, int> weights;
 
+    // add complete bipartite graph all edges
+    int P = std::max(g_init.num_ranks(), g_final.num_ranks());
+    for (int i = 0; i < P; ++i) {
+        for (int j = i; j < P; ++j) {
+            edge_t e{i, j};
+            weights[e] = 0;
+        }
+    }
+
     for (int i = 0; i < n_blocks_row; ++i) {
         for (int j = 0; j < n_blocks_col; ++j) {
             auto rank_to_comm_vol = utils::rank_to_comm_vol_for_block(

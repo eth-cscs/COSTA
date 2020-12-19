@@ -10,26 +10,6 @@
 #include <costa/grid2grid/profiler.hpp>
 
 namespace costa {
-// returns true if subcomm is a subcommunicator of comm
-// i.e. checks if intersection(comm, subcomm) == subcomm
-bool is_subcommunicator(MPI_Comm comm, MPI_Comm subcomm) {
-    // get the groups from the given communicators
-    MPI_Group group;
-    MPI_Group subgroup;
-    MPI_Comm_group(comm, &group);
-    MPI_Comm_group(subcomm, &subgroup);
-
-    // get the intersection of the two groups
-    MPI_Group intersection;
-    MPI_Group_intersection(group, subgroup, &intersection);
-
-    // check if intersection == subcomm (meaning that subcomm is a subset of comm)
-    int comp;
-    MPI_Group_compare(intersection, subgroup, &comp);
-
-    return comp != MPI_UNEQUAL;
-}
-
 template <typename T>
 void pxgemr2d(
            const int m,
@@ -68,11 +48,15 @@ void pxgemr2d(
     // get MPI communicators
     MPI_Comm comm_a = scalapack::get_communicator(ctxt_a);
     MPI_Comm comm_c = scalapack::get_communicator(ctxt_c);
+    /*
     MPI_Comm comm = scalapack::get_communicator(ctxt);
     // MPI_Comm comm = blacs::Cblacs2sys_handle(ctxt);
     // check if comm is at least the union of comm_a and comm_c
     assert(is_subcommunicator(comm, comm_a));
     assert(is_subcommunicator(comm, comm_c));
+    */
+
+    MPI_Comm comm = scalapack::comm_union(comm_a, comm_c);
 
     // communicator size and rank
     int rank, P;

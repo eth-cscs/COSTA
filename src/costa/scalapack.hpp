@@ -44,7 +44,7 @@ struct rank_src {
     }
 };
 
-costa::scalapack::ordering rank_ordering(int ctxt, int P);
+ordering rank_ordering(int ctxt, int P);
 
 // gets the grid context from descriptors of A, B and C and compares
 // if all three matrices belong to the same context
@@ -69,5 +69,11 @@ int leading_dimension(const int* desc);
 int numroc(int n, int nb, int iproc, int isrcproc, int nprocs);
 
 int local_buffer_size(const int* desc);
+
+// checks if comm contains subcomm
+bool is_subcommunicator(MPI_Comm comm, MPI_Comm subcomm);
+
+// returns the union of two communicators
+MPI_Comm comm_union(MPI_Comm comm1, MPI_Comm comm2);
 }}
 

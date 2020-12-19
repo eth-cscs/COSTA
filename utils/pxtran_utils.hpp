@@ -13,14 +13,9 @@
 #include <costa/pxtran/costa_pxtran.hpp>
 #include <costa/pxtran/pxtran_params.hpp>
 #include <costa/random_generator.hpp>
+#include "pxgemr2d_utils.hpp"
 
-// random number generator
-// we cast them to ints, so that we can more easily test them
-// but it's not necessary (they are anyway stored as double's)
-template <typename T>
-void fill_randomly(std::vector<T> &in) {
-    std::generate(in.begin(), in.end(), []() { return costa::random_generator<T>::sample();});
-}
+#include "general.hpp"
 
 // **********************
 //   ScaLAPACK routines
@@ -146,23 +141,6 @@ inline void scalapack_pxtran<std::complex<double>>::pxtran(
                        ic, jc, descc);
 }
 
-// compares two vectors up to eps precision, returns true if they are equal
-template <typename T>
-bool validate_results(std::vector<T>& v1, std::vector<T>& v2, double epsilon=1e-6) {
-    if (v1.size() != v2.size())
-        return false;
-    if (v1.size() == 0)
-        return true;
-    bool correct = true;
-    for (size_t i = 0; i < v1.size(); ++i) {
-        if (std::abs(v1[i] - v2[i]) > epsilon) {
-            std::cout << "v1 = " << v1[i] << ", which is != " << v2[i] << std::endl;
-            correct = false;
-        }
-    }
-    return correct;
-}
-
 // runs costa or scalapack pdtran wrapper for n_rep times and returns
 // a vector of timings (in milliseconds) of size n_rep
 template <typename T>
@@ -193,8 +171,18 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
     // ************************************
     // *    scalapack processor grid      *
     // ************************************
-    int ctxt = costa::blacs::Csys2blacs_handle(comm);
-    costa::blacs::Cblacs_gridinit(&ctxt, &params.order, params.p_rows, params.p_cols);
+    int ctxt_a = costa::blacs::Csys2blacs_handle(comm);
+    costa::blacs::Cblacs_gridinit(&ctxt_a, &params.order_a, 
+                                         params.p_rows_a, params.p_cols_a);
+    int ctxt_c = costa::blacs::Csys2blacs_handle(comm);
+    costa::blacs::Cblacs_gridinit(&ctxt_c, &params.order_c, 
+                                         params.p_rows_c, params.p_cols_c);
+
+    int Pa = params.p_rows_a * params.p_cols_a;
+    int Pc = params.p_rows_c * params.p_cols_c;
+
+    // union context
+    int ctxt_union = Pa > Pc ? ctxt_a : ctxt_c;
 
     // ************************************
     // *   scalapack array descriptors    *
@@ -206,7 +194,7 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
                          &params.ma, &params.na,
                          &params.bma, &params.bna,
                          &params.src_ma, &params.src_na,
-                         &ctxt,
+                         &ctxt_a,
                          &params.lld_a,
                          &info);
     if (rank == 0 && info != 0) {
@@ -219,7 +207,7 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
                          &params.mc, &params.nc,
                          &params.bmc, &params.bnc,
                          &params.src_mc, &params.src_nc,
-                         &ctxt,
+                         &ctxt_c,
                          &params.lld_c,
                          &info);
     if (rank == 0 && info != 0) {
@@ -235,6 +223,7 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
     std::vector<T> a;
     std::vector<T> c_costa;
     std::vector<T> c_scalapack;
+    std::vector<T> c_scalapack_transpose;
 
     try {
         a = std::vector<T>(size_a);
@@ -243,22 +232,26 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
         }
         if (algorithm == "both" || algorithm == "scalapack") {
             c_scalapack = std::vector<T>(size_c);
+            c_scalapack_transpose = std::vector<T>(size_c);
         }
     } catch (const std::bad_alloc& e) {
         std::cout << "COSTA (pxtran_utils): not enough space to store the initial local matrices. The problem size is too large. Either decrease the problem size or run it on more nodes/ranks." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::length_error& e) {
         std::cout << "COSTA (pxtran_utils): the initial local size of matrices >= vector::max_size(). Try using std::array or similar in costa/utils/pxgemm_utils.cpp instead of vectors to store the initial matrices." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::exception& e) {
         std::cout << "COSTA (pxtran_utils): unknown exception, potentially a bug. Please inform us of the test-case." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
@@ -269,13 +262,14 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
         // reusing the cache in subsequent iterations
         fill_randomly(a);
         if (algorithm == "both") {
-            fill_randomly(c_costa);
+            fill_zeros(c_costa);
             // in case beta > 0, this is important in order to get the same results
-            c_scalapack = c_costa;
+            // c_scalapack = c_costa;
         } else if (algorithm == "costa") {
-            fill_randomly(c_costa);
+            fill_zeros(c_costa);
         } else {
-            fill_randomly(c_scalapack);
+            fill_zeros(c_scalapack);
+            fill_zeros(c_scalapack_transpose);
         }
 
         if (algorithm == "both" || algorithm == "costa") {
@@ -304,14 +298,20 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
             long time = 0;
             MPI_Barrier(comm);
             auto start = std::chrono::steady_clock::now();
+            scalapack_pxgemr2d<T>::pxgemr2d(
+                &params.m, &params.n,
+                a.data(), &params.ia, &params.ja, &desca[0],
+                c_scalapack.data(), &params.ic, &params.jc, &descc[0], &ctxt_union
+            );
             scalapack_pxtran<T>::pxtran(
                 &params.m, &params.n,
-                &params.alpha, a.data(), &params.ia, &params.ja, &desca[0],
-                &params.beta, c_scalapack.data(), &params.ic, &params.jc, &descc[0]);
+                &params.alpha, c_scalapack.data(), &params.ic, &params.jc, &descc[0],
+                &params.beta, c_scalapack_transpose.data(), &params.ic, &params.jc, &descc[0]);
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
             scalapack_times[i] = time;
+            c_scalapack = c_scalapack_transpose;
         }
     }
 
@@ -329,7 +329,8 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
                    || validate_results(c_costa, c_scalapack);
 
     // exit blacs context
-    costa::blacs::Cblacs_gridexit(ctxt);
+    costa::blacs::Cblacs_gridexit(ctxt_a);
+    costa::blacs::Cblacs_gridexit(ctxt_c);
     if (exit_blacs) {
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);

@@ -39,15 +39,31 @@ void pxtran(
     //           MAIN CODE
     // **********************************
     // blas context
-    int ctxt = scalapack::get_grid_context(desca, descc);
+    int ctxt_a = scalapack::get_grid_context(desca);
+    int ctxt_c = scalapack::get_grid_context(descc);
 
     // scalapack rank grid decomposition
-    int procrows, proccols;
-    int myrow, mycol;
-    blacs::Cblacs_gridinfo(ctxt, &procrows, &proccols, &myrow, &mycol);
+    int procrows_a, proccols_a;
+    int myrow_a, mycol_a;
+    blacs::Cblacs_gridinfo(ctxt_a, &procrows_a, &proccols_a, &myrow_a, &mycol_a);
+    int procrows_c, proccols_c;
+    int myrow_c, mycol_c;
+    blacs::Cblacs_gridinfo(ctxt_c, &procrows_c, &proccols_c, &myrow_c, &mycol_c);
 
     // get MPI communicator
-    MPI_Comm comm = scalapack::get_communicator(ctxt);
+    MPI_Comm comm_a = scalapack::get_communicator(ctxt_a);
+    MPI_Comm comm_c = scalapack::get_communicator(ctxt_c);
+
+    // take the union of both communicators
+    MPI_Comm comm = scalapack::comm_union(comm_a, comm_c);
+
+    // comm_a size and rank
+    int Pa;
+    MPI_Comm_size(comm, &Pa);
+
+    // comm_c size and rank
+    int Pc;
+    MPI_Comm_size(comm, &Pc);
 
     // communicator size and rank
     int rank, P;
@@ -78,9 +94,13 @@ void pxtran(
     int lld_c = scalapack::leading_dimension(descc);
 
     // check whether rank grid is row-major or col-major
-    auto ordering = scalapack::rank_ordering(ctxt, P);
-    char grid_order =
-        ordering == costa::scalapack::ordering::column_major ? 'C' : 'R';
+    auto ordering_a = scalapack::rank_ordering(ctxt_a, Pa);
+    char grid_order_a =
+        ordering_a == costa::scalapack::ordering::column_major ? 'C' : 'R';
+
+    auto ordering_c = scalapack::rank_ordering(ctxt_c, Pc);
+    char grid_order_c =
+        ordering_c == costa::scalapack::ordering::column_major ? 'C' : 'R';
 
 #ifdef DEBUG
     if (rank == 0) {
@@ -101,7 +121,8 @@ void pxtran(
                              // leading dimensinons
                              lld_a, lld_c,
                              // processor grid
-                             procrows, proccols,
+                             procrows_a, proccols_a,
+                             procrows_c, proccols_c,
                              // processor grid ordering
                              grid_order,
                              // ranks containing first rows
@@ -128,8 +149,8 @@ void pxtran(
         {ia, ja},
         {a_subm, a_subn},
         {b_dim_a.rows, b_dim_a.cols},
-        {procrows, proccols},
-        ordering,
+        {procrows_a, proccols_a},
+        ordering_a,
         {rank_src_a.row_src, rank_src_a.col_src},
         a,
         rank);
@@ -140,8 +161,8 @@ void pxtran(
         {ic, jc},
         {c_subm, c_subn},
         {b_dim_c.rows, b_dim_c.cols},
-        {procrows, proccols},
-        ordering,
+        {procrows_c, proccols_c},
+        ordering_c,
         {rank_src_c.row_src, rank_src_c.col_src},
         c,
         rank);

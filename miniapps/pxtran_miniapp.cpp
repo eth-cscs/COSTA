@@ -30,7 +30,10 @@ int main(int argc, char **argv) {
         ("block_c",
             "block dimensions for matrix C.",
              cxxopts::value<std::vector<int>>()->default_value("128,128"))
-        ("p,p_grid",
+        ("p,p_grid_a",
+            "processor 2D-decomposition.",
+             cxxopts::value<std::vector<int>>()->default_value("1,1"))
+        ("q,p_grid_c",
             "processor 2D-decomposition.",
              cxxopts::value<std::vector<int>>()->default_value("1,1"))
         ("alpha",
@@ -67,7 +70,8 @@ int main(int argc, char **argv) {
     auto block_a = result["block_a"].as<std::vector<int>>();
     auto block_c = result["block_c"].as<std::vector<int>>();
 
-    auto p_grid = result["p_grid"].as<std::vector<int>>();
+    auto p_grid_a = result["p_grid_a"].as<std::vector<int>>();
+    auto p_grid_c = result["p_grid_c"].as<std::vector<int>>();
 
     auto al = result["alpha"].as<int>();
     auto be = result["beta"].as<int>();
@@ -151,9 +155,12 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &P);
 
     // check if processor grid corresponds to P
-    if (p_grid[0] * p_grid[1] != P) {
-        p_grid[0] = 1;
-        p_grid[1] = P;
+    int num_ranks = std::max(p_grid_a[0]*p_grid_a[1], p_grid_c[0]*p_grid_c[1]);
+    if (num_ranks != P) {
+        p_grid_a[0] = 1;
+        p_grid_a[1] = P;
+        p_grid_c[0] = 1;
+        p_grid_c[1] = P;
         if (rank == 0) {
             std::cout << "COSTA(pxtran_miniapp.cpp): warning: number of processors in the grid must be equal to P, setting grid to 1xP instead." << std::endl;
         }
@@ -171,7 +178,8 @@ int main(int argc, char **argv) {
             pxtran_params<double> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
-                                         p_grid[0], p_grid[1],
+                                         p_grid_a[0], p_grid_a[1],
+                                         p_grid_c[0], p_grid_c[1],
                                          alpha, beta);
 
             // **************************************
@@ -192,7 +200,8 @@ int main(int argc, char **argv) {
             pxtran_params<float> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
-                                         p_grid[0], p_grid[1],
+                                         p_grid_a[0], p_grid_a[1],
+                                         p_grid_c[0], p_grid_c[1],
                                          alpha, beta);
 
             // **************************************
@@ -214,7 +223,8 @@ int main(int argc, char **argv) {
             pxtran_params<std::complex<float>> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
-                                         p_grid[0], p_grid[1],
+                                         p_grid_a[0], p_grid_a[1],
+                                         p_grid_c[0], p_grid_c[1],
                                          alpha, beta);
 
             // **************************************
@@ -235,7 +245,8 @@ int main(int argc, char **argv) {
             pxtran_params<std::complex<double>> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
-                                         p_grid[0], p_grid[1],
+                                         p_grid_a[0], p_grid_a[1],
+                                         p_grid_c[0], p_grid_c[1],
                                          alpha, beta);
 
             // **************************************

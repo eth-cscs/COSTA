@@ -149,3 +149,38 @@ int costa::scalapack::local_buffer_size(const int* desc) {
     return lld * n_local_cols;
 }
 
+// returns true if subcomm is a subcommunicator of comm
+// i.e. checks if intersection(comm, subcomm) == subcomm
+bool costa::scalapack::is_subcommunicator(MPI_Comm comm, MPI_Comm subcomm) {
+    // get the groups from the given communicators
+    MPI_Group group;
+    MPI_Group subgroup;
+    MPI_Comm_group(comm, &group);
+    MPI_Comm_group(subcomm, &subgroup);
+
+    // get the intersection of the two groups
+    MPI_Group intersection;
+    MPI_Group_intersection(group, subgroup, &intersection);
+
+    // check if intersection == subcomm (meaning that subcomm is a subset of comm)
+    int comp;
+    MPI_Group_compare(intersection, subgroup, &comp);
+
+    return comp != MPI_UNEQUAL;
+}
+
+MPI_Comm costa::scalapack::comm_union(MPI_Comm comm1, MPI_Comm comm2) {
+    MPI_Group group1;
+    MPI_Group group2;
+    MPI_Group group_union;
+
+    MPI_Comm_group(comm1, &group1);
+    MPI_Comm_group(comm2, &group2);
+
+    MPI_Group_union(group1, group2, &group_union);
+
+    MPI_Comm comm;
+    MPI_Comm_create_group(MPI_COMM_WORLD, group_union, 0, &comm);
+    return comm;
+}
+

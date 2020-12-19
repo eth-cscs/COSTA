@@ -14,13 +14,7 @@
 #include <costa/pxgemr2d/pxgemr2d_params.hpp>
 #include <costa/random_generator.hpp>
 
-// random number generator
-// we cast them to ints, so that we can more easily test them
-// but it's not necessary (they are anyway stored as double's)
-template <typename T>
-void fill_randomly(std::vector<T> &in) {
-    std::generate(in.begin(), in.end(), []() { return costa::random_generator<T>::sample();});
-}
+#include "general.hpp"
 
 // **********************
 //   ScaLAPACK routines
@@ -153,25 +147,6 @@ inline void scalapack_pxgemr2d<std::complex<double>>::pxgemr2d(
                        reinterpret_cast<double*>(c),
                        ic, jc, descc,
                        ctxt);
-}
-
-// compares two vectors up to eps precision, returns true if they are equal
-template <typename T>
-bool validate_results(std::vector<T>& v1, std::vector<T>& v2, double epsilon=1e-6) {
-    double lower_threshold = 1e-3;
-
-    if (v1.size() != v2.size())
-        return false;
-    if (v1.size() == 0)
-        return true;
-    bool correct = true;
-    for (size_t i = 0; i < v1.size(); ++i) {
-        if (std::abs(v1[i] - v2[i]) > epsilon) {
-            std::cout << "epsilon = " << epsilon << ", v1 = " << v1[i] << ", which is != " << v2[i] << std::endl;
-            correct = false;
-        }
-    }
-    return correct;
 }
 
 // runs costa or scalapack pxgemr2d wrapper for n_rep times and returns

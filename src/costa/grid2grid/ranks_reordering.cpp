@@ -1,5 +1,6 @@
 #include <costa/grid2grid/ranks_reordering.hpp>
 #include <algorithm>
+#include <costa/hungarian/hungarian.h>
 
 std::vector<int> costa::optimal_reordering(comm_volume& comm_volume, int n_ranks, bool& reordered) {
     std::vector<bool> visited(n_ranks, false);
@@ -12,8 +13,11 @@ std::vector<int> costa::optimal_reordering(comm_volume& comm_volume, int n_ranks
     }
     reordered = false;
 
+    std::vector<WeightedBipartiteEdge> edges;
+
     std::vector<weighted_edge_t> sorted_edges;
     sorted_edges.reserve(comm_volume.volume.size());
+
     for (const auto& el : comm_volume.volume) {
         auto& e = el.first;
         int w = el.second;
@@ -23,15 +27,27 @@ std::vector<int> costa::optimal_reordering(comm_volume& comm_volume, int n_ranks
         // w += comm_volume.volume[edge_t{dest, src}];
         if (src == dest) {
             w *= 2;
-            ++w;
         }
         w -= comm_volume.volume[edge_t{src, src}];
         w -= comm_volume.volume[edge_t{dest, dest}];
 
-        if (w) {
-            sorted_edges.push_back(weighted_edge_t(src, dest, w));
-        }
+        if (w > 0)
+        std::cout << src << "->" << dest << "=" << w <<std::endl;
+
+        // truncate to int range
+        w = std::min(w, std::numeric_limits<int>::max());
+        w = std::max(w, std::numeric_limits<int>::min());
+        auto we = WeightedBipartiteEdge(src, dest, -w);
+        edges.push_back(we);
+        auto we2 = WeightedBipartiteEdge(dest, src, -w);
+        edges.push_back(we2);
+
+        sorted_edges.push_back(weighted_edge_t(src, dest, w));
     }
+
+    std::vector<int> reordering = hungarianMinimumWeightPerfectMatching(n_ranks, edges);
+    reordered = reordering.size() == n_ranks;
+    return reordering;
 
     // sort the edges by weights (decreasing order)
     std::sort(sorted_edges.rbegin(), sorted_edges.rend());

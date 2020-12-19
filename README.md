@@ -393,7 +393,7 @@ mpirun -np 4 ./build/examples/pxtran_miniapp -m 1000 -n 1000 \
                                             --block_a=128,128 \ 
                                             --block_c=128,128 \
                                             --p_grid_a=2,2 \
-                                            --p_grid_c=2,2 \
+                                            --p_grid_c=1,4 \
                                             --alpha=1 \
                                             --beta=1 \
                                             --type=double \

@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
         for (int j = 0; j < n_blocks_col_c; ++j) {
             int p_row = i % p_grid_c[0];
             int p_col = j % p_grid_c[1];
-            int p = p_row * p_grid_c[1] + p_col;
+            int p = p_col * p_grid_c[0] + p_row;
             // std::cout << "(" << i << ", " << j << ") -> rank " << p << "(" << p_row << ", "  << p_col << ")"<< std::endl;
             owners_c[i][j] = p;
         }

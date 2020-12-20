@@ -4,6 +4,7 @@
 #include <costa/blacs.hpp>
 #include <costa/pxgemr2d/pxgemr2d_params.hpp>
 #include <costa/pxgemr2d/costa_pxgemr2d.hpp>
+#include <costa/grid2grid/ranks_reordering.hpp>
 
 #include <costa/grid2grid/transform.hpp>
 
@@ -153,8 +154,50 @@ void pxgemr2d(
         c,
         rank);
 
+    MPI_Barrier(comm);
     // transform A to C
+    auto start = std::chrono::steady_clock::now();
+
     costa::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
+
+    MPI_Barrier(comm);
+    auto end = std::chrono::steady_clock::now();
+
+    auto timing_no_relabeling =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    bool reordered = false;
+    auto comm_vol = costa::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
+    std::vector<int> rank_permutation = costa::optimal_reordering(comm_vol, P, reordered);
+    scalapack_layout_c.reorder_ranks(rank_permutation);
+
+    MPI_Barrier(comm);
+    // transform A to C
+    start = std::chrono::steady_clock::now();
+
+    costa::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
+
+    MPI_Barrier(comm);
+    end = std::chrono::steady_clock::now();
+
+    auto timing_with_relabeling =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    auto new_comm_vol = costa::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
+
+    auto comm_vol_total = comm_vol.total_volume();
+    auto new_comm_vol_total = new_comm_vol.total_volume();
+
+
+    std::cout << "Time no relabeling [ms] = " << timing_no_relabeling << std::endl;
+    std::cout << "Time with relabeling [ms] = " << timing_with_relabeling << std::endl;
+
+    auto diff = (long long) comm_vol_total - (long long) new_comm_vol_total;
+    if (comm_vol_total > 0) {
+        std::cout << "Comm volume reduction [%] = " << 100.0 * diff / comm_vol_total << std::endl;
+    } else {
+        std::cout << "Initial comm vol = 0, nothing to improve." << std::endl;
+    }
 
     // print the profiling data
     if (rank == 0) {

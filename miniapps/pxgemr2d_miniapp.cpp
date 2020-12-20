@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
     }
 
     // *******************************
-    //   perform the multiplication
+    //   perform the reshuffling
     // ******************************
     // no blacs functions will be invoked afterwards
     bool exit_blacs = true;
@@ -174,7 +174,8 @@ int main(int argc, char **argv) {
 
             result_correct = benchmark_pxgemr2d<double>(params, MPI_COMM_WORLD, n_rep,
                                     algorithm,
-                                    costa_times, scalapack_times, 
+                                    costa_times, 
+                                    scalapack_times, 
                                     test_correctness, exit_blacs);
         } else if (type == "float") {
             pxgemr2d_params<float> params(m, n,
@@ -194,7 +195,8 @@ int main(int argc, char **argv) {
 
             result_correct = benchmark_pxgemr2d<float>(params, MPI_COMM_WORLD, n_rep,
                                     algorithm,
-                                    costa_times, scalapack_times,
+                                    costa_times, 
+                                    scalapack_times,
                                     test_correctness, exit_blacs);
 
         } else if (type == "zfloat") {
@@ -215,7 +217,8 @@ int main(int argc, char **argv) {
 
             result_correct = benchmark_pxgemr2d<std::complex<float>>(params, MPI_COMM_WORLD, n_rep,
                                     algorithm,
-                                    costa_times, scalapack_times,
+                                    costa_times,
+                                    scalapack_times,
                                     test_correctness, exit_blacs);
         } else if (type == "zdouble") {
             pxgemr2d_params<std::complex<double>> params(m, n,
@@ -235,7 +238,8 @@ int main(int argc, char **argv) {
 
             result_correct = benchmark_pxgemr2d<std::complex<double>>(params, MPI_COMM_WORLD, n_rep,
                                     algorithm,
-                                    costa_times, scalapack_times,
+                                    costa_times, 
+                                    scalapack_times,
                                     test_correctness, exit_blacs);
         } else {
             throw std::runtime_error("COSTA(pxgemr2d_miniapp): unknown data type of matrix entries.");

@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 #
 set(MASTER_PROJECT OFF)
 if(NOT DEFINED PROJECT_NAME)
-  set(MASTER_PROJECT ON)
+    set(MASTER_PROJECT ON)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -14,7 +14,7 @@ include(cmake/adjust_mpiexec_flags.cmake)
 # Options
 #
 set(COSTA_SCALAPACK "OFF" CACHE STRING
-    "Blas backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+    "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
 set_property(CACHE COSTA_SCALAPACK PROPERTY STRINGS
     "OFF" "MKL" "CRAY_LIBSCI" "CUSTOM")
 
@@ -30,7 +30,7 @@ message(STATUS "Selected ScaLAPACK backend for COSTA: ${COSTA_SCALAPACK}")
 unset(BACKEND_LIST)
 get_property(BACKEND_LIST CACHE COSTA_SCALAPACK PROPERTY STRINGS)
 if(COSTA_SCALAPACK AND NOT COSTA_SCALAPACK IN_LIST BACKEND_LIST)
-  message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK!")
+    message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK!")
 endif()
 
 project(costa VERSION 1.0.0 LANGUAGES CXX)
@@ -39,24 +39,32 @@ project(costa VERSION 1.0.0 LANGUAGES CXX)
 # use `CMAKE_SKIP_INSTALL_RPATH` to skip this
 # https://spack.readthedocs.io/en/latest/workflows.html#write-the-cmake-build
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
-          "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
-# skip RPATH if SIRIUS is installed to system directories
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
+# skip RPATH if the library is installed to system directories
 if(isSystemDir STREQUAL "-1")
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-  if(APPLE)
-    set(basePoint @loader_path)
-  else()
-    set(basePoint $ORIGIN)
-  endif()
-  file(RELATIVE_PATH relDir ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
-                            ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-  set(CMAKE_INSTALL_RPATH ${basePoint} ${basePoint}/${relDir})
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    if(APPLE)
+        set(basePoint @loader_path)
+    else()
+        set(basePoint $ORIGIN)
+    endif()
+    file(RELATIVE_PATH relDir ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+    set(CMAKE_INSTALL_RPATH ${basePoint} ${basePoint}/${relDir})
 endif()
 
 # Dependencies
 #
-find_package(MPI REQUIRED)
+find_package(MPI COMPONENTS CXX REQUIRED)
 adjust_mpiexec_flags()
+
+# OpenMP
+find_package(OpenMP COMPONENTS CXX REQUIRED)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 # Bundled dependencies
 #
@@ -71,8 +79,18 @@ add_subdirectory(libs/cxxopts)
 #
 set(SCALAPACK_TARGET "")
 if (${COSTA_SCALAPACK} STREQUAL "MKL")
-    find_package(MKL REQUIRED COMPONENTS SCALAPACK_32BIT_OMP)
-    set(SCALAPACK_TARGET "mkl::scalapack_32bit_omp")
+    find_package(MKL REQUIRED)
+    set(SCALAPACK_TARGET "mkl::scalapack_${MPI_TYPE}_intel_32bit_omp_dyn")
+    if (TARGET mkl::mkl_intel_32bit_omp_dyn)
+        message("FOUND TARGET: mkl::mkl_intel_32bit_omp_dyn")
+    else()
+        message("CANNOT FIND TARGET: mkl::mkl_intel_32bit_omp_dyn")
+    endif()
+    if (TARGET ${SCALAPACK_TARGET})
+        message("FOUND TARGET: ${SCALAPACK_TARGET}")
+    else()
+        message("CANNOT FIND TARGET: ${SCALAPACK_TARGET}")
+    endif()
 elseif (${COSTA_SCALAPACK} STREQUAL "CRAY_LIBSCI")
     find_package(CRAY_LIBSCI REQUIRED)
     set(SCALAPACK_TARGET "${CRAY_LIBSCI_LIBRARIES}")
@@ -97,9 +115,9 @@ if(COSTA_WITH_INSTALL)
     include(GNUInstallDirs)
 
     install(DIRECTORY "${costa_SOURCE_DIR}/src/costa"
-            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-            FILES_MATCHING
-                PATTERN "*.hpp")
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        FILES_MATCHING
+        PATTERN "*.hpp")
 
     write_basic_package_version_file(
         "${costa_BINARY_DIR}/costaConfigVersion.cmake"
@@ -107,20 +125,20 @@ if(COSTA_WITH_INSTALL)
         COMPATIBILITY SameMajorVersion)
 
     configure_file("${costa_SOURCE_DIR}/cmake/costa.pc.in"
-                   "${costa_BINARY_DIR}/costa.pc"
-                   @ONLY)
+        "${costa_BINARY_DIR}/costa.pc"
+        @ONLY)
 
     configure_file("${costa_SOURCE_DIR}/cmake/costaConfig.cmake.in"
-                   "${costa_BINARY_DIR}/costaConfig.cmake"
-                   @ONLY)
+        "${costa_BINARY_DIR}/costaConfig.cmake"
+        @ONLY)
 
     install(FILES "${costa_BINARY_DIR}/costaConfig.cmake"
-                  "${costa_BINARY_DIR}/costaConfigVersion.cmake"
-                  "${costa_SOURCE_DIR}/cmake/FindMKL.cmake"
-            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/costa")
+        "${costa_BINARY_DIR}/costaConfigVersion.cmake"
+        "${costa_SOURCE_DIR}/cmake/FindMKL.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/costa")
 
     install(FILES "${costa_BINARY_DIR}/costa.pc"
-            DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
 
 if(COSTA_WITH_APPS)

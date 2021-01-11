@@ -4,7 +4,7 @@ libdir=@CMAKE_INSTALL_FULL_LIBDIR@
 includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 
 Name: costa
-Description: Distributed communication-optimal scale and transpose algorithm 
+Description: Distributed communication-optimal shuffle and transpose algorithm 
 Version: @costa_VERSION@
 Libs: -L${libdir} -lcosta
 Cflags: -I${includedir}

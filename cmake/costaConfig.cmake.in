@@ -18,11 +18,15 @@ if(NOT TARGET costa::costa)
     set(COSTA_SCALAPACK "@COSTA_SCALAPACK@")
 
     if (${COSTA_SCALAPACK} STREQUAL "MKL")
-        find_package(MKL COMPONENTS SCALAPACK_32BIT_OMP)
+        find_package(MKL)
     elseif (${COSTA_SCALAPACK} STREQUAL "CRAY_LIBSCI")
         find_package(CRAY_LIBSCI REQUIRED)
     elseif (${COSTA_SCALAPACK} STREQUAL "CUSTOM")
         find_package(SCALAPACK)
+    endif ()
+
+    if ("@COSTA_WITH_PROFILING@")
+        find_dependency(semiprof)
     endif ()
 
     # Clean-up module path.

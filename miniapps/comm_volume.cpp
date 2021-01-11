@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     // **************************************
     //   setup command-line parser
     // **************************************
-    cxxopts::Options options("COSTA BLOCK-CYCLIC MINIAPP", 
+    cxxopts::Options options("COSTA COMM-VOLUME MINIAPP", 
         "A miniapp computing: `C = alpha*op(A) + beta*C` where op = none, transpose or conjugate.");
 
     // **************************************
@@ -42,6 +42,9 @@ int main(int argc, char **argv) {
         ("block_a",
             "block dimensions for matrix A.",
              cxxopts::value<std::vector<int>>()->default_value("128,128"))
+        ("block_c",
+            "block dimensions for matrix A.",
+             cxxopts::value<std::vector<int>>()->default_value("-1,-1"))
         ("p,p_grid_a",
             "processor 2D-decomposition.",
              cxxopts::value<std::vector<int>>()->default_value("1,1"))
@@ -62,16 +65,20 @@ int main(int argc, char **argv) {
     auto n = result["n_dim"].as<int>();
 
     auto block_a = result["block_a"].as<std::vector<int>>();
+    auto block_c = result["block_c"].as<std::vector<int>>();
 
     auto p_grid_a = result["p_grid_a"].as<std::vector<int>>();
     auto p_grid_c = result["p_grid_c"].as<std::vector<int>>();
 
     int P = std::max(p_grid_a[0] * p_grid_a[1], p_grid_c[0] * p_grid_c[1]);
 
-    std::vector<int> block_c = {m/p_grid_c[0], n/p_grid_c[1]};
+    if (block_c[0] == -1 || block_c[1] == -1) {
+        block_c[0] = m/p_grid_c[0];
+        block_c[1] = n/p_grid_c[1];
+    }
     // std::vector<int> block_c_col = {n/p_grid[1], m/p_grid[0]};
     // block_c = block_c_col;
-    // std::cout << "block = " << block_c_col[0] << ", " << block_c_col[1] << std::endl;
+    std::cout << "block = " << block_c[0] << ", " << block_c[1] << std::endl;
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -131,8 +138,8 @@ int main(int argc, char **argv) {
     std::vector<int> rank_permutation = costa::optimal_reordering(comm_vol, P, reordered);
     target_grid.reorder_ranks(rank_permutation);
     for (int i = 0; i < P; ++i) {
-        if (rank_permutation[i] != i) 
-            std::cout << i << "->" << rank_permutation[i] << std::endl;
+        // if (rank_permutation[i] != i) 
+            // std::cout << i << "->" << rank_permutation[i] << std::endl;
     }
 
     // percent of communication volume reduction

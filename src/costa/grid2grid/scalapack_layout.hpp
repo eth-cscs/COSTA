@@ -118,6 +118,7 @@ struct int_pair {
 std::ostream &operator<<(std::ostream &os, const int_pair &other);
 
 struct rank_grid_coord : public int_pair {
+    rank_grid_coord() = default;
     rank_grid_coord(int r, int c)
         : int_pair(r, c) {}
     rank_grid_coord &operator=(const int_pair &other) {
@@ -128,6 +129,7 @@ struct rank_grid_coord : public int_pair {
 };
 
 struct rank_decomposition : public int_pair {
+    rank_decomposition() = default;
     rank_decomposition(int r, int c)
         : int_pair(r, c) {}
     rank_decomposition &operator=(const int_pair &other) {
@@ -140,6 +142,7 @@ struct rank_decomposition : public int_pair {
 };
 
 struct elem_grid_coord : public int_pair {
+    elem_grid_coord() = default;
     elem_grid_coord(int r, int c)
         : int_pair(r, c) {}
     elem_grid_coord(int_pair &pair)
@@ -164,6 +167,7 @@ struct local_grid_coord {
 };
 
 struct block_dim : public int_pair {
+    block_dim() = default;
     block_dim(int r, int c)
         : int_pair(r, c) {}
     block_dim &operator=(const int_pair &other) {
@@ -176,6 +180,7 @@ struct block_dim : public int_pair {
 };
 
 struct matrix_dim : public int_pair {
+    matrix_dim() = default;
     matrix_dim(int r, int c)
         : int_pair(r, c) {}
     matrix_dim &operator=(const int_pair &other) {

@@ -356,7 +356,8 @@ export MKL_NUM_THREADS=18
 mpirun -np 4 ./build/examples/pxgemr2d_miniapp -m 1000 -n 1000 \
                                             --block_a=128,128 \ 
                                             --block_c=128,128 \
-                                            --p_grid=2,2 \
+                                            --p_grid_a=2,2 \
+                                            --p_grid_c=2,2 \
                                             --type=double \
                                             --algorithm=costa
 ```
@@ -366,7 +367,8 @@ The overview of all supported options is given below:
 - `-n (--n_dim)` (default: `1000`): number of columns of matrices `A` and `C`. 
 - `--block_a` (optional, default: `128,128`): 2D-block size for matrix A. 
 - `--block_c` (optional, default `128,128`): 2D-block size for matrix C.
-- `-p (--p_grid)` (optional, default: `1,P`): 2D-processor grid. By default `1xP` where `P` is the total number of MPI ranks.
+- `-p (--p_grid_a)` (optional, default: `1,P`): 2D-processor grid for matrix A. By default `1xP` where `P` is the total number of MPI ranks.
+- `-q (--p_grid_c)` (optional, default: `1,P`): 2D-processor grid for matrix C. By default `1xP` where `P` is the total number of MPI ranks.
 - `-r (--n_rep)` (optional, default: 2): number of repetitions.
 - `-t (--type)` (optional, default: `double`): data type of matrix entries. Can be one of: `float`, `double`, `zfloat` and `zdouble`. The last two correspond to complex numbers.
 - `--test` (optional): if present, the result of COSTA will be verified with the result of the available SCALAPACK.
@@ -410,6 +412,18 @@ The overview of all supported options is given below:
 - `--test` (optional): if present, the result of COSTA will be verified with the result of the available SCALAPACK.
 - `--algorithm` (optional, default: `both`): defines which algorithm (`costa`, `scalapack` or `both`) to run.
 - `-h (--help) (optional)`: print available options.
+
+### Communication Volume
+
+Measuring the total communication volume reduction (in \%) that can be achieved by process relabeling can be done by running the `comm_volume` miniapp, without using `MPI`. The miniapps assumes a matrix with dimensions `m x n` is transformed between two block-cyclic layouts which are specified by block sizes and process grids. 
+
+```bash
+./miniapps/comm_volume -m 100000 -n 100000 \
+                       --block_a=100,100 --p_grid_a=2,4 \
+                       --block_c=100,100 --p_grid_c=4,2
+output:
+Comm volume reduction [%] = 33.3333
+```
 
 ## Questions?
 

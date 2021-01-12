@@ -18,6 +18,7 @@
 - [Miniapps (for testing and benchmarking)](#miniapps-for-testing-and-benchmarking)
     - [Data-redistribution with pxgemr2d](#data-redistribution-with-pxgemr2d)
     - [Scale and Transpose with pxtran and pxtranu](#scale-and-transpose-with-pxtran-and-pxtranu)
+    - [Communication Volume Reduction](#communication-volume-reduction)
 - [Questions?](#questions)
 - [Acknowledgements](#acknowledgements)
 
@@ -413,9 +414,9 @@ The overview of all supported options is given below:
 - `--algorithm` (optional, default: `both`): defines which algorithm (`costa`, `scalapack` or `both`) to run.
 - `-h (--help) (optional)`: print available options.
 
-### Communication Volume
+### Communication Volume Reduction
 
-Measuring the total communication volume reduction (in \%) that can be achieved by process relabeling can be done by running the `comm_volume` miniapp, without using `MPI`. The miniapps assumes a matrix with dimensions `m x n` is transformed between two block-cyclic layouts which are specified by block sizes and process grids. 
+Measuring the total communication volume reduction (in \%) that can be achieved by process relabeling can be done by running the `comm_volume` miniapp, without using `MPI`. The miniapps assumes a matrix with dimensions `m x n` is transformed between two block-cyclic layouts which are specified by block sizes and process grids. The suffix `_a` refers to the initial layout and the suffix `_b` refers to the target layout.
 
 ```bash
 ./miniapps/comm_volume -m 100000 -n 100000 \

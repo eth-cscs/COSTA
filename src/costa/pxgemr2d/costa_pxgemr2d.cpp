@@ -4,32 +4,13 @@
 #include <costa/blacs.hpp>
 #include <costa/pxgemr2d/pxgemr2d_params.hpp>
 #include <costa/pxgemr2d/costa_pxgemr2d.hpp>
+#include <costa/grid2grid/ranks_reordering.hpp>
 
 #include <costa/grid2grid/transform.hpp>
 
 #include <costa/grid2grid/profiler.hpp>
 
 namespace costa {
-// returns true if subcomm is a subcommunicator of comm
-// i.e. checks if intersection(comm, subcomm) == subcomm
-bool is_subcommunicator(MPI_Comm comm, MPI_Comm subcomm) {
-    // get the groups from the given communicators
-    MPI_Group group;
-    MPI_Group subgroup;
-    MPI_Comm_group(comm, &group);
-    MPI_Comm_group(subcomm, &subgroup);
-
-    // get the intersection of the two groups
-    MPI_Group intersection;
-    MPI_Group_intersection(group, subgroup, &intersection);
-
-    // check if intersection == subcomm (meaning that subcomm is a subset of comm)
-    int comp;
-    MPI_Group_compare(intersection, subgroup, &comp);
-
-    return comp != MPI_UNEQUAL;
-}
-
 template <typename T>
 void pxgemr2d(
            const int m,
@@ -68,11 +49,15 @@ void pxgemr2d(
     // get MPI communicators
     MPI_Comm comm_a = scalapack::get_communicator(ctxt_a);
     MPI_Comm comm_c = scalapack::get_communicator(ctxt_c);
+    /*
     MPI_Comm comm = scalapack::get_communicator(ctxt);
     // MPI_Comm comm = blacs::Cblacs2sys_handle(ctxt);
     // check if comm is at least the union of comm_a and comm_c
     assert(is_subcommunicator(comm, comm_a));
     assert(is_subcommunicator(comm, comm_c));
+    */
+
+    MPI_Comm comm = scalapack::comm_union(comm_a, comm_c);
 
     // communicator size and rank
     int rank, P;
@@ -169,8 +154,50 @@ void pxgemr2d(
         c,
         rank);
 
+    MPI_Barrier(comm);
     // transform A to C
+    auto start = std::chrono::steady_clock::now();
+
     costa::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
+
+    MPI_Barrier(comm);
+    auto end = std::chrono::steady_clock::now();
+
+    auto timing_no_relabeling =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    bool reordered = false;
+    auto comm_vol = costa::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
+    std::vector<int> rank_permutation = costa::optimal_reordering(comm_vol, P, reordered);
+    scalapack_layout_c.reorder_ranks(rank_permutation);
+
+    MPI_Barrier(comm);
+    // transform A to C
+    start = std::chrono::steady_clock::now();
+
+    costa::transform<T>(scalapack_layout_a, scalapack_layout_c, comm);
+
+    MPI_Barrier(comm);
+    end = std::chrono::steady_clock::now();
+
+    auto timing_with_relabeling =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    auto new_comm_vol = costa::communication_volume(scalapack_layout_a.grid, scalapack_layout_c.grid);
+
+    auto comm_vol_total = comm_vol.total_volume();
+    auto new_comm_vol_total = new_comm_vol.total_volume();
+
+
+    std::cout << "Time no relabeling [ms] = " << timing_no_relabeling << std::endl;
+    std::cout << "Time with relabeling [ms] = " << timing_with_relabeling << std::endl;
+
+    auto diff = (long long) comm_vol_total - (long long) new_comm_vol_total;
+    if (comm_vol_total > 0) {
+        std::cout << "Comm volume reduction [%] = " << 100.0 * diff / comm_vol_total << std::endl;
+    } else {
+        std::cout << "Initial comm vol = 0, nothing to improve." << std::endl;
+    }
 
     // print the profiling data
     if (rank == 0) {

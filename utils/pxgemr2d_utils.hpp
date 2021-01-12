@@ -14,13 +14,7 @@
 #include <costa/pxgemr2d/pxgemr2d_params.hpp>
 #include <costa/random_generator.hpp>
 
-// random number generator
-// we cast them to ints, so that we can more easily test them
-// but it's not necessary (they are anyway stored as double's)
-template <typename T>
-void fill_randomly(std::vector<T> &in) {
-    std::generate(in.begin(), in.end(), []() { return costa::random_generator<T>::sample();});
-}
+#include "general.hpp"
 
 // **********************
 //   ScaLAPACK routines
@@ -32,37 +26,37 @@ extern "C" {
     void descinit_(int* desc, const int* m, const int* n, const int* mb, const int* nb,
            const int* irsrc, const int* icsrc, const int* ictxt, const int* lld, int* info);
 
-    void psgemr2d_(const int *m , const int *n , 
-                   const float *a , 
-                   const int *ia , const int *ja , 
-                   const int *desca , 
-                   float *c , 
+    void psgemr2d_(const int *m , const int *n ,
+                   const float *a ,
+                   const int *ia , const int *ja ,
+                   const int *desca ,
+                   float *c ,
                    const int *ic , const int *jc ,
                    const int *descc,
                    const int *ctxt);
 
-    void pdgemr2d_(const int *m , const int *n , 
-                   const double *a , 
-                   const int *ia , const int *ja , 
-                   const int *desca , 
-                   double *c , 
+    void pdgemr2d_(const int *m , const int *n ,
+                   const double *a ,
+                   const int *ia , const int *ja ,
+                   const int *desca ,
+                   double *c ,
                    const int *ic , const int *jc ,
                    const int *descc,
                    const int *ctxt);
 
-    void pcgemr2d_(const int *m , const int *n , 
-                   const float *a , 
-                   const int *ia , const int *ja , 
-                   const int *desca , 
-                   float *c , 
+    void pcgemr2d_(const int *m , const int *n ,
+                   const float *a ,
+                   const int *ia , const int *ja ,
+                   const int *desca ,
+                   float *c ,
                    const int *ic , const int *jc ,
                    const int *descc,
                    const int *ctxt);
 
-    void pzgemr2d_(const int *m , const int *n , 
-                   const double *a , 
-                   const int *ia , const int *ja , 
-                   const int *desca , 
+    void pzgemr2d_(const int *m , const int *n ,
+                   const double *a ,
+                   const int *ia , const int *ja ,
+                   const int *desca ,
                    double *c ,
                    const int *ic , const int *jc ,
                    const int *descc,
@@ -82,7 +76,7 @@ struct scalapack_pxgemr2d {
               const int* m, const int* n,
               const T* a,
               const int* ia, const int* ja, const int* desca,
-              T* c, 
+              T* c,
               const int* ic, const int* jc, const int* descc,
               const int *ctxt);
 };
@@ -90,9 +84,9 @@ struct scalapack_pxgemr2d {
 template <>
 inline void scalapack_pxgemr2d<float>::pxgemr2d(
               const int* m, const int* n,
-              const float* a, 
+              const float* a,
               const int* ia, const int* ja, const int* desca,
-              float* c, 
+              float* c,
               const int* ic, const int* jc, const int* descc,
               const int *ctxt) {
     scalapack::psgemr2d_(
@@ -107,9 +101,9 @@ inline void scalapack_pxgemr2d<float>::pxgemr2d(
 template <>
 inline void scalapack_pxgemr2d<double>::pxgemr2d(
               const int* m, const int* n,
-              const double* a, 
+              const double* a,
               const int* ia, const int* ja, const int* desca,
-              double* c, 
+              double* c,
               const int* ic, const int* jc, const int* descc,
               const int *ctxt) {
     scalapack::pdgemr2d_(
@@ -155,31 +149,12 @@ inline void scalapack_pxgemr2d<std::complex<double>>::pxgemr2d(
                        ctxt);
 }
 
-// compares two vectors up to eps precision, returns true if they are equal
-template <typename T>
-bool validate_results(std::vector<T>& v1, std::vector<T>& v2, double epsilon=1e-6) {
-    double lower_threshold = 1e-3;
-
-    if (v1.size() != v2.size())
-        return false;
-    if (v1.size() == 0)
-        return true;
-    bool correct = true;
-    for (size_t i = 0; i < v1.size(); ++i) {
-        if (std::abs(v1[i] - v2[i]) > epsilon) {
-            std::cout << "epsilon = " << epsilon << ", v1 = " << v1[i] << ", which is != " << v2[i] << std::endl;
-            correct = false;
-        }
-    }
-    return correct;
-}
-
 // runs costa or scalapack pxgemr2d wrapper for n_rep times and returns
 // a vector of timings (in milliseconds) of size n_rep
 template <typename T>
 bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_rep,
                     const std::string& algorithm,
-                    std::vector<long>& costa_times, std::vector<long>& scalapack_times, 
+                    std::vector<long>& costa_times, std::vector<long>& scalapack_times,
                     bool test_correctness = false, bool exit_blacs = false) {
     assert(algorithm == "both" || algorithm == "costa" || algorithm == "scalapack");
     if (algorithm == "both" || algorithm == "costa") {
@@ -204,8 +179,16 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
     // ************************************
     // *    scalapack processor grid      *
     // ************************************
-    int ctxt = costa::blacs::Csys2blacs_handle(comm);
-    costa::blacs::Cblacs_gridinit(&ctxt, &params.order, params.p_rows, params.p_cols);
+    int ctxt_a = costa::blacs::Csys2blacs_handle(comm);
+    costa::blacs::Cblacs_gridinit(&ctxt_a, &params.order_a, params.p_rows_a, params.p_cols_a);
+    int ctxt_c = costa::blacs::Csys2blacs_handle(comm);
+    costa::blacs::Cblacs_gridinit(&ctxt_c, &params.order_c, params.p_rows_c, params.p_cols_c);
+
+    int Pa = params.p_rows_a * params.p_cols_a;
+    int Pc = params.p_rows_c * params.p_cols_c;
+
+    // union context
+    int ctxt_union = Pa > Pc ? ctxt_a : ctxt_c;
 
     // ************************************
     // *   scalapack array descriptors    *
@@ -217,7 +200,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
                          &params.ma, &params.na,
                          &params.bma, &params.bna,
                          &params.src_ma, &params.src_na,
-                         &ctxt,
+                         &ctxt_a,
                          &params.lld_a,
                          &info);
     if (rank == 0 && info != 0) {
@@ -230,7 +213,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
                          &params.mc, &params.nc,
                          &params.bmc, &params.bnc,
                          &params.src_mc, &params.src_nc,
-                         &ctxt,
+                         &ctxt_c,
                          &params.lld_c,
                          &info);
     if (rank == 0 && info != 0) {
@@ -257,19 +240,22 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
         }
     } catch (const std::bad_alloc& e) {
         std::cout << "COSTA (pxgemr2d_utils): not enough space to store the initial local matrices. The problem size is too large. Either decrease the problem size or run it on more nodes/ranks." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::length_error& e) {
         std::cout << "COSTA (pxgemr2d_utils): the initial local size of matrices >= vector::max_size(). Try using std::array or similar in costa/utils/pxgemm_utils.cpp instead of vectors to store the initial matrices." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
     } catch (const std::exception& e) {
         std::cout << "COSTA (pxgemr2d_utils): unknown exception, potentially a bug. Please inform us of the test-case." << std::endl;
-        costa::blacs::Cblacs_gridexit(ctxt);
+        costa::blacs::Cblacs_gridexit(ctxt_a);
+        costa::blacs::Cblacs_gridexit(ctxt_c);
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);
         throw;
@@ -300,7 +286,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
             costa::pxgemr2d<T>(
                 params.m, params.n,
                 a.data(), params.ia, params.ja, &desca[0],
-                c_costa.data(), params.ic, params.jc, &descc[0], ctxt);
+                c_costa.data(), params.ic, params.jc, &descc[0], ctxt_union);
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -318,7 +304,7 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
             scalapack_pxgemr2d<T>::pxgemr2d(
                 &params.m, &params.n,
                 a.data(), &params.ia, &params.ja, &desca[0],
-                c_scalapack.data(), &params.ic, &params.jc, &descc[0], &ctxt);
+                c_scalapack.data(), &params.ic, &params.jc, &descc[0], &ctxt_union);
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -335,12 +321,13 @@ bool benchmark_pxgemr2d(costa::pxgemr2d_params<T>& params, MPI_Comm comm, int n_
 
     // if algorithm != both than we don't check the correctness,
     // also if test_correctness flat is set to false
-    bool correct = algorithm != "both" 
-                   || !test_correctness 
+    bool correct = algorithm != "both"
+                   || !test_correctness
                    || validate_results(c_costa, c_scalapack);
 
     // exit blacs context
-    costa::blacs::Cblacs_gridexit(ctxt);
+    costa::blacs::Cblacs_gridexit(ctxt_a);
+    costa::blacs::Cblacs_gridexit(ctxt_c);
     if (exit_blacs) {
         int dont_finalize_mpi = 1;
         costa::blacs::Cblacs_exit(dont_finalize_mpi);

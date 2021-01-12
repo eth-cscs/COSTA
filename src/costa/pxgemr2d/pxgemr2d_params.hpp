@@ -59,10 +59,16 @@ struct pxgemr2d_params {
     // ***********************
     // *      proc grid      *
     // ***********************
-    int p_rows; // rows
-    int p_cols; // cols
+    int p_rows_a; // rows
+    int p_cols_a; // cols
+
+    int p_rows_c; // rows
+    int p_cols_c; // cols
+
     int P;
-    char order = 'R';
+
+    char order_a = 'R';
+    char order_c = 'R';
 
     // ***********************
     // *      proc srcs      *
@@ -83,7 +89,9 @@ struct pxgemr2d_params {
     void initialize(int mm, int nn,
                     int block_a1, int block_a2,
                     int block_c1, int block_c2,
-                    int prows, int pcols) {
+                    int prows_a, int pcols_a,
+                    int prows_c, int pcols_c
+                    ) {
         m = mm;
         n = nn;
 
@@ -109,14 +117,17 @@ struct pxgemr2d_params {
         ic = 1; jc = 1;
 
         // proc grid
-        order = 'R';
-        p_rows = prows;
-        p_cols = pcols;
-        P = p_rows * p_cols;
+        order_a = 'R';
+        order_c = 'R';
+        p_rows_a = prows_a;
+        p_cols_a = pcols_a;
+        p_rows_c = prows_c;
+        p_cols_c = pcols_c;
+        P = std::max(p_rows_a * p_cols_a, p_rows_c * p_cols_c);
 
         // leading dims
-        lld_a = scalapack::max_leading_dimension(ma, bma, p_rows);
-        lld_c = scalapack::max_leading_dimension(mc, bmc, p_rows);
+        lld_a = scalapack::max_leading_dimension(ma, bma, p_rows_a);
+        lld_c = scalapack::max_leading_dimension(mc, bmc, p_rows_c);
 
         // proc srcs
         src_ma = 0; src_na = 0;
@@ -125,7 +136,9 @@ struct pxgemr2d_params {
 
     pxgemr2d_params(int m, int n,
                   int bm, int bn,
-                  int prows, int pcols) {
+                  int prows_a, int pcols_a,
+                  int prows_c, int pcols_c
+                  ) {
         // block sizes
         // blocks BEFORE transposing (if transposed)
         bma = bm;
@@ -137,7 +150,9 @@ struct pxgemr2d_params {
         initialize(m, n,
                    bma, bna,
                    bmc, bnc,
-                   prows, pcols);
+                   prows_a, pcols_a,
+                   prows_c, pcols_c
+                   );
         std::string info;
         if (!valid(info)) {
             std::runtime_error("WRONG PXGEMR2D PARAMETER: " + info);
@@ -148,11 +163,15 @@ struct pxgemr2d_params {
     pxgemr2d_params(int m, int n,
                   int block_a1, int block_a2,
                   int block_c1, int block_c2,
-                  int prows, int pcols) {
+                  int prows_a, int pcols_a,
+                  int prows_c, int pcols_c
+                  ) {
         initialize(m, n,
                    block_a1, block_a2,
                    block_c1, block_c2,
-                   prows, pcols);
+                   prows_a, pcols_a,
+                   prows_c, pcols_c
+                   );
         std::string info;
         if (!valid(info)) {
             std::runtime_error("WRONG PXGEMR2D PARAMETER: " + info);
@@ -179,8 +198,12 @@ struct pxgemr2d_params {
         int lld_a, int lld_c,
 
         // processor grid
-        int p_rows, int p_cols,
-        char order,
+        int p_rows_a, int p_cols_a,
+        int p_rows_c, int p_cols_c,
+
+        // processor grid order
+        char order_a,
+        char order_c,
 
         // processor srcs
         int src_ma, int src_na, // matrix A
@@ -199,9 +222,10 @@ struct pxgemr2d_params {
 
         lld_a(lld_a), lld_c(lld_c),
 
-        order(std::toupper(order)),
-        p_rows(p_rows), p_cols(p_cols),
-        P(p_rows * p_cols),
+        order_a(std::toupper(order_a)),
+        order_c(std::toupper(order_c)),
+        p_rows_a(p_rows_a), p_cols_c(p_cols_c),
+        P(std::max(p_rows_a * p_cols_a, p_rows_c * p_cols_c)),
 
         src_ma(src_ma), src_na(src_na),
         src_mc(src_mc), src_nc(src_nc)
@@ -218,8 +242,12 @@ struct pxgemr2d_params {
     //     returns false and info = name of the incorrectly set variable;
     bool valid(std::string& info) {
         info = "";
-        if (order != 'R' && order != 'C') {
-            info = "oder = " + std::to_string(order);
+        if (order_a != 'R' && order_a != 'C') {
+            info = "oder_a = " + std::to_string(order_a);
+            return false;
+        }
+        if (order_c != 'R' && order_c != 'C') {
+            info = "oder_c = " + std::to_string(order_c);
             return false;
         }
 
@@ -231,14 +259,18 @@ struct pxgemr2d_params {
              bma, bna, bmc, bnc,
              m, n,
              lld_a, lld_c,
-             p_rows, p_cols, P,
+             p_rows_a, p_cols_a,
+             p_rows_c, p_cols_c,
+             P
         };
         std::vector<std::string> positive_labels = {
              "ma", "na", "mc", "nc",
              "bma", "bna", "bmc", "bnc",
              "m", "n",
              "lld_a", "lld_c",
-             "p_rows", "p_cols", "P"
+             "p_rows_a", "p_cols_a",
+             "p_rows_c", "p_cols_c",
+             "P"
         };
         for (int i = 0; i < positive.size(); ++i) {
             if (positive[i] < 0) {
@@ -338,8 +370,8 @@ struct pxgemr2d_params {
         // *************************************************
         // check leading dimensions
         // *************************************************
-        int min_lld_a = scalapack::min_leading_dimension(ma, bma, p_rows);
-        int min_lld_c = scalapack::min_leading_dimension(mc, bmc, p_rows);
+        int min_lld_a = scalapack::min_leading_dimension(ma, bma, p_rows_a);
+        int min_lld_c = scalapack::min_leading_dimension(mc, bmc, p_rows_c);
 
         if (lld_a < min_lld_a) {
             info = "lld_a = " + std::to_string(min_lld_a);
@@ -373,8 +405,10 @@ struct pxgemr2d_params {
         os << "=============================" << std::endl;
         os << "         PROC GRID" << std::endl;
         os << "=============================" << std::endl;
-        os << "grid = " << obj.p_rows << " x " << obj.p_cols << std::endl;
-        os << "grid order = " << obj.order << std::endl;
+        os << "grid_a = " << obj.p_rows_a << " x " << obj.p_cols_a << std::endl;
+        os << "grid_c = " << obj.p_rows_c << " x " << obj.p_cols_c << std::endl;
+        os << "grid order_a = " << obj.order_a << std::endl;
+        os << "grid order_c = " << obj.order_c << std::endl;
         os << "=============================" << std::endl;
         os << "         PROC SRCS" << std::endl;
         os << "=============================" << std::endl;

@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-
 # Check if COSTA is a subproject.
 #
 set(MASTER_PROJECT OFF)
@@ -81,16 +80,6 @@ set(SCALAPACK_TARGET "")
 if (${COSTA_SCALAPACK} STREQUAL "MKL")
     find_package(MKL REQUIRED)
     set(SCALAPACK_TARGET "mkl::scalapack_${MPI_TYPE}_intel_32bit_omp_dyn")
-    if (TARGET mkl::mkl_intel_32bit_omp_dyn)
-        message("FOUND TARGET: mkl::mkl_intel_32bit_omp_dyn")
-    else()
-        message("CANNOT FIND TARGET: mkl::mkl_intel_32bit_omp_dyn")
-    endif()
-    if (TARGET ${SCALAPACK_TARGET})
-        message("FOUND TARGET: ${SCALAPACK_TARGET}")
-    else()
-        message("CANNOT FIND TARGET: ${SCALAPACK_TARGET}")
-    endif()
 elseif (${COSTA_SCALAPACK} STREQUAL "CRAY_LIBSCI")
     find_package(CRAY_LIBSCI REQUIRED)
     set(SCALAPACK_TARGET "${CRAY_LIBSCI_LIBRARIES}")

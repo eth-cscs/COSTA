@@ -71,10 +71,12 @@ endif()
 #
 
 # Do not install cxxopts when including it.
-option(CXXOPTS_BUILD_EXAMPLES OFF)
-option(CXXOPTS_BUILD_TESTS OFF)
-option(CXXOPTS_ENABLE_INSTALL OFF)
-add_subdirectory(libs/cxxopts)
+if (COSTA_WITH_TESTS OR COSTA_WITH_APPS)
+    option(CXXOPTS_BUILD_EXAMPLES OFF)
+    option(CXXOPTS_BUILD_TESTS OFF)
+    option(CXXOPTS_ENABLE_INSTALL OFF)
+    add_subdirectory(libs/cxxopts)
+endif()
 
 # ScaLAPACK providers
 #

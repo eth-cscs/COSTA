@@ -1,3 +1,4 @@
+#
 # CMake recipes
 # https://github.com/eth-cscs/cmake-recipes
 #
@@ -74,7 +75,7 @@ BLACS targets:
 
 mkl::blacs_[mpich|ompi]_[gf|intel]_[32bit|64bit]_[seq|omp|tbb]_[st|dyn] e.g.
 
-mkl::blacs_mpich_intel_32bit_seq_st
+mkl::blacs_intel_mpich_32bit_seq_st
 
 ScaLAPACK targets:
 
@@ -123,6 +124,7 @@ set(_mkl_libpath_suffix "lib/intel64")
 if(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32 bit
     set(_mkl_libpath_suffix "lib/ia32")
 endif()
+list(APPEND _mkl_libpath_suffix "lib")
 
 if(WIN32)
     string(APPEND _mkl_libpath_suffix "_win")
@@ -142,7 +144,7 @@ else() # LINUX
 endif()
 set(_mkl_search_paths "${MKL_ROOT}"
     "${MKL_ROOT}/mkl"
-    "${MKL_ROOT}/lib"
+    "${MKL_ROOT}/libs"
     "${MKL_ROOT}/compiler")
 
 # Functions: finds both static and shared MKL libraries

@@ -63,7 +63,9 @@ assigned_grid2D::assigned_grid2D(grid2D &&g,
 
 // returns the rank owning block (i, j)
 int assigned_grid2D::owner(int i, int j) const { 
-    return reordered_rank(ranks[i][j]);
+    int b_row = transposed ? j : i;
+    int b_col = transposed ? i : j;
+    return reordered_rank(ranks[b_row][b_col]);
 }
 
 // returns a grid
@@ -90,23 +92,20 @@ int assigned_grid2D::block_size(int row_index, int col_index) {
            cols_interval(col_index).length();
 }
 
-std::vector<std::vector<int>>
-assigned_grid2D::transpose(const std::vector<std::vector<int>> &v) {
-    int m = v.size();
-    int n = v.size() == 0 ? 0 : v[0].size();
-
-    std::vector<std::vector<int>> transposed(n, std::vector<int>(m));
-    for (int i = 0; i < m; ++i) {
-        for (int j = 0; j < n; ++j) {
-            transposed[j][i] = v[i][j];
-        }
-    }
-    return transposed;
-}
-
 void assigned_grid2D::transpose() {
     g.transpose();
-    ranks = transpose(ranks);
+    // ranks = transpose(ranks);
+    transposed = !transposed;
+}
+
+void assigned_grid2D::transpose(char trans) {
+    char flag = std::toupper(trans);
+    assert(flag == 'N' || flag == 'T' || flag == 'C');
+    if (flag != 'N') {
+        g.transpose();
+        // ranks = transpose(ranks);
+        transposed = !transposed;
+    }
 }
 
 void assigned_grid2D::reorder_ranks(std::vector<int>& reordering) {

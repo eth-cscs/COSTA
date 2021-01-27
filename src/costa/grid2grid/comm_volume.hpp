@@ -84,7 +84,7 @@ struct weighted_edge_t {
 };
 
 struct comm_volume {
-    using volume_t = std::unordered_map<edge_t, int>;
+    using volume_t = std::unordered_map<edge_t, size_t>;
     volume_t volume;
 
     comm_volume() = default;
@@ -94,23 +94,23 @@ struct comm_volume {
     comm_volume& operator+=(const comm_volume& other) {
         for (const auto& vol : other.volume) {
             auto& e = vol.first;
-            int w = vol.second;
-            volume[e.sorted()] += w;
+            auto w = vol.second;
+            volume[e.sorted()] += (size_t) w;
         }
         return *this;
     }
 
     comm_volume operator+(const comm_volume& other) const {
-      comm_volume res;
-      for (const auto& vol : volume) {
-          auto& e = vol.first;
-          auto w = vol.second;
-          res.volume[e.sorted()] += w;
-      }
-        for (const auto& vol : other.volume) {
+        comm_volume res;
+        for (const auto& vol : volume) {
             auto& e = vol.first;
             auto w = vol.second;
             res.volume[e.sorted()] += w;
+        }
+        for (const auto& vol : other.volume) {
+            auto& e = vol.first;
+            auto w = vol.second;
+            res.volume[e.sorted()] += (size_t) w;
         }
         return res;
     }
@@ -119,7 +119,7 @@ struct comm_volume {
         size_t sum = 0;
         for (const auto& vol : volume) {
             auto& e = vol.first;
-            int w = vol.second;
+            auto w = vol.second;
             // if not a local communication, count it
             if (e.src != e.dest) {
                 assert(w > 0);
@@ -133,7 +133,7 @@ struct comm_volume {
         os << "Communication volume consists of the following:" << std::endl;
         for (const auto& vol : other.volume) {
             auto& e = vol.first;
-            int w = vol.second;
+            auto w = vol.second;
             os << e.src << "->" << e.dest << ": " << w << std::endl;
         }
         return os;

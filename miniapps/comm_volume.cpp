@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
                                std::move(owners_c), P};
 
     bool reordered = false;
-    auto comm_vol = costa::communication_volume(init_grid, target_grid);
+    auto comm_vol = costa::communication_volume(init_grid, target_grid, 'N');
     std::vector<int> rank_permutation = costa::optimal_reordering(comm_vol, P, reordered);
     target_grid.reorder_ranks(rank_permutation);
     for (int i = 0; i < P; ++i) {
@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
     }
 
     // percent of communication volume reduction
-    auto new_comm_vol = costa::communication_volume(init_grid, target_grid);
+    auto new_comm_vol = costa::communication_volume(init_grid, target_grid, 'N');
 
     auto comm_vol_total = comm_vol.total_volume();
     auto new_comm_vol_total = new_comm_vol.total_volume();

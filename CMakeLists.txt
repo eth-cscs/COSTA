@@ -12,8 +12,10 @@ include(cmake/adjust_mpiexec_flags.cmake)
 
 # Options
 #
-set(COSTA_SCALAPACK "OFF" CACHE STRING
-    "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+if (NOT COSTA_SCALAPACK)
+    set(COSTA_SCALAPACK "OFF" CACHE STRING
+        "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+endif()
 set_property(CACHE COSTA_SCALAPACK PROPERTY STRINGS
     "OFF" "MKL" "CRAY_LIBSCI" "CUSTOM")
 

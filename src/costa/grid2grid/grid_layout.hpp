@@ -18,7 +18,7 @@ class grid_layout {
     void transpose_or_conjugate(char flag) {
         flag = std::toupper(flag);
         assert(flag == 'N' || flag == 'T' || flag == 'C');
-        if (flag == 'T' || flag == 'C') {
+        if (flag != 'N') {
             grid.transpose();
             blocks.transpose_or_conjugate(flag);
         }

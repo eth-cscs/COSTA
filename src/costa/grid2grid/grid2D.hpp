@@ -74,6 +74,7 @@ class assigned_grid2D {
     // if flag='T' => transpose
     // if flag='C' => transpose and conjugate
     void transpose();
+    void transpose(char flag);
 
     void reorder_ranks(std::vector<int>& reordering);
 
@@ -114,8 +115,7 @@ class assigned_grid2D {
     friend bool operator==(assigned_grid2D const &,
                            assigned_grid2D const &) noexcept;
 
-    std::vector<std::vector<int>>
-    transpose(const std::vector<std::vector<int>> &v);
+    bool transposed = false;
 
     grid2D g;
     std::vector<std::vector<int>> ranks;

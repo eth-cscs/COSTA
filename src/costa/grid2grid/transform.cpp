@@ -7,13 +7,16 @@
 namespace costa {
 
 comm_volume communication_volume(assigned_grid2D& g_init,
-                                 assigned_grid2D& g_final) {
+                                 assigned_grid2D& g_final,
+                                 char trans) {
+    // transpose
+    g_init.transpose(trans);
     grid_cover g_cover(g_init.grid(), g_final.grid());
 
     int n_blocks_row = g_init.grid().n_rows;
     int n_blocks_col = g_init.grid().n_cols;
 
-    std::unordered_map<edge_t, int> weights;
+    std::unordered_map<edge_t, size_t> weights;
 
     for (int i = 0; i < n_blocks_row; ++i) {
         for (int j = 0; j < n_blocks_col; ++j) {
@@ -35,6 +38,8 @@ comm_volume communication_volume(assigned_grid2D& g_init,
         }
     }
 
+    // transpose back
+    g_init.transpose(trans);
     return comm_volume(std::move(weights));
 }
 

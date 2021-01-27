@@ -127,7 +127,7 @@ std::unordered_map<int, int> rank_to_comm_vol_for_block(
 
             int size = (row_end - row_start) * (col_end - col_start);
             // if non empty, add this block
-            if (size) {
+            if (size > 0) {
                 comm_vol[rank] += size;
             }
 

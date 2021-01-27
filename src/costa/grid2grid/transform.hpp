@@ -45,6 +45,7 @@ void transform(std::vector<layout_ref<T>>& initial_layouts,
 // compute the communication volume of transformation
 // (creates a graph of communication volumes between ranks)
 comm_volume communication_volume(assigned_grid2D& g_init,
-                                 assigned_grid2D& g_final);
+                                 assigned_grid2D& g_final,
+                                 char trans);
 
 } // namespace costa

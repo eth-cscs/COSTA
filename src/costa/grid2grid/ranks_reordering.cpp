@@ -28,7 +28,7 @@ std::vector<int> costa::optimal_reordering(comm_volume& comm_volume, int n_ranks
         w -= comm_volume.volume[edge_t{src, src}];
         w -= comm_volume.volume[edge_t{dest, dest}];
 
-        if (w) {
+        if (w > 0) {
             sorted_edges.push_back(weighted_edge_t(src, dest, w));
         }
     }
@@ -41,7 +41,7 @@ std::vector<int> costa::optimal_reordering(comm_volume& comm_volume, int n_ranks
         if (visited[edge.src()] || visited[edge.dest()])
             continue;
 
-        if (edge.weight()) {
+        if (edge.weight() > 0) {
             // map src -> dest
             // take this edge to perfect matching
             permutation[edge.src()] = edge.dest();

@@ -96,6 +96,9 @@ endif ()
 
 # COSTA
 #
+if(COSTA_WITH_INSTALL)
+    include(GNUInstallDirs)
+endif()
 add_subdirectory(src/costa)
 
 if(COSTA_WITH_PROFILING)

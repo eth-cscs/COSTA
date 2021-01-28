@@ -54,6 +54,11 @@ if(isSystemDir STREQUAL "-1")
     set(CMAKE_INSTALL_RPATH ${basePoint} ${basePoint}/${relDir})
 endif()
 
+# include this so that all paths are set-up before adding subdirectories
+if(COSTA_WITH_INSTALL)
+    include(GNUInstallDirs)
+endif()
+
 # Dependencies
 #
 find_package(MPI COMPONENTS CXX REQUIRED)
@@ -96,9 +101,6 @@ endif ()
 
 # COSTA
 #
-if(COSTA_WITH_INSTALL)
-    include(GNUInstallDirs)
-endif()
 add_subdirectory(src/costa)
 
 if(COSTA_WITH_PROFILING)

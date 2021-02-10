@@ -107,7 +107,7 @@ struct comm_volume {
             auto& w = vol.second;
             // scale the weight by the cost given by topology
             auto scaling_cost = topology[e.src][e.dest];
-            w *= scaling_cost;
+            w /= scaling_cost;
         }
     }
 

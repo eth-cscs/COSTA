@@ -5,7 +5,7 @@ std::vector<std::vector<int>> costa::topology_cost(MPI_Comm comm) {
     MPI_Comm_size(comm, &P);
     // default cost factor 2
     // ranks sharing the same node will have the cost factor = 1
-    std::vector<std::vector<int>> cost(P, std::vector<int>(P, 2));
+    std::vector<std::vector<int>> cost(P, std::vector<int>(P, 1));
 
     // split global comm into local_comms where each local comm contains
     // all ranks which share the same node
@@ -51,8 +51,8 @@ std::vector<std::vector<int>> costa::topology_cost(MPI_Comm comm) {
         for (int j = i; j < P; ++j) {
             // if ranks share the same node, halve the cost
             if (rank2node[i] == rank2node[j]) {
-                cost[i][j] = 1;
-                cost[j][i] = 1;
+                cost[i][j] = 2;
+                cost[j][i] = 2;
             }
         }
     }

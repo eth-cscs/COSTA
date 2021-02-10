@@ -7,6 +7,67 @@
 
 namespace costa {
 namespace utils {
+
+std::vector<std::vector<int>> topology_cost(MPI_Comm comm) {
+    int P;
+    MPI_Comm_size(comm, &P);
+    // default cost factor 2
+    // ranks sharing the same node will have the cost factor = 1
+    std::vector<std::vector<int>> cost(P, std::vector<int>(P, 2));
+
+    // split global comm into local_comms where each local comm contains
+    // all ranks which share the same node
+    int rank, local_rank, local_size;
+    MPI_Comm local_comm;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, rank,  MPI_INFO_NULL, &local_comm);
+
+    // size of the local subcomm
+    int small_P;
+    MPI_Comm_size(local_comm, &small_P);
+
+    // global group
+    MPI_Group group;
+    MPI_Comm_group(comm, &group);
+
+    // local group
+    MPI_Group local_group;
+    MPI_Comm_group(local_comm, &local_group);
+
+    // we want to translate all local ranks (sharing the current node) 
+    // to their global identifiers
+    std::vector<int> local_ranks(small_P);
+    for (int i = 0; i < local_ranks.size(); ++i) {
+        local_ranks[i] = i;
+    }
+
+    std::vector<int> local2global(small_P);
+
+    // translate local-group ranks to global ranks
+    MPI_Group_translate_ranks(local_group, small_P, &local_ranks[0], 
+                              group, &local2global[0]);
+
+    // each node is labeled by the smallest rank residing on that node
+    int node_idx = *std::min_element(local2global.begin(), local2global.end());
+
+    std::vector<int> rank2node(P);
+
+    // each rank reports its local node
+    MPI_Allgather(&node_idx, 1, MPI_INT, &rank2node[0], 1, MPI_INT, comm);
+
+    for (int i = 0; i < P; ++i) {
+        for (int j = i; j < P; ++j) {
+            // if ranks share the same node, halve the cost
+            if (rank2node[i] == rank2node[j]) {
+                cost[i][j] = 1;
+                cost[j][i] = 1;
+            }
+        }
+    }
+
+    return cost;
+}
+
 template <typename T>
 std::vector<message<T>> decompose_block(const block<T> &b,
                                         grid_cover &g_cover,

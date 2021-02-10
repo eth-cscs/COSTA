@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <cassert>
 #include <iostream>
+#include <vector>
 
 namespace costa {
 struct edge_t {
@@ -98,6 +99,16 @@ struct comm_volume {
             volume[e.sorted()] += (size_t) w;
         }
         return *this;
+    }
+
+    void apply_topology(const std::vector<std::vector<int>>& topology) {
+        for (auto& vol : volume) {
+            auto& e = vol.first;
+            auto& w = vol.second;
+            // scale the weight by the cost given by topology
+            auto scaling_cost = topology[e.src][e.dest];
+            w *= scaling_cost;
+        }
     }
 
     comm_volume operator+(const comm_volume& other) const {

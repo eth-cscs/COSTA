@@ -10,6 +10,7 @@ if(NOT TARGET costa)
                       grid2grid/communication_data.cpp
                       grid2grid/grid_cover.cpp
                       grid2grid/ranks_reordering.cpp
+                      grid2grid/utils.cpp
                       grid2grid/transform.cpp
                       grid2grid/transformer.hpp
                       layout.cpp

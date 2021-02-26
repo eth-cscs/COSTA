@@ -3,10 +3,23 @@
 #include <costa/grid2grid/grid_layout.hpp>
 #include <costa/grid2grid/grid_cover.hpp>
 #include <costa/grid2grid/communication_data.hpp>
+#include <unordered_map>
 #include <algorithm>
+#include <vector>
 
 namespace costa {
+
+std::vector<std::vector<int>> topology_cost(MPI_Comm comm);
+
+
 namespace utils {
+
+std::unordered_map<int, int> rank_to_comm_vol_for_block(
+        const assigned_grid2D& g_init,
+        const block_coordinates &b_coord,
+        grid_cover &g_cover,
+        const assigned_grid2D& g_final);
+
 template <typename T>
 std::vector<message<T>> decompose_block(const block<T> &b,
                                         grid_cover &g_cover,
@@ -88,55 +101,6 @@ std::vector<message<T>> decompose_blocks(const grid_layout<T> &init_layout,
     return messages;
 }
 
-std::unordered_map<int, int> rank_to_comm_vol_for_block(
-        const assigned_grid2D& g_init,
-        const block_coordinates &b_coord,
-        grid_cover &g_cover,
-        const assigned_grid2D& g_final) {
-    // std::cout << "decomposing block " << b << std::endl;
-    block_cover b_cover = g_cover.decompose_block(b_coord);
-
-    int row_first = b_cover.rows_cover.start_index;
-    int row_last = b_cover.rows_cover.end_index;
-
-    int col_first = b_cover.cols_cover.start_index;
-    int col_last = b_cover.cols_cover.end_index;
-
-    auto rows_interval = g_init.rows_interval(b_coord.row);
-    auto cols_interval = g_init.cols_interval(b_coord.col);
-
-    std::unordered_map<int, int> comm_vol;
-
-    int row_start = rows_interval.start;
-    // use start of the interval to get the rank and the end of the interval
-    // to get the block which has to be sent
-    // skip the last element
-    for (int i = row_first; i < row_last; ++i) {
-        int row_end = std::min(g_final.grid().rows_split[i + 1], rows_interval.end);
-
-        int col_start = cols_interval.start;
-        for (int j = col_first; j < col_last; ++j) {
-            // use i, j to find out the rank
-            int rank = g_final.owner(i, j);
-            // std::cout << "owner of block " << i << ", " << j << " is " <<
-            // rank << std::endl;
-
-            // use i+1 and j+1 to find out the block
-            int col_end =
-                std::min(g_final.grid().cols_split[j + 1], cols_interval.end);
-
-            int size = (row_end - row_start) * (col_end - col_start);
-            // if non empty, add this block
-            if (size > 0) {
-                comm_vol[rank] += size;
-            }
-
-            col_start = col_end;
-        }
-        row_start = row_end;
-    }
-    return comm_vol;
-}
 
 template <typename T>
 void merge_messages(std::vector<message<T>> &messages) {

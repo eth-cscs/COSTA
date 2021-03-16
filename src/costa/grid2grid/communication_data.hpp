@@ -1,6 +1,7 @@
 #pragma once
 #include <costa/grid2grid/block.hpp>
 #include <costa/grid2grid/memory_utils.hpp>
+#include <costa/grid2grid/tiling_manager.hpp>
 
 #include <chrono>
 #include <memory>
@@ -12,7 +13,9 @@ class message {
   public:
     message() = default;
 
-    message(block<T> b, int rank);
+    message(block<T> b, int rank, 
+            T alpha=T{1}, T beta=T{0}, 
+            char trans='N', char ordering = 'C');
 
     block<T> get_block() const;
 
@@ -23,6 +26,9 @@ class message {
 
     T alpha = T{1};
     T beta = T{0};
+    bool transpose = false;
+    bool conjugate = false;
+    bool col_major = true;
 
   private:
     block<T> b;
@@ -47,27 +53,20 @@ class communication_data {
     int my_rank;
     int n_packed_messages = 0;
 
+    // tiling manager, used only for transposing
+    memory::tiling_manager<T> tiling;
+
     communication_data() = default;
 
     communication_data(std::vector<message<T>> &msgs, int my_rank, int n_ranks);
 
     // copy all mpi_messages to buffer
     void copy_to_buffer();
-    // copy mpi_messages within the idx-th package
-    // a package includes all mpi_messages
-    // to be sent to the same rank
-    void copy_to_buffer(int idx);
 
-    // copy all mpi_messages from buffer
-    void copy_from_buffer();
     // copy mpi_messages within the idx-th package
     // a package includes all mpi_messages
     // received from the same rank
     void copy_from_buffer(int idx);
-
-    // copies from buffer and performs: dest = beta * dest + alpha * src
-    // where src refers to the data in the buffer and dest this communication data
-    void copy_from_buffer_and_scale(int idx, T alpha, T beta);
 
     T *data();
 
@@ -79,10 +78,6 @@ class communication_data {
 };
 
 template <typename T>
-void copy_local_blocks(std::vector<message<T>>& from, std::vector<message<T>>& to);
-
-template <typename T>
-void copy_local_blocks_and_scale(std::vector<message<T>>& from, 
-                                 std::vector<message<T>>& to,
-                                 T alpha, T beta);
+void copy_local_blocks(std::vector<message<T>>& from, 
+                       std::vector<message<T>>& to);
 } // namespace costa

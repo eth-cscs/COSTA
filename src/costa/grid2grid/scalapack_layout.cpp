@@ -264,7 +264,8 @@ grid_layout<T> get_scalapack_layout(
                      {cols_split[j], cols_split[j + 1]}, // cols
                      {i, j},                             // blk coords
                      ptr + data_offset,
-                     lld});
+                     lld,
+                     'C'});
             }
         }
     }

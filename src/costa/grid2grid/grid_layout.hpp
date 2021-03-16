@@ -15,12 +15,12 @@ class grid_layout {
 
     int num_ranks() const { return grid.num_ranks(); }
 
-    void transpose_or_conjugate(char flag) {
+    void transpose(char flag) {
         flag = std::toupper(flag);
         assert(flag == 'N' || flag == 'T' || flag == 'C');
         if (flag != 'N') {
             grid.transpose();
-            blocks.transpose_or_conjugate(flag);
+            blocks.transpose(flag);
         }
     }
 

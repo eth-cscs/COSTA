@@ -137,10 +137,10 @@ void transform(grid_layout<T> &initial_layout,
 
     auto send_data = 
         utils::prepare_to_send(initial_layout, final_layout, rank,
-                               T{1}, T{0});
+                               T{1}, T{0}, 'N');
     auto recv_data = 
         utils::prepare_to_recv(final_layout, initial_layout, rank,
-                               T{1}, T{0});
+                               T{1}, T{0}, 'N');
 
     // perform the communication
     exchange_async(send_data, recv_data, comm);
@@ -152,17 +152,16 @@ void transform(grid_layout<T> &initial_layout,
                const char trans,
                const T alpha, const T beta,
                MPI_Comm comm) {
-    // transpose the initial layout if specified
-    initial_layout.transpose_or_conjugate(trans);
-
     int rank;
     MPI_Comm_rank(comm, &rank);
 
     auto send_data =
-        utils::prepare_to_send(initial_layout, final_layout, rank, alpha, beta);
+        utils::prepare_to_send(initial_layout, final_layout, rank, 
+                               alpha, beta, trans);
 
     auto recv_data =
-        utils::prepare_to_recv(final_layout, initial_layout, rank, alpha, beta);
+        utils::prepare_to_recv(final_layout, initial_layout, rank, 
+                               alpha, beta, trans);
 
     // perform the communication
     exchange_async(send_data, recv_data, comm);
@@ -179,9 +178,10 @@ void transform(std::vector<layout_ref<T>>& from,
 
     std::vector<T> alpha(from.size(), T{1});
     std::vector<T> beta(to.size(), T{0});
+    std::vector<char> trans(to.size(), 'N');
 
-    auto send_data = utils::prepare_to_send(from, to, rank, &alpha[0], &beta[0]);
-    auto recv_data = utils::prepare_to_recv(to, from, rank, &alpha[0], &beta[0]);
+    auto send_data = utils::prepare_to_send(from, to, rank, &alpha[0], &beta[0], &trans[0]);
+    auto recv_data = utils::prepare_to_recv(to, from, rank, &alpha[0], &beta[0], &trans[0]);
 
     exchange_async(send_data, recv_data, comm);
 }
@@ -199,11 +199,11 @@ void transform(std::vector<layout_ref<T>>& from,
 
     // transpose each initial layout as specified by flags
     for (unsigned i = 0u; i < from.size(); ++i) {
-        from[i].get().transpose_or_conjugate(trans[i]);
+        from[i].get().transpose(trans[i]);
     }
 
-    auto send_data = utils::prepare_to_send(from, to, rank, alpha, beta);
-    auto recv_data = utils::prepare_to_recv(to, from, rank, alpha, beta);
+    auto send_data = utils::prepare_to_send(from, to, rank, alpha, beta, trans);
+    auto recv_data = utils::prepare_to_recv(to, from, rank, alpha, beta, trans);
 
     exchange_async(send_data, recv_data, comm);
 }

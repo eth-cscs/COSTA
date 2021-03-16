@@ -8,9 +8,31 @@ namespace costa {
 //     MESSAGE
 // *********************
 template <typename T>
-message<T>::message(block<T> b, int rank)
+message<T>::message(block<T> b, int rank,
+        T alpha, T beta,
+        char trans, char ordering)
     : b(b)
-    , rank(rank) {}
+    , rank(rank)
+    , alpha(alpha)
+    , beta(beta) {
+
+    // ignore upper/lower-case
+    trans = std::toupper(trans);
+    ordering = std::toupper(ordering);
+
+    // check if the values are valid
+    assert(trans == 'N' || trans == 'T' || trans == 'C');
+    assert(ordering == 'R' || ordering == 'C');
+
+    // set boolean variables based on given chars
+    transpose = trans != 'N';
+    col_major = ordering == 'C';
+
+    // check if the data type is complex
+    bool is_complex = std::is_same<T, std::complex<double>>::value ||
+                      std::is_same<T, std::complex<float>>::value;
+    conjugate = trans == 'C' && is_complex;
+}
 
 template <typename T>
 block<T> message<T>::get_block() const {
@@ -99,57 +121,24 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
 }
 
 template <typename T>
-void copy_block_to_buffer(block<T> b, T *dest_ptr) {
-    // std::cout << "copy block->buffer: " << b << std::endl;
-    // std::cout << "copy block->buffer" << std::endl;
-    if (!b.transpose_on_copy)
-        memory::copy2D(b.size(), b.data, b.stride, dest_ptr, b.n_rows());
-    else {
-        // stride in the destination
-        // is the number of columns
-        // because block b will be transposed
-        // in the buffer without any stride
-        // (we make the buffer packed)
-        int dest_stride = b.n_rows();
-        memory::copy_and_transpose(b, dest_ptr, dest_stride);
-        // b.stride = b.n_cols();
-    }
-}
-
-template <typename T>
-void copy_block_from_buffer_and_scale(T *src_ptr, block<T> &b, T alpha, T beta) {
-    // std::cout << "copy buffer->block" << std::endl;
-    memory::copy2D_and_scale(b.size(), src_ptr, b.n_rows(), b.data, b.stride, 
-                             alpha, beta);
-}
-
-template <typename T>
-void copy_block_from_buffer(T *src_ptr, block<T> &b) {
-    // std::cout << "copy buffer->block" << std::endl;
-    memory::copy2D(b.size(), src_ptr, b.n_rows(), b.data, b.stride);
-}
-
-template <typename T>
 void communication_data<T>::copy_to_buffer() {
     if (mpi_messages.size()) {
 #pragma omp parallel for schedule(dynamic, 1)
         for (unsigned i = 0; i < mpi_messages.size(); ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
-            copy_block_to_buffer(b, data() + offset_per_message[i]);
-        }
-    }
-}
 
-template <typename T>
-void communication_data<T>::copy_to_buffer(int idx) {
-    assert(idx >= 0 && idx+1 < package_ticks.size());
-    if (package_ticks[idx+1] - package_ticks[idx]) {
-#pragma omp parallel for schedule(dynamic, 1)
-        for (unsigned i = package_ticks[idx]; i < package_ticks[idx+1]; ++i) {
-            const auto &m = mpi_messages[i];
-            block<T> b = m.get_block();
-            copy_block_to_buffer(b, data() + offset_per_message[i]);
+            copy_and_transform(b.n_rows(), b.n_cols(),
+                               b.data, b.stride, b.ordering, 
+                               // dest_ptr
+                               data() + offset_per_message[i],
+                               0,
+                               m.col_major,
+                               false, // no transpose on copy to buffer
+                               false, // no conjugate on copy to buffer
+                               tiling,
+                               T{1}, T{0} // no scaling on copy to buffer
+                               );
         }
     }
 }
@@ -162,29 +151,14 @@ void communication_data<T>::copy_from_buffer(int idx) {
         for (unsigned i = package_ticks[idx]; i < package_ticks[idx+1]; ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
-            if (m.alpha != T{1} || m.beta != T{0}) {
-                copy_block_from_buffer_and_scale(data() + offset_per_message[i], b, 
-                                                 m.alpha, m.beta);
-            } else {
-                copy_block_from_buffer(data() + offset_per_message[i], b);
-            }
-        }
-    }
-}
-
-template <typename T>
-void communication_data<T>::copy_from_buffer() {
-    if (mpi_messages.size()) {
-#pragma omp parallel for schedule(dynamic, 1)
-        for (unsigned i = 0; i < mpi_messages.size(); ++i) {
-            const auto &m = mpi_messages[i];
-            block<T> b = m.get_block();
-            if (m.alpha != T{1} || m.beta != T{0}) {
-                copy_block_from_buffer_and_scale(data() + offset_per_message[i], b,
-                                                 m.alpha, m.beta);
-            } else {
-                copy_block_from_buffer(data() + offset_per_message[i], b);
-            }
+            copy_and_transform(b.n_rows(), b.n_cols(),
+                               b.data, 0, m.col_major, 
+                               data() + offset_per_message[i],
+                               b.stride, b.ordering,
+                               m.transpose,
+                               m.conjugate,
+                               tiling,
+                               m.alpha, m.beta);
         }
     }
 }
@@ -195,58 +169,33 @@ T *communication_data<T>::data() {
 }
 
 template <typename T>
-void copy_block_to_block_and_scale(block<T>& src, block<T>& dest, 
-                                   T alpha, T beta) {
-    // std::cout << "copy buffer->block" << std::endl;
-    if (!src.transpose_on_copy) {
-        memory::copy2D_and_scale(src.size(), src.data, src.stride, 
-                                 dest.data, dest.stride,
-                                 alpha, beta);
-    } else {
-        // transpose and conjugate if necessary while copying
-        memory::copy_transpose_and_scale(src, dest.data, dest.stride,
-                                             alpha, beta);
-    }
-}
-
-template <typename T>
-void copy_block_to_block(block<T>& src, block<T>& dest) {
-    // std::cout << "copy buffer->block" << std::endl;
-    if (!src.transpose_on_copy) {
-        memory::copy2D(src.size(), src.data, src.stride, 
-                       dest.data, dest.stride);
-    } else {
-        // transpose and conjugate if necessary while copying
-        memory::copy_and_transpose(src, dest.data, dest.stride);
-    }
-}
-
-template <typename T>
 void copy_local_blocks(std::vector<message<T>>& from,
                        std::vector<message<T>>& to) {
     assert(from.size() == to.size());
     if (from.size() > 0) {
-#pragma omp parallel for
+    memory::tiling_manager<T> tiling;
+#pragma omp parallel for 
         for (unsigned i = 0u; i < from.size(); ++i) {
             assert(from[i].alpha == to[i].alpha);
             assert(from[i].beta == to[i].beta);
-            auto block_src = from[i].get_block();
-            auto block_dest = to[i].get_block();
-            assert(block_src.non_empty());
-            assert(block_dest.non_empty());
-            assert(block_src.total_size() == block_dest.total_size());
-            // destination block cannot be transposed
-            assert(!block_dest.transpose_on_copy);
+            assert(from[i].transpose == to[i].transpose);
+            assert(from[i].conjugate == to[i].conjugate);
+            assert(from[i].get_rank() == to[i].get_rank());
 
-            const auto& alpha = from[i].alpha;
-            const auto& beta = from[i].beta;
+            auto b_src = from[i].get_block();
+            auto b_dest = to[i].get_block();
+            assert(b_src.non_empty());
+            assert(b_dest.non_empty());
+            assert(b_src.total_size() == b_dest.total_size());
 
-            if (alpha != T{1} || beta != T{0}) {
-                copy_block_to_block_and_scale(block_src, block_dest,
-                                    alpha, beta);
-            } else {
-                copy_block_to_block(block_src, block_dest);
-            }
+            copy_and_transform(b_src.n_rows(), b_src.n_cols(),
+                               b_src.data, b_src.stride, b_src.ordering,
+                               b_dest.data,
+                               b_dest.stride, b_dest.ordering,
+                               from[i].transpose,
+                               from[i].conjugate,
+                               tiling,
+                               from[i].alpha, from[i].beta);
     }
     }
 }

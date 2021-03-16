@@ -15,297 +15,316 @@ namespace costa {
 namespace memory {
 
 // copies n entries of elem_type from src_ptr to desc_ptr
+// if alpha!=1 or beta != 0, then also performs: 
+//     dest[i] = alpha * src[i] + beta*dest[i]
 template <typename elem_type>
-void copy(std::size_t n, const elem_type *src_ptr, elem_type *dest_ptr) {
+void copy(const std::size_t n, const elem_type *src_ptr,
+          elem_type *dest_ptr,
+          const bool should_conjugate = false,
+          const elem_type alpha=elem_type{1},
+          const elem_type beta=elem_type{0}) {
     static_assert(std::is_trivially_copyable<elem_type>(),
                   "Element type must be trivially copyable!");
-    std::memcpy(dest_ptr, src_ptr, sizeof(elem_type) * n);
-}
-
-// copies n entries of elem_type from src_ptr to desc_ptr
-template <typename elem_type>
-void copy_and_scale(std::size_t n, 
-                    const elem_type *src_ptr, elem_type *dest_ptr, 
-                    elem_type alpha, elem_type beta) {
-    static_assert(std::is_trivially_copyable<elem_type>(),
-                  "Element type must be trivially copyable!");
-    if (alpha == elem_type{1} && beta == elem_type{0}) {
-        copy(n, src_ptr, dest_ptr);
-        return;
-    }
-    for (int i = 0; i < n; ++i) {
-        dest_ptr[i] = beta * dest_ptr[i] + alpha * src_ptr[i];
+    bool perform_operation = std::abs(alpha - elem_type{1}) > 0 || std::abs(beta - elem_type{0}) > 0;
+    if (!perform_operation && !should_conjugate) {
+        std::memcpy(dest_ptr, src_ptr, sizeof(elem_type) * n);
+    } else {
+        for (int i = 0; i < n; ++i) {
+            auto el = src_ptr[i];
+            if (should_conjugate) {
+                el = conjugate(el);
+            }
+            dest_ptr[i] = beta * dest_ptr[i] + alpha * el;
+        }
     }
 }
 
 // copies 2D block of given size from src_ptr with stride ld_src
 // to dest_ptr with stride ld_dest
 template <class elem_type>
-void copy2D(const std::pair<size_t, size_t> &block_dim,
-            const elem_type *src_ptr,
-            int ld_src,
-            elem_type *dest_ptr,
-            int ld_dest,
-            bool col_major = true) {
+void copy2D(int n_rows, int n_cols,
+            const elem_type *src_ptr, const int ld_src,
+            elem_type *dest_ptr, const int ld_dest,
+            const bool should_conjugate = false,
+            const elem_type alpha = elem_type{1},
+            const elem_type beta = elem_type{0},
+            const bool col_major = true) {
     static_assert(std::is_trivially_copyable<elem_type>(),
                   "Element type must be trivially copyable!");
-    auto block_size = block_dim.first * block_dim.second;
+    auto block_size = n_rows * n_cols;
     // std::cout << "invoking copy2D." << std::endl;
-    if (!block_size) {
-        return;
-    }
+    assert(block_size >= 0);
 
-    auto dim = block_dim;
-    if (!col_major) {
-        dim = std::make_pair(block_dim.second, block_dim.first);
+    // stop if 0-sized
+    if (block_size == 0) return;
+
+    if (col_major) {
+        std::swap(n_rows, n_cols);
     }
 
     // if not strided, copy in a single piece
-    if (dim.first == (size_t)ld_src &&
-        dim.first == (size_t)ld_dest) {
-        copy(block_size, src_ptr, dest_ptr);
+    if (n_rows == (size_t)ld_src &&
+        n_rows == (size_t)ld_dest) {
+        copy(block_size, src_ptr, dest_ptr, should_conjugate, alpha, beta);
     } else {
         // if strided, copy column-by-column
         // #pragma omp task firstprivate(dim, src_ptr, ld_src, dest_ptr, ld_dest)
-        for (size_t col = 0; col < dim.second; ++col) {
+        for (size_t col = 0; col < n_cols; ++col) {
             // #pragma omp task firstprivate(dim, src_ptr, ld_src, col, dest_ptr, ld_dest)
-            copy(dim.first,
+            copy(n_rows,
                  src_ptr + ld_src * col,
-                 dest_ptr + ld_dest * col);
+                 dest_ptr + ld_dest * col, 
+                 should_conjugate, 
+                 alpha, beta);
         }
     }
 }
 
-// copies 2D block of given size from src_ptr with stride ld_src
-// to dest_ptr with stride ld_dest
-template <class elem_type>
-void copy2D_and_scale(const std::pair<size_t, size_t> &block_dim,
-            const elem_type *src_ptr,
-            int ld_src,
-            elem_type *dest_ptr,
-            int ld_dest,
-            elem_type alpha, elem_type beta,
-            bool col_major = true
-            ) {
-    static_assert(std::is_trivially_copyable<elem_type>(),
-                  "Element type must be trivially copyable!");
-    if (alpha == elem_type{1} && beta == elem_type{0}) {
-        copy2D(block_dim, src_ptr, ld_src, dest_ptr, ld_dest, col_major);
-        return;
-    }
-    auto block_size = block_dim.first * block_dim.second;
-    // std::cout << "invoking copy2D." << std::endl;
-    if (!block_size) {
-        return;
-    }
+// transpose (out of place) data that is in col-major order
+template <typename T>
+void transpose_col_major(const int n_rows, const int n_cols, 
+               const T* src_ptr, const int src_stride, 
+               T* dest_ptr, const int dest_stride, 
+               const bool should_conjugate, 
+               const tiling_manager<T>& tiling,
+               const T alpha=T{1}, const T beta=T{0}) {
+    static_assert(std::is_trivially_copyable<T>(),
+            "Element type must be trivially copyable!");
+    // n_rows and n_cols before transposing
+    // int block_dim = std::max(8, 128/(int)sizeof(T));
+    int block_dim = tiling.block_dim;
 
-    auto dim = block_dim;
-    if (!col_major) {
-        dim = std::make_pair(block_dim.second, block_dim.first);
-    }
+    int n_blocks_row = (n_rows+block_dim-1)/block_dim;
+    int n_blocks_col = (n_cols+block_dim-1)/block_dim;
+    int n_blocks = n_blocks_row * n_blocks_col;
 
-    // if not strided, copy in a single piece
-    if (dim.first == (size_t)ld_src &&
-        dim.first == (size_t)ld_dest) {
-        copy_and_scale(block_size, src_ptr, dest_ptr, alpha, beta);
+    int n_threads = std::min(n_blocks, tiling.max_threads);
+
+    bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
+
+#pragma omp parallel for num_threads(n_threads)
+    for (int block = 0; block < n_blocks; ++block) {
+        int thread_id = omp_get_thread_num();
+        int b_offset = thread_id * block_dim;
+
+        // col-major traversing blocks
+        int block_i = (block % n_blocks_row) * block_dim;
+        int block_j = (block / n_blocks_row) * block_dim;
+
+        int upper_i = std::min(n_rows, block_i + block_dim);
+        int upper_j = std::min(n_cols, block_j + block_dim);
+
+        if (block_i == block_j) {
+            for (int i = block_i; i < upper_i; ++i) {
+                for (int j = block_j; j < upper_j; ++j) {
+                    // (i, j) in the original block, column-major
+                    auto el = src_ptr[j * src_stride + i];
+                    // auto el = b.local_element(i, j);
+                    // (j, i) in the send buffer, column-major
+                    if (should_conjugate)
+                        el = conjugate(el);
+                    tiling.buffer[b_offset + j-block_j] = el;
+                }
+                for (int j = block_j; j < upper_j; ++j) {
+                    auto& dst = dest_ptr[i*dest_stride + j];
+                    if (perform_operation) {
+                        dst = beta * dst + alpha * tiling.buffer[b_offset + j-block_j];
+                    } else {
+                        dst = tiling.buffer[b_offset + j-block_j];
+                    }
+                }
+            }
+        } else {
+            // #pragma omp task firstprivate(block_i, block_j, dest_ptr, ptr, stride, conj, n_rows_t)
+            for (int i = block_i; i < upper_i; ++i) {
+                for (int j = block_j; j < upper_j; ++j) {
+                    auto el = src_ptr[j * src_stride + i];
+                    // (i, j) in the original block, column-major
+                    // auto el = b.local_element(i, j);
+                    // (j, i) in the send buffer, column-major
+                    if (should_conjugate)
+                        el = conjugate(el);
+                    auto& dst = dest_ptr[i*dest_stride + j];
+                    if (perform_operation) {
+                        dst = beta * dst + alpha * el;
+                    } else {
+                        dst = el;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// transpose (out of place) data that is in row-major order
+template <typename T>
+void transpose_row_major(const int n_rows, const int n_cols, 
+               const T* src_ptr, const int src_stride, 
+               T* dest_ptr, const int dest_stride, 
+               const bool should_conjugate, 
+               const tiling_manager<T>& tiling,
+               const T alpha=T{1}, const T beta=T{0}) {
+    static_assert(std::is_trivially_copyable<T>(),
+            "Element type must be trivially copyable!");
+    // n_rows and n_cols before transposing
+    // int block_dim = std::max(8, 128/(int)sizeof(T));
+    int block_dim = tiling.block_dim;
+
+    int n_blocks_row = (n_rows+block_dim-1)/block_dim;
+    int n_blocks_col = (n_cols+block_dim-1)/block_dim;
+    int n_blocks = n_blocks_row * n_blocks_col;
+
+    int n_threads = std::min(n_blocks, tiling.max_threads);
+
+    bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
+
+#pragma omp parallel for num_threads(n_threads)
+    for (int block = 0; block < n_blocks; ++block) {
+        int thread_id = omp_get_thread_num();
+        int b_offset = thread_id * block_dim;
+
+        // row-major traversing blocks
+        int block_i = (block / n_blocks_row) * block_dim;
+        int block_j = (block % n_blocks_row) * block_dim;
+
+        int upper_i = std::min(n_rows, block_i + block_dim);
+        int upper_j = std::min(n_cols, block_j + block_dim);
+
+        if (block_i == block_j) {
+            for (int j = block_j; j < upper_j; ++j) {
+                for (int i = block_i; i < upper_i; ++i) {
+                    // (i, j) in the original block, column-major
+                    auto el = src_ptr[i * src_stride + j];
+                    // auto el = b.local_element(i, j);
+                    // (j, i) in the send buffer, column-major
+                    if (should_conjugate)
+                        el = conjugate(el);
+                    tiling.buffer[b_offset + i-block_i] = el;
+                }
+                for (int i = block_i; i < upper_i; ++i) {
+                    auto& dst = dest_ptr[j*dest_stride + i];
+                    if (perform_operation) {
+                        dst = beta * dst + alpha * tiling.buffer[b_offset + i-block_i];
+                    } else {
+                        dst = tiling.buffer[b_offset + i-block_i];
+                    }
+                }
+            }
+        } else {
+            // #pragma omp task firstprivate(block_i, block_j, dest_ptr, ptr, stride, conj, n_rows_t)
+            for (int j = block_j; j < upper_j; ++j) {
+                for (int i = block_i; i < upper_i; ++i) {
+                    auto el = src_ptr[i * src_stride + j];
+                    // (i, j) in the original block, column-major
+                    // auto el = b.local_element(i, j);
+                    // (j, i) in the send buffer, column-major
+                    if (should_conjugate)
+                        el = conjugate(el);
+                    auto& dst = dest_ptr[j*dest_stride + i];
+                    if (perform_operation) {
+                        dst = beta * dst + alpha * el;
+                    } else {
+                        dst = el;
+                    }
+                }
+            }
+        }
+    }
+}
+
+template <typename T>
+void transpose(const int n_rows, const int n_cols, 
+               const T* src_ptr, const int src_stride, 
+               T* dest_ptr, const int dest_stride, 
+               const bool should_conjugate, 
+               const tiling_manager<T>& tiling,
+               const T alpha=T{1}, const T beta=T{0},
+               const bool col_major=true) {
+    if (col_major) {
+        transpose_col_major(n_rows, n_cols, 
+                            src_ptr, src_stride,
+                            dest_ptr, dest_stride,
+                            should_conjugate,
+                            tiling,
+                            alpha, beta);
     } else {
-        // if strided, copy column-by-column
-        // #pragma omp task firstprivate(dim, src_ptr, ld_src, dest_ptr, ld_dest)
-        for (size_t col = 0; col < dim.second; ++col) {
-            // #pragma omp task firstprivate(dim, src_ptr, ld_src, col, dest_ptr, ld_dest)
-            copy_and_scale(dim.first,
-                           src_ptr + ld_src * col,
-                           dest_ptr + ld_dest * col,
-                           alpha, beta);
-        }
+        transpose_row_major(n_rows, n_cols, 
+                            src_ptr, src_stride,
+                            dest_ptr, dest_stride,
+                            should_conjugate,
+                            tiling,
+                            alpha, beta);
     }
 }
 
-// copy from block to MPI send buffer
+inline
+int default_stride(int n_rows, int n_cols, bool should_transpose, bool col_major) {
+    int stride = 0;
+    if (should_transpose) {
+        stride = col_major ? n_rows : n_cols;
+    } else {
+        stride = col_major ? n_cols : n_rows;
+    }
+    return stride;
+}
+
+
 template <typename T>
-void copy_and_transpose(T* src_ptr, const int n_rows, const int n_cols, 
-                        const int src_stride, 
-                        T* dest_ptr, int dest_stride, 
-                        bool conjugate_on_copy,
-                        tiling_manager<T>& tiling) {
-    static_assert(std::is_trivially_copyable<T>(),
-            "Element type must be trivially copyable!");
-    // n_rows and n_cols before transposing
-    // int block_dim = std::max(8, 128/(int)sizeof(T));
-    int block_dim = tiling.block_dim;
+void copy_and_transform(const int n_rows, const int n_cols,
+                        const T* src_ptr, int src_stride,
+                        const bool src_col_major,
+                        T* dest_ptr, int dest_stride,
+                        const bool dest_col_major,
+                        const bool should_transpose,
+                        const bool should_conjugate,
+                        const tiling_manager<T>& tiling,
+                        const T alpha=T{1}, const T beta=T{0}) {
+    // BE CAREFUL: transpose and different src and dest orderings might cancel out
+    // ===========
+    // Row-major + Transpose + Row-major = Transpose (Row-major)
+    // Col-major + Transpose + Col-major = Transpose (Col-major)
+    // Row-major + Transpose + Col-major = Copy(Row-major) // cancels out
+    // Col-major + Transpose + Row-major = Copy(Col-major) // cancels out
+    //
+    // Row-major + NoTranspose + Row-major = Copy(Row-major)
+    // Col-major + NoTranspose + Col-major = Copy(Col-major)
+    // Row-major + NoTranspose + Col-major = Transpose(Row-major)
+    // Col-major + NoTranspose + Row-major = Transpose(Col-major)
+    bool will_transpose = (should_transpose && src_col_major == dest_col_major)
+                           ||
+                          (!should_transpose && src_col_major != dest_col_major);
 
-    int n_blocks_row = (n_rows+block_dim-1)/block_dim;
-    int n_blocks_col = (n_cols+block_dim-1)/block_dim;
-    int n_blocks = n_blocks_row * n_blocks_col;
+    assert(dest_stride >= 0);
 
-    int n_threads = std::min(n_blocks, tiling.max_threads);
+    // if dest_stride == 0, then no stride (i.e. default stride)
+    if (dest_stride == 0) {
+        dest_stride = default_stride(n_rows, n_cols,
+                                     will_transpose, dest_col_major);
+    }
+    // if src_stride == 0, then no stride (i.e. default stride)
+    if (src_stride == 0) {
+        // src is not transposed
+        src_stride = default_stride(n_rows, n_cols,
+                                    false, src_col_major);
+    }
 
-#pragma omp parallel for num_threads(n_threads)
-    for (int block = 0; block < n_blocks; ++block) {
-        int thread_id = omp_get_thread_num();
-        int b_offset = thread_id * block_dim;
-
-        int block_i = (block % n_blocks_row) * block_dim;
-        int block_j = (block / n_blocks_row) * block_dim;
-
-        int upper_i = std::min(n_rows, block_i + block_dim);
-        int upper_j = std::min(n_cols, block_j + block_dim);
-
-        if (block_i == block_j) {
-            for (int i = block_i; i < upper_i; ++i) {
-                for (int j = block_j; j < upper_j; ++j) {
-                    // (i, j) in the original block, column-major
-                    auto el = src_ptr[j * src_stride + i];
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (conjugate_on_copy)
-                        el = conjugate(el);
-                    tiling.buffer[b_offset + j-block_j] = el;
-                }
-                for (int j = block_j; j < upper_j; ++j) {
-                    dest_ptr[i*dest_stride + j] = tiling.buffer[b_offset + j-block_j];
-                }
-            }
-        } else {
-            // #pragma omp task firstprivate(block_i, block_j, dest_ptr, ptr, stride, conj, n_rows_t)
-            for (int i = block_i; i < upper_i; ++i) {
-                for (int j = block_j; j < upper_j; ++j) {
-                    auto el = src_ptr[j * src_stride + i];
-                    // (i, j) in the original block, column-major
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (conjugate_on_copy)
-                        el = conjugate(el);
-                    dest_ptr[i*dest_stride + j] = el;
-                }
-            }
-        }
+    if (will_transpose) {
+        transpose(n_rows, n_cols,
+                  src_ptr, src_stride, 
+                  dest_ptr, dest_stride, 
+                  should_conjugate, 
+                  tiling,
+                  alpha, beta,
+                  src_col_major);
+    } else {
+        copy2D(n_rows, n_cols,
+               src_ptr, src_stride,
+               dest_ptr, dest_stride,
+               should_conjugate,
+               alpha, beta,
+               src_col_major);
     }
 }
 
-// copy from block to MPI send buffer
-template <typename T>
-void copy_transpose_and_scale(T* src_ptr, 
-                              const int n_rows, const int n_cols, 
-                              const int src_stride, 
-                              T* dest_ptr, 
-                              int dest_stride, 
-                              bool conjugate_on_copy, 
-                              tiling_manager<T>& tiling,
-                              T alpha, T beta) {
-    static_assert(std::is_trivially_copyable<T>(),
-            "Element type must be trivially copyable!");
-    if (alpha == T{1} && beta == T{0}) {
-        copy_and_transpose(src_ptr, n_rows, n_cols, src_stride,
-                           dest_ptr, dest_stride, conjugate_on_copy, tiling);
-        return;
-    }
-    // n_rows and n_cols before transposing
-    // int block_dim = std::max(8, 128/(int)sizeof(T));
-    int block_dim = tiling.block_dim;
-
-    int n_blocks_row = (n_rows+block_dim-1)/block_dim;
-    int n_blocks_col = (n_cols+block_dim-1)/block_dim;
-    int n_blocks = n_blocks_row * n_blocks_col;
-
-    int n_threads = std::min(n_blocks, tiling.max_threads);
-
-#pragma omp parallel for num_threads(n_threads)
-    for (int block = 0; block < n_blocks; ++block) {
-        int thread_id = omp_get_thread_num();
-        int b_offset = thread_id * block_dim;
-
-        int block_i = (block % n_blocks_row) * block_dim;
-        int block_j = (block / n_blocks_row) * block_dim;
-
-        int upper_i = std::min(n_rows, block_i + block_dim);
-        int upper_j = std::min(n_cols, block_j + block_dim);
-
-        if (block_i == block_j) {
-            for (int i = block_i; i < upper_i; ++i) {
-                for (int j = block_j; j < upper_j; ++j) {
-                    // (i, j) in the original block, column-major
-                    auto el = src_ptr[j * src_stride + i];
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (conjugate_on_copy)
-                        el = conjugate(el);
-                    tiling.buffer[b_offset + j-block_j] = el;
-                }
-                for (int j = block_j; j < upper_j; ++j) {
-                    auto& dst = dest_ptr[i*dest_stride + j];
-                    dst = beta * dst + alpha * tiling.buffer[b_offset + j-block_j];
-                }
-            }
-        } else {
-            // #pragma omp task firstprivate(block_i, block_j, dest_ptr, ptr, stride, conj, n_rows_t)
-            for (int i = block_i; i < upper_i; ++i) {
-                for (int j = block_j; j < upper_j; ++j) {
-                    auto el = src_ptr[j * src_stride + i];
-                    // (i, j) in the original block, column-major
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (conjugate_on_copy)
-                        el = conjugate(el);
-                    auto& dst = dest_ptr[i*dest_stride + j];
-                    dst = beta * dst + alpha * el;
-                }
-            }
-        }
-    }
-}
-
-template <typename T>
-void copy_and_transpose(T* src_ptr, const int n_rows, const int n_cols, const int src_stride, T* dest_ptr, int dest_stride, bool conjugate_on_copy) {
-    memory::tiling_manager<T> tiling;
-    copy_and_transpose(src_ptr, n_rows, n_cols, src_stride, dest_ptr, dest_stride, conjugate_on_copy, tiling);
-}
-
-// same as previous, but with alpha and beta scaling parameters
-template <typename T>
-void copy_transpose_and_scale(T* src_ptr, 
-                        const int n_rows, const int n_cols, 
-                        const int src_stride, 
-                        T* dest_ptr, int dest_stride, 
-                        bool conjugate_on_copy,
-                        T alpha, T beta) {
-    memory::tiling_manager<T> tiling;
-    copy_transpose_and_scale(src_ptr, n_rows, n_cols, src_stride, dest_ptr, dest_stride, conjugate_on_copy, tiling, alpha, beta);
-}
-
-// copy from block to MPI send buffer
-template <typename T>
-void copy_and_transpose(const block<T> b, T* dest_ptr, int dest_stride) {
-    assert(b.non_empty());
-    copy_and_transpose(b.data, b.n_cols(), b.n_rows(), b.stride, dest_ptr, dest_stride, b.conjugate_on_copy);
-}
-
-// as before, but with scaling
-template <typename T>
-void copy_transpose_and_scale(const block<T> b, T* dest_ptr, int dest_stride,
-                              T alpha, T beta) {
-    assert(b.non_empty());
-    copy_transpose_and_scale(b.data, b.n_cols(), b.n_rows(), b.stride, 
-                             dest_ptr, dest_stride, b.conjugate_on_copy, 
-                             alpha, beta);
-}
-
-// copy from block to MPI send buffer
-template <typename T>
-void copy_and_transpose(const block<T> b, T* dest_ptr, int dest_stride, tiling_manager<T>& tiling) {
-    assert(b.non_empty());
-    copy_and_transpose(b.data, b.n_cols(), b.n_rows(), b.stride, dest_ptr, dest_stride, b.conjugate_on_copy, tiling);
-}
-
-template <typename T>
-void copy_transpose_and_scale(const block<T> b, T* dest_ptr, int dest_stride, 
-                              tiling_manager<T>& tiling,
-                              T alpha, T beta) {
-    assert(b.non_empty());
-    copy_transpose_and_scale(b.data, b.n_cols(), b.n_rows(), b.stride, 
-                             dest_ptr, dest_stride, b.conjugate_on_copy, 
-                             tiling,
-                             alpha, beta);
-}
 } // namespace memory
 } // namespace costa

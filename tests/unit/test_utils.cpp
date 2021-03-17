@@ -1,759 +1,206 @@
 #include "../gtest.h"
+#include <costa/grid2grid/memory_utils.hpp>
+#include <costa/grid2grid/tiling_manager.hpp>
 #include <vector>
-#include <conflux/lu/conflux_opt.hpp>
-#include <conflux/lu/utils.hpp>
-#include <conflux/lu/matrix_view.hpp>
 #include <cmath>
 
-TEST(push_pivots_up, row_major) {
+TEST(copy2D, row_major) {
     // this is the input
     std::vector<int> in = {
-        9, 1, 1, 9, 5, 5, 3, 3, // [0]
-        7, 3, 4, 5, 2, 4, 5, 2, // [1]
-        5, 5, 1, 3, 3, 9, 1, 9, // [2]
-        9, 2, 3, 9, 5, 2, 2, 9, // [3]
-        7, 6, 5, 7, 8, 1, 4, 4, // [4]
-        2, 2, 4, 6, 5, 2, 6, 5, // [5]
-        3, 7, 4, 4, 4, 7, 1, 7, // [6]
-        3, 8, 1, 6, 4, 8, 7, 8  // [7]
+         9,  1,  1, -1, // [0]
+         7,  3,  4, -1, // [1]
+         5,  5,  1, -1, // [2]
+         9,  2,  3, -1, // [3]
+         7,  6,  5, -1, // [4]
+         2,  2,  4, -1, // [5]
+         3,  7,  4, -1, // [6]
+         3,  8,  1, -1  // [7]
     };
 
     // this is the correct result we are expecting
     std::vector<int> result = {
-        5, 5, 1, 3, 3, 9, 1, 9, // [2]
-        7, 3, 4, 5, 2, 4, 5, 2, // [1]
-        2, 2, 4, 6, 5, 2, 6, 5, // [5]
-        9, 2, 3, 9, 5, 2, 2, 9, // [3]
-        7, 6, 5, 7, 8, 1, 4, 4, // [4]
-        9, 1, 1, 9, 5, 5, 3, 3, // [0]
-        3, 7, 4, 4, 4, 7, 1, 7, // [6]
-        3, 8, 1, 6, 4, 8, 7, 8  // [7]
+         9,  1,  1, -1, -1, // [0]
+         7,  3,  4, -1, -1, // [1]
+         5,  5,  1, -1, -1, // [2]
+         9,  2,  3, -1, -1, // [3]
+         7,  6,  5, -1, -1, // [4]
+         2,  2,  4, -1, -1, // [5]
+         3,  7,  4, -1, -1, // [6]
+         3,  8,  1, -1, -1  // [7]
     };
 
+    std::vector<int> out(result.size());
 
-    // dimension
-    int n = (int) sqrt(in.size());
+    costa::memory::tiling_manager<int> tiling;
 
-    // the starting row for pushing pivots
-    int first_non_pivot_row = 0;
+    int n_rows = 8; int n_cols = 3;
+    int in_stride = 4;
+    int out_stride = 5;
 
-    // matrix layout (row/col major)
-    auto layout = conflux::order::row_major;
+    costa::memory::copy_and_transform(n_rows, n_cols,
+                                      in.data(), 
+                                      in_stride, // in-stride
+                                      false, // => row-major
+                                      out.data(),
+                                      out_stride, // out-stride
+                                      false, // => row-major
+                                      false, // => no transpose
+                                      false, // => no conjugate
+                                      tiling,
+                                      1, 0 // alpha, beta
+                                      );
 
-
-    // current (local) pivots
-    // curPivots[0] is the number of local pivots
-    // (i.e. the size of the array)
-    std::vector<int> curPivots = {3, 2, 1, 5};
-
-    // temporary matrix
-    std::vector<int> in_temp(result.size());
-
-    // input matrix
-    conflux::matrix_view in_mat(in.data(), n, n, layout);
-    conflux::matrix_view result_mat(result.data(), n, n, layout);
-
-    std::cout << "Input matrix:" << std::endl;
-    std::cout << in_mat.to_string() << std::endl;
-
-    // in-place pushing pivots up
-    conflux::push_pivots_up<int>(in, in_temp, 
-                        n, n, layout, 
-                        curPivots, first_non_pivot_row);
-
-    std::vector<bool> correct_row(n, true);
-
-    std::cout << "Output matrix:" << std::endl;
-    std::cout << in_mat.to_string() << std::endl;
-    std::cout << "-------------------" << std::endl;
-    std::cout << "Target Matrix:" << std::endl;
-    std::cout << result_mat.to_string() << std::endl;
-    std::cout << "===================" << std::endl;
-
-    // the output matrix and the result matrix should match
-    EXPECT_TRUE(in_mat == result_mat);
-}
-
-TEST(permute_rows, row_major) {
-    // input matrix
-    std::vector<std::vector<double>> in_mat = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            1, 2, 3,
-            4, 5, 6,
-            7, 8, 9
-        },
-        // rectangular case
-        {
-            1, 2, 3,
-            4, 5, 6,
-            7, 8, 9,
-            10, 11, 12,
-        },
-        // rectangular case - strided
-        {
-            1, 2, 3, -1, -1,
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            10, 11, 12, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset)
-        {
-            1, 2, 3, -1, -1,
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            10, 11, 12, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset and different target strides)
-        {
-            1, 2, 3, -1, -1,
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            10, 11, 12, -1, -1
-        },
-    };
-    // this is the target (correct) result
-    std::vector<std::vector<double>> result = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            4, 5, 6,
-            7, 8, 9,
-            1, 2, 3
-        },
-        // rectangular case
-        {
-            4, 5, 6,
-            7, 8, 9,
-            1, 2, 3,
-            10, 11, 12
-        },
-        // rectangular case - strided
-        {
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            1, 2, 3, -1, -1,
-            10, 11, 12, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset)
-        {
-            5, 6, -1, -1, -1,
-            8, 9, -1, -1, -1,
-            2, 3, -1, -1, -1,
-            11, 12, -1, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset and different target stride)
-        {
-            5, 6, -1, -1, -1, -1, -1, -1,
-            8, 9, -1, -1, -1, -1, -1, -1,
-            2, 3, -1, -1, -1, -1, -1, -1,
-            11, 12, -1, -1, -1, -1, -1, -1
+    // ignore stride when checking the correctness
+    std::cout << "Result should be: " << std::endl;
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            std::cout << result[i * out_stride + j] << ", ";
         }
-    };
-
-    // permutation: i-th row -> perm[i]-th row
-    // 0th row -> 2nd row
-    // 1st row -> 0th row
-    // 2nd row -> 1st row
-    // 3rd row -> 3rd row
-    std::vector<std::vector<int>> perm = {
-        {0},
-        {0},
-        {2, 0, 1},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3}
-    };
-
-    std::vector<int> col_offset = {0, 0, 0, 0, 0, 1, 1};
-    std::vector<int> n_rows = {1, 1, 3, 4, 4, 4, 4};
-    std::vector<int> n_cols = {1, 1, 3, 3, 3, 3, 3};
-    std::vector<int> strides = {1, 2, 3, 3, 5, 5, 5};
-    std::vector<int> strides_offset = {0, 0, 0, 0, 0, 0, 3};
-
-    // output matrix
-    std::vector<std::vector<double>> out_mat(result.size());
-
-    // row major data layout
-    auto layout = conflux::order::row_major;
-
-    for (int i = 0; i < in_mat.size(); ++i) {
-        // flush the output
-        out_mat[i] = std::vector<double>(result[i].size());
-
-        // input matrix view
-        conflux::matrix_view<double> in(in_mat[i].data(),
-                                        n_rows[i], n_cols[i],
-                                        strides[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == in.layout());
+        std::cout << std::endl;
+    }
+    std::cout << "Output is: " << std::endl;
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            std::cout << out[i * out_stride + j] << ", ";
         }
-
-        // output matrix view
-        conflux::matrix_view<double> out(out_mat[i].data(),
-                                        n_rows[i], n_cols[i]-col_offset[i],
-                                        strides[i] + strides_offset[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == out.layout());
+        std::cout << std::endl;
+    }
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            EXPECT_TRUE(result[i * out_stride + j] == out[i * out_stride + j]);
         }
-
-        // permute rows
-        conflux::permute_rows<double>(in, out, perm[i]);
-
-        // target matrix view (used only for output)
-        conflux::matrix_view<double> res(result[i].data(),
-                                         n_rows[i], 
-                                         n_cols[i]-col_offset[i], 
-                                         strides[i] + strides_offset[i],
-                                         layout);
-
-        std::cout << "Input matrix:" << std::endl;
-        std::cout << in.to_string() << std::endl;
-        std::cout << "Output matrix:" << std::endl;
-        std::cout << out.to_string() << std::endl;
-        std::cout << "-------------------" << std::endl;
-        std::cout << "Target Matrix:" << std::endl;
-        std::cout << res.to_string() << std::endl;
-        std::cout << "===================" << std::endl;
-
-        EXPECT_TRUE(out == res);
     }
 }
 
-TEST(permute_rows, col_major) {
-    // input matrix
-    std::vector<std::vector<double>> in_mat = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            1, 4, 7,
-            2, 5, 8,
-            3, 6, 9
-        },
-        // rectangular case
-        {
-            1, 5, 9,
-            2, 6, 10,
-            3, 7, 11,
-            4, 8, 12
-        },
-        // rectangular case - strided
-        {
-            1, 5, 9, -1, -1,
-            2, 6, 10, -1, -1,
-            3, 7, 11, -1, -1,
-            4, 8, 12, -1, -1
-        },
-        // rectangular case - strided (with col-offset)
-        {
-            1, 5, 9, -1, -1,
-            2, 6, 10, -1, -1,
-            3, 7, 11, -1, -1,
-            4, 8, 12, -1, -1
-        },
-        // rectangular case - strided 
-        // (with col-offset, and different target stride)
-        {
-            1, 5, 9, -1, -1,
-            2, 6, 10, -1, -1,
-            3, 7, 11, -1, -1,
-            4, 8, 12, -1, -1
-        }
-    };
-    // this is the target (correct) result
-    std::vector<std::vector<double>> result = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            4, 7, 1,
-            5, 8, 2,
-            6, 9, 3
-        },
-        // rectangular case
-        {
-            5, 9,  1,
-            6, 10, 2,
-            7, 11, 3,
-            8, 12, 4
-        },
-        // rectangular case - strided
-        {
-            5, 9, 1, -1, -1,
-            6, 10, 2, -1, -1,
-            7, 11, 3, -1, -1,
-            8, 12, 4, -1, -1
-        },
-        // rectangular case - strided (with col-offset)
-        {
-            6, 10, 2, -1, -1,
-            7, 11, 3, -1, -1,
-            8, 12, 4, -1, -1
-        },
-        // rectangular case - strided 
-        // (with col-offset, and different target stride)
-        {
-            6, 10, 2, -1, -1, -1, -1, -1,
-            7, 11, 3, -1, -1, -1, -1, -1,
-            8, 12, 4, -1, -1, -1, -1, -1
-        }
+TEST(copy2D, col_major) {
+    // this is the input
+    std::vector<int> in = {
+         9,  1,  1, -1, // [0]
+         7,  3,  4, -1, // [1]
+         5,  5,  1, -1, // [2]
+         9,  2,  3, -1, // [3]
+         7,  6,  5, -1, // [4]
+         2,  2,  4, -1, // [5]
+         3,  7,  4, -1, // [6]
+         3,  8,  1, -1  // [7]
     };
 
-    // permutation: i-th row -> perm[i]-th row
-    // 0th row -> 2nd row
-    // 1st row -> 0th row
-    // 2nd row -> 1st row
-    // 3rd row -> 3rd row
-    std::vector<std::vector<int>> perm = {
-        {0},
-        {0},
-        {2, 0, 1},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3}
+    // this is the correct result we are expecting
+    std::vector<int> result = {
+         9,  1,  1, -1, -1, // [0]
+         7,  3,  4, -1, -1, // [1]
+         5,  5,  1, -1, -1, // [2]
+         9,  2,  3, -1, -1, // [3]
+         7,  6,  5, -1, -1, // [4]
+         2,  2,  4, -1, -1, // [5]
+         3,  7,  4, -1, -1, // [6]
+         3,  8,  1, -1, -1  // [7]
     };
 
-    std::vector<int> col_offset = {0, 0, 0, 0, 0, 1, 1};
-    std::vector<int> n_rows = {1, 1, 3, 3, 3, 3, 3};
-    std::vector<int> n_cols = {1, 1, 3, 4, 4, 4, 4};
-    std::vector<int> strides = {1, 2, 3, 3, 5, 5, 5};
-    std::vector<int> strides_offset = {0, 0, 0, 0, 0, 0, 3};
+    std::vector<int> out(result.size());
 
-    // output matrix
-    std::vector<std::vector<double>> out_mat(result.size());
+    costa::memory::tiling_manager<int> tiling;
 
-    // row major data layout
-    auto layout = conflux::order::col_major;
+    int n_rows = 3; int n_cols = 8;
+    int in_stride = 4;
+    int out_stride = 5;
 
-    for (int i = 0; i < in_mat.size(); ++i) {
-        // flush the output
-        out_mat[i] = std::vector<double>(result[i].size());
+    costa::memory::copy_and_transform(n_rows, n_cols,
+                                      in.data(), 
+                                      in_stride, // in-stride
+                                      true, // => col-major
+                                      out.data(),
+                                      out_stride, // out-stride
+                                      true, // => col-major
+                                      false, // => no transpose
+                                      false, // => no conjugate
+                                      tiling,
+                                      1, 0 // alpha, beta
+                                      );
 
-        // input matrix view
-        conflux::matrix_view<double> in(in_mat[i].data(),
-                                        n_rows[i], n_cols[i],
-                                        strides[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == in.layout());
+    // ignore stride when checking the correctness
+    std::cout << "Result should be: " << std::endl;
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            std::cout << result[j * out_stride + i] << ", ";
         }
-
-        // output matrix view
-        conflux::matrix_view<double> out(out_mat[i].data(),
-                                        n_rows[i], n_cols[i]-col_offset[i],
-                                        strides[i] + strides_offset[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == out.layout());
+        std::cout << std::endl;
+    }
+    std::cout << "Output is: " << std::endl;
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            std::cout << out[j * out_stride + i] << ", ";
         }
-
-        // permute rows
-        conflux::permute_rows<double>(in, out, perm[i]);
-
-        // target matrix view (used only for output)
-        conflux::matrix_view<double> res(result[i].data(),
-                                         n_rows[i], 
-                                         n_cols[i]-col_offset[i], 
-                                         strides[i] + strides_offset[i],
-                                         layout);
-
-        std::cout << "Input matrix:" << std::endl;
-        std::cout << in.to_string() << std::endl;
-        std::cout << "Output matrix:" << std::endl;
-        std::cout << out.to_string() << std::endl;
-        std::cout << "-------------------" << std::endl;
-        std::cout << "Target Matrix:" << std::endl;
-        std::cout << res.to_string() << std::endl;
-        std::cout << "===================" << std::endl;
-
-        EXPECT_TRUE(out == res);
+        std::cout << std::endl;
+    }
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            EXPECT_TRUE(result[j * out_stride + i] == out[j * out_stride + i]);
+        }
     }
 }
 
-TEST(inverse_permute_rows, row_major) {
-    // input matrix
-    std::vector<std::vector<double>> in_mat = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            1, 2, 3,
-            4, 5, 6,
-            7, 8, 9
-        },
-        // rectangular case
-        {
-            1, 2, 3,
-            4, 5, 6,
-            7, 8, 9,
-            10, 11, 12,
-        },
-        // rectangular case - strided
-        {
-            1, 2, 3, -1, -1,
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            10, 11, 12, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset)
-        {
-            1, 2, 3, -1, -1,
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            10, 11, 12, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset and different target strides)
-        {
-            1, 2, 3, -1, -1,
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            10, 11, 12, -1, -1
-        },
-    };
-    // this is the target (correct) result
-    std::vector<std::vector<double>> result = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            4, 5, 6,
-            7, 8, 9,
-            1, 2, 3
-        },
-        // rectangular case
-        {
-            4, 5, 6,
-            7, 8, 9,
-            1, 2, 3,
-            10, 11, 12
-        },
-        // rectangular case - strided
-        {
-            4, 5, 6, -1, -1,
-            7, 8, 9, -1, -1,
-            1, 2, 3, -1, -1,
-            10, 11, 12, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset)
-        {
-            5, 6, -1, -1, -1,
-            8, 9, -1, -1, -1,
-            2, 3, -1, -1, -1,
-            11, 12, -1, -1, -1
-        },
-        // rectangular case - strided
-        // (with col-offset and different target stride)
-        {
-            5, 6, -1, -1, -1, -1, -1, -1,
-            8, 9, -1, -1, -1, -1, -1, -1,
-            2, 3, -1, -1, -1, -1, -1, -1,
-            11, 12, -1, -1, -1, -1, -1, -1
-        }
+TEST(transpose, row_to_col_major) {
+    // this is the input
+    std::vector<int> in = {
+         9,  1,  1, -1, // [0]
+         7,  3,  4, -1, // [1]
+         5,  5,  1, -1, // [2]
+         9,  2,  3, -1, // [3]
+         7,  6,  5, -1, // [4]
+         2,  2,  4, -1, // [5]
+         3,  7,  4, -1, // [6]
+         3,  8,  1, -1  // [7]
     };
 
-    // permutation: i-th row -> perm[i]-th row
-    // 0th row -> 2nd row
-    // 1st row -> 0th row
-    // 2nd row -> 1st row
-    // 3rd row -> 3rd row
-    std::vector<std::vector<int>> perm = {
-        {0},
-        {0},
-        {2, 0, 1},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3}
+    // this is the correct result we are expecting
+    std::vector<int> result = {
+        9, 7, 5, 9, 7, 2, 3, 3, -1, -1,
+        1, 3, 5, 2, 6, 2, 7, 8, -1, -1,
+        1, 4, 1, 3, 5, 4, 4, 1, -1, -1
     };
 
-    std::vector<int> col_offset = {0, 0, 0, 0, 0, 1, 1};
-    std::vector<int> n_rows = {1, 1, 3, 4, 4, 4, 4};
-    std::vector<int> n_cols = {1, 1, 3, 3, 3, 3, 3};
-    std::vector<int> strides = {1, 2, 3, 3, 5, 5, 5};
-    std::vector<int> strides_offset = {0, 0, 0, 0, 0, 0, 3};
+    std::vector<int> out(result.size());
 
-    // output matrix
-    std::vector<std::vector<double>> out_mat(result.size());
-    std::vector<std::vector<double>> in2_mat(in_mat.size());
+    costa::memory::tiling_manager<int> tiling;
 
-    // row major data layout
-    auto layout = conflux::order::row_major;
+    int n_rows = 8; int n_cols = 3;
+    int in_stride = 4;
+    int out_stride = 5;
 
-    for (int i = 0; i < in_mat.size(); ++i) {
-        // flush the output
-        out_mat[i] = std::vector<double>(result[i].size());
-        in2_mat[i] = std::vector<double>(in_mat[i].size());
+    // row -> col major ordering = transpose
+    costa::memory::copy_and_transform(n_rows, n_cols,
+                                      in.data(), 
+                                      in_stride, // in-stride
+                                      false, // => row-major
+                                      out.data(),
+                                      out_stride, // out-stride
+                                      true, // => col-major
+                                      false, // => no transpose
+                                      false, // => no conjugate
+                                      tiling,
+                                      1, 0 // alpha, beta
+                                      );
 
-        // input matrix view
-        conflux::matrix_view<double> in(in_mat[i].data(),
-                                        n_rows[i], n_cols[i],
-                                        strides[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == in.layout());
+    // ignore stride when checking the correctness
+    std::cout << "Result should be: " << std::endl;
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            std::cout << result[j * out_stride + i] << ", ";
         }
-
-        // output matrix view
-        conflux::matrix_view<double> out(out_mat[i].data(),
-                                        n_rows[i], n_cols[i]-col_offset[i],
-                                        strides[i] + strides_offset[i],
-                                        layout);
-
-        // input matrix view
-        conflux::matrix_view<double> in2(in2_mat[i].data(),
-                                        n_rows[i], n_cols[i]-col_offset[i],
-                                        strides[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == out.layout());
+        std::cout << std::endl;
+    }
+    std::cout << "Output is: " << std::endl;
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            std::cout << out[j * out_stride + i] << ", ";
         }
-
-        // permute rows
-        conflux::permute_rows<double>(in, out, perm[i]);
-        conflux::inverse_permute_rows<double>(out, in2, perm[i]);
-
-        std::cout << "Input matrix:" << std::endl;
-        std::cout << in.to_string() << std::endl;
-        std::cout << "Output matrix:" << std::endl;
-        std::cout << in2.to_string() << std::endl;
-        std::cout << "-------------------" << std::endl;
-        std::cout << "Target Matrix:" << std::endl;
-        std::cout << in.to_string() << std::endl;
-        std::cout << "===================" << std::endl;
-
-        EXPECT_TRUE(in.submatrix(0, col_offset[i], n_rows[i], n_cols[i]) == in2);
+        std::cout << std::endl;
+    }
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            EXPECT_TRUE(result[j * out_stride + i] == out[j * out_stride + i]);
+        }
     }
 }
 
-TEST(inverse_permute_rows, col_major) {
-    // input matrix
-    std::vector<std::vector<double>> in_mat = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            1, 4, 7,
-            2, 5, 8,
-            3, 6, 9
-        },
-        // rectangular case
-        {
-            1, 5, 9,
-            2, 6, 10,
-            3, 7, 11,
-            4, 8, 12
-        },
-        // rectangular case - strided
-        {
-            1, 5, 9, -1, -1,
-            2, 6, 10, -1, -1,
-            3, 7, 11, -1, -1,
-            4, 8, 12, -1, -1
-        },
-        // rectangular case - strided (with col-offset)
-        {
-            1, 5, 9, -1, -1,
-            2, 6, 10, -1, -1,
-            3, 7, 11, -1, -1,
-            4, 8, 12, -1, -1
-        },
-        // rectangular case - strided 
-        // (with col-offset, and different target stride)
-        {
-            1, 5, 9, -1, -1,
-            2, 6, 10, -1, -1,
-            3, 7, 11, -1, -1,
-            4, 8, 12, -1, -1
-        }
-    };
-    // this is the target (correct) result
-    std::vector<std::vector<double>> result = {
-        // weird cases
-        {
-            1
-        },
-        // weird case - strided
-        {
-            1, -1
-        },
-        // square case
-        {
-            4, 7, 1,
-            5, 8, 2,
-            6, 9, 3
-        },
-        // rectangular case
-        {
-            5, 9,  1,
-            6, 10, 2,
-            7, 11, 3,
-            8, 12, 4
-        },
-        // rectangular case - strided
-        {
-            5, 9, 1, -1, -1,
-            6, 10, 2, -1, -1,
-            7, 11, 3, -1, -1,
-            8, 12, 4, -1, -1
-        },
-        // rectangular case - strided (with col-offset)
-        {
-            6, 10, 2, -1, -1,
-            7, 11, 3, -1, -1,
-            8, 12, 4, -1, -1
-        },
-        // rectangular case - strided 
-        // (with col-offset, and different target stride)
-        {
-            6, 10, 2, -1, -1, -1, -1, -1,
-            7, 11, 3, -1, -1, -1, -1, -1,
-            8, 12, 4, -1, -1, -1, -1, -1
-        }
-    };
-
-    // permutation: i-th row -> perm[i]-th row
-    // 0th row -> 2nd row
-    // 1st row -> 0th row
-    // 2nd row -> 1st row
-    // 3rd row -> 3rd row
-    std::vector<std::vector<int>> perm = {
-        {0},
-        {0},
-        {2, 0, 1},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3},
-        {2, 0, 1, 3}
-    };
-
-    std::vector<int> col_offset = {0, 0, 0, 0, 0, 1, 1};
-    std::vector<int> n_rows = {1, 1, 3, 3, 3, 3, 3};
-    std::vector<int> n_cols = {1, 1, 3, 4, 4, 4, 4};
-    std::vector<int> strides = {1, 2, 3, 3, 5, 5, 5};
-    std::vector<int> strides_offset = {0, 0, 0, 0, 0, 0, 3};
-
-    // output matrix
-    std::vector<std::vector<double>> out_mat(result.size());
-    std::vector<std::vector<double>> in2_mat(in_mat.size());
-
-    // row major data layout
-    auto layout = conflux::order::col_major;
-
-    for (int i = 0; i < in_mat.size(); ++i) {
-        // flush the output
-        out_mat[i] = std::vector<double>(result[i].size());
-        in2_mat[i] = std::vector<double>(in_mat[i].size());
-
-        // input matrix view
-        conflux::matrix_view<double> in(in_mat[i].data(),
-                                        n_rows[i], n_cols[i],
-                                        strides[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == in.layout());
-        }
-
-        // output matrix view
-        conflux::matrix_view<double> out(out_mat[i].data(),
-                                        n_rows[i], n_cols[i]-col_offset[i],
-                                        strides[i] + strides_offset[i],
-                                        layout);
-
-        // input matrix view
-        conflux::matrix_view<double> in2(in2_mat[i].data(),
-                                        n_rows[i], n_cols[i]-col_offset[i],
-                                        strides[i],
-                                        layout);
-
-        // layout makes sense if n_rows > 1 and n_cols > 1
-        if (n_rows[i] > 1 && n_cols[i] > 1) {
-            EXPECT_TRUE(layout == out.layout());
-        }
-
-        // permute rows
-        conflux::permute_rows<double>(in, out, perm[i]);
-        conflux::inverse_permute_rows<double>(out, in2, perm[i]);
-
-        std::cout << "Input matrix:" << std::endl;
-        std::cout << in.to_string() << std::endl;
-        std::cout << "Output matrix:" << std::endl;
-        std::cout << in2.to_string() << std::endl;
-        std::cout << "-------------------" << std::endl;
-        std::cout << "Target Matrix:" << std::endl;
-        std::cout << in.to_string() << std::endl;
-        std::cout << "===================" << std::endl;
-
-        EXPECT_TRUE(in.submatrix(0, col_offset[i], n_rows[i], n_cols[i]) == in2);
-    }
-}

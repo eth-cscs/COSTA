@@ -59,7 +59,7 @@ void copy2D(int n_rows, int n_cols,
     // stop if 0-sized
     if (block_size == 0) return;
 
-    if (col_major) {
+    if (!col_major) {
         std::swap(n_rows, n_cols);
     }
 

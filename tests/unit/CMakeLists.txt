@@ -1,6 +1,6 @@
 
 set(unit_test_files
-    # test_utils.cpp
+    test_utils.cpp
     test.cpp
 )
 

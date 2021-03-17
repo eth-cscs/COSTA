@@ -9,12 +9,14 @@ namespace costa {
  * ld: leading dimension or distance between two columns of A_loc
  * row: the global block row index
  * col: the global block colum index
+ * ordering: 'R' (row-major) or 'C' (col-major).
  */
 struct block_t {
     void *data;
     int ld;
     int row;
     int col;
+    char ordering;
 };
 
 /**

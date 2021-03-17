@@ -21,8 +21,9 @@ class message {
 
     int get_rank() const;
 
-    // implementing comparator
     bool operator<(const message<T> &other) const;
+
+    std::string to_string() const;
 
     T alpha = T{1};
     T beta = T{0};

@@ -96,61 +96,12 @@ block<T>::block(const assigned_grid2D &grid,
 {}
 
 template <typename T>
-block<T>::block(const assigned_grid2D &grid, block_coordinates coord, T *ptr, 
-                const char ordering)
-    : block(grid, coord, ptr, grid.rows_interval(coord.row).length(), ordering) {}
-
-template <typename T>
-block<T>::block(const assigned_grid2D &grid,
-                interval r_inter,
-                interval c_inter,
-                T *ptr,
-                const char ordering)
-    : block(grid, r_inter, c_inter, ptr, r_inter.length(), ordering) {}
-
-template <typename T>
 block<T>::block(const assigned_grid2D &grid,
                 block_range &range,
                 T *ptr,
                 const int stride,
                 const char ordering)
     : block(grid, range.rows_interval, range.cols_interval, ptr, stride, ordering) {}
-
-template <typename T>
-block<T>::block(const assigned_grid2D &grid, block_range &range, T *ptr,
-                const char ordering)
-    : block(grid, range.rows_interval, range.cols_interval, ptr, ordering) {}
-
-template <typename T>
-block<T>::block(interval r_inter,
-                interval c_inter,
-                block_coordinates coord,
-                T *ptr,
-                const int stride,
-                const char ordering)
-    : rows_interval(r_inter)
-    , cols_interval(c_inter)
-    , coordinates(coord)
-    , data(ptr)
-    , stride(stride)
-    , ordering(ordering) {}
-
-template <typename T>
-block<T>::block(interval r_inter,
-                interval c_inter,
-                block_coordinates coord,
-                T *ptr,
-                const char ordering)
-    : block(r_inter, c_inter, coord, ptr, r_inter.length(), ordering) {}
-
-template <typename T>
-block<T>::block(block_range &range, block_coordinates coord, T *ptr, 
-                const int stride, const char ordering)
-    : block(range.rows_interval, range.cols_interval, coord, ptr, stride, ordering) {}
-
-template <typename T>
-block<T>::block(block_range &range, block_coordinates coord, T *ptr, const char ordring)
-    : block(range.rows_interval, range.cols_interval, coord, ptr, ordering) {}
 
 template <typename T>
 block<T>::block(const assigned_grid2D &grid,
@@ -169,6 +120,26 @@ block<T>::block(const assigned_grid2D &grid,
     int col_coord = interval_index(grid.grid().cols_split, cols_interval);
     coordinates = block_coordinates(row_coord, col_coord);
 }
+
+template <typename T>
+block<T>::block(interval r_inter,
+                interval c_inter,
+                block_coordinates coord,
+                T *ptr,
+                const int stride,
+                const char ordering)
+    : rows_interval(r_inter)
+    , cols_interval(c_inter)
+    , coordinates(coord)
+    , data(ptr)
+    , stride(stride)
+    , ordering(ordering) {}
+
+template <typename T>
+block<T>::block(block_range &range, block_coordinates coord, T *ptr, 
+                const int stride, const char ordering)
+    : block(range.rows_interval, range.cols_interval, coord, ptr, stride, ordering) {}
+
 
 // finds the index of the interval inter in splits
 template <typename T>
@@ -197,8 +168,7 @@ block<T> block<T>::subblock(interval r_range, interval c_range) const {
              (r_range.start - r_interval.start);
     // std::cout << "stride = " << stride << std::endl;
     // std::cout << "ptr offset = " << (ptr - data) << std::endl;
-    block<T> b(r_range, c_range, coord, ptr, stride); // correct
-    b.ordering = ordering;
+    block<T> b(r_range, c_range, coord, ptr, stride, ordering); // correct
     b.trans = trans;
     b.tag = tag;
     return b;
@@ -237,8 +207,12 @@ template <typename T>
 const T& block<T>::local_element(int li, int lj) const {
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
+    assert(ordering == 'C' || ordering == 'R');
 
     int offset = stride * lj + li;
+    if (ordering == 'R') {
+        offset = stride * li + lj;
+    }
     return data[offset];
 }
 
@@ -246,8 +220,12 @@ template <typename T>
 T& block<T>::local_element(int li, int lj) {
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
+    assert(ordering == 'C' || ordering == 'R');
 
     int offset = stride * lj + li;
+    if (ordering == 'R') {
+        offset = stride * li + lj;
+    }
     return data[offset];
 }
 

@@ -28,6 +28,7 @@ void copy(const std::size_t n, const elem_type *src_ptr,
     bool perform_operation = std::abs(alpha - elem_type{1}) > 0 || std::abs(beta - elem_type{0}) > 0;
     if (!perform_operation && !should_conjugate) {
         std::memcpy(dest_ptr, src_ptr, sizeof(elem_type) * n);
+        assert(dest_ptr[0] == src_ptr[0]);
     } else {
         for (int i = 0; i < n; ++i) {
             auto el = src_ptr[i];

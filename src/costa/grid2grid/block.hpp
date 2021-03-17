@@ -88,7 +88,14 @@ struct block {
           const int stride,
           const char ordering);
 
-    block(const assigned_grid2D &grid, block_coordinates coord, T *ptr, 
+    block(const assigned_grid2D &grid, block_range &range, T *ptr,
+          const int stride, const char ordering);
+
+    block(const assigned_grid2D &grid,
+          interval r_inter,
+          interval c_inter,
+          T *ptr,
+          const int stride,
           const char ordering);
 
     block(interval r_inter,
@@ -98,30 +105,8 @@ struct block {
           const int stride,
           const char ordering);
 
-    block(interval r_inter, interval c_inter, block_coordinates coord, T *ptr, 
-          const char ordering);
     block(block_range &range, block_coordinates coord, T *ptr, 
           const int stride, const char ordering);
-    block(block_range &range, block_coordinates coord, T *ptr, 
-          const char ordering);
-
-    // without coordinates
-    block(const assigned_grid2D &grid,
-          interval r_inter,
-          interval c_inter,
-          T *ptr,
-          const int stride,
-          const char ordering);
-
-    block(const assigned_grid2D &grid,
-          interval r_inter,
-          interval c_inter,
-          T *ptr,
-          const char ordering);
-    block(const assigned_grid2D &grid, block_range &range, T *ptr, 
-          const int stride, const char ordering);
-    block(const assigned_grid2D &grid, block_range &range, T *ptr, 
-          const char ordering);
 
     // finds the index of the interval inter in splits
     int interval_index(const std::vector<int> &splits, interval inter);

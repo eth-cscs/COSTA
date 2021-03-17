@@ -137,6 +137,19 @@ int main(int argc, char **argv) {
             rank // current rank
     );
 
+    /*
+    for (int i = 0; i < P; ++i) {
+        if (rank == i) {
+            std::cout << "Rank = " << rank << std::endl;
+            for (int j = 0; j < final_data.size(); ++j) {
+                std::cout << final_data[i] << ", ";
+            }
+            std::cout << std::endl;
+        }
+        MPI_Barrier(comm);
+    }
+    */
+
     // ***************************************
     // TRANSFORMING: INITIAL->FINAL
     // ***************************************

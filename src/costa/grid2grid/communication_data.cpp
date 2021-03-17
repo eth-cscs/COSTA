@@ -16,6 +16,8 @@ message<T>::message(block<T> b, int rank,
     , alpha(alpha)
     , beta(beta) {
 
+    assert(b.non_empty());
+
     // ignore upper/lower-case
     trans = std::toupper(trans);
     ordering = std::toupper(ordering);
@@ -32,6 +34,21 @@ message<T>::message(block<T> b, int rank,
     bool is_complex = std::is_same<T, std::complex<double>>::value ||
                       std::is_same<T, std::complex<float>>::value;
     conjugate = trans == 'C' && is_complex;
+}
+
+template <typename T>
+std::string message<T>::to_string() const {
+    std::string transposed = transpose ? "True" : "False";
+    std::string conjugated = conjugate ? "True" : "False";
+    std::string col_majored = col_major ? "True" : "False";
+
+    std::string res = "";
+    res += "Message: \n";
+    res += "transpose = " + transposed + "\n";
+    res += "conjugate = " + conjugated + "\n";
+    res += "col_major = " + col_majored + "\n";
+    res += "block: " + std::to_string(b.n_rows()) + " x " + std::to_string(b.n_cols()) + "\n";
+    return res;
 }
 
 template <typename T>
@@ -91,6 +108,9 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
         block<T> b = m.get_block();
         assert(b.non_empty());
 
+        // std::cout << "Message " << m.to_string() << std::endl;
+        // std::cout << "rank = " << m.get_rank() << ", Block = " << b << std::endl;
+
         // if the message should be communicated to 
         // a different rank
         if (target_rank != my_rank) {
@@ -127,7 +147,6 @@ void communication_data<T>::copy_to_buffer() {
         for (unsigned i = 0; i < mpi_messages.size(); ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
-
             copy_and_transform(b.n_rows(), b.n_cols(),
                                b.data, b.stride, b.ordering, 
                                // dest_ptr
@@ -146,15 +165,15 @@ void communication_data<T>::copy_to_buffer() {
 template <typename T>
 void communication_data<T>::copy_from_buffer(int idx) {
     assert(idx >= 0 && idx+1 < package_ticks.size());
-    if (package_ticks[idx+1] - package_ticks[idx]) {
+    if (package_ticks[idx+1] - package_ticks[idx] > 0) {
 #pragma omp parallel for schedule(dynamic, 1)
         for (unsigned i = package_ticks[idx]; i < package_ticks[idx+1]; ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
             copy_and_transform(b.n_rows(), b.n_cols(),
-                               b.data, 0, m.col_major, 
                                data() + offset_per_message[i],
-                               b.stride, b.ordering,
+                               0, m.col_major,
+                               b.data, b.stride, b.ordering,
                                m.transpose,
                                m.conjugate,
                                tiling,

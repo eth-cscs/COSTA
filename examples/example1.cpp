@@ -109,6 +109,8 @@ int main(int argc, char **argv) {
     local_block.data = &elements[0];
     // local leading dimension of this block
     local_block.ld = block_size;
+    // block ordering (row-major or col-major)
+    local_block.ordering = 'R';
 
     // set the block coordinates for each local block:
     // rank 0 owns block with coordinates (0, 0)

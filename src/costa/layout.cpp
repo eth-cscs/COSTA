@@ -47,13 +47,14 @@ costa::grid_layout<T> costa::custom_layout(int rowblocks,
         auto col = block.col;
         auto ptr = reinterpret_cast<T *>(block.data);
         auto stride = block.ld;
+        auto ordering = block.ordering;
 
         costa::block_coordinates coord{row, col};
         costa::interval rows{rowsplit[row],
                              rowsplit[row + 1]};
         costa::interval cols{colsplit[col],
                              colsplit[col + 1]};
-        loc_blks.emplace_back(rows, cols, coord, ptr, stride);
+        loc_blks.emplace_back(rows, cols, coord, ptr, stride, ordering);
     }
 
     auto grid = custom_grid(rowblocks, colblocks, rowsplit, colsplit, owners);

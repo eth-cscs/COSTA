@@ -66,7 +66,7 @@ std::vector<message<T>> decompose_block(const block<T> &b,
                 // << " is " << rank << std::endl;
                 decomposed_blocks.push_back({subblock, rank,
                                              alpha, beta,
-                                             b.trans, b.ordering});
+                                             subblock.trans, subblock.ordering});
             }
 
             col_start = col_end;

@@ -310,6 +310,7 @@ void copy_and_transform(const int n_rows, const int n_cols,
     }
 
     if (will_transpose) {
+        // transpose dimensions
         transpose(n_rows, n_cols,
                   src_ptr, src_stride, 
                   dest_ptr, dest_stride, 

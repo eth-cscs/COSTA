@@ -166,7 +166,7 @@ TEST(transpose, row_to_col_major) {
 
     int n_rows = 8; int n_cols = 3;
     int in_stride = 4;
-    int out_stride = 5;
+    int out_stride = 10;
 
     // row -> col major ordering = transpose
     costa::memory::copy_and_transform(n_rows, n_cols,
@@ -197,6 +197,7 @@ TEST(transpose, row_to_col_major) {
         }
         std::cout << std::endl;
     }
+    std::cout << "Finished the output" << std::endl;
     for (int i = 0; i < n_rows; ++i) {
         for (int j = 0; j < n_cols; ++j) {
             EXPECT_TRUE(result[j * out_stride + i] == out[j * out_stride + i]);

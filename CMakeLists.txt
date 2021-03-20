@@ -83,6 +83,11 @@ if (COSTA_WITH_TESTS OR COSTA_WITH_APPS)
     add_subdirectory(libs/cxxopts)
 endif()
 
+if (COSTA_WITH_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 # ScaLAPACK providers
 #
 set(SCALAPACK_TARGET "")

@@ -11,8 +11,11 @@ namespace costa {
 
 std::vector<std::vector<int>> topology_cost(MPI_Comm comm);
 
-
 namespace utils {
+
+bool if_should_transpose(const char src_ordering,
+                         const char dest_ordering,
+                         const char trans);
 
 std::unordered_map<int, int> rank_to_comm_vol_for_block(
         const assigned_grid2D& g_init,
@@ -24,7 +27,10 @@ template <typename T>
 std::vector<message<T>> decompose_block(const block<T> &b,
                                         grid_cover &g_cover,
                                         const assigned_grid2D &g,
-                                        const T alpha, const T beta) {
+                                        const char final_ordering,
+                                        const T alpha, const T beta,
+                                        bool transpose, bool conjugate
+                                        ) {
     // std::cout << "decomposing block " << b << std::endl;
     block_cover b_cover = g_cover.decompose_block(b);
 
@@ -65,9 +71,10 @@ std::vector<message<T>> decompose_block(const block<T> &b,
                 // std::cout << "for rank " << rank << ", adding subblock: " <<
                 // subblock << std::endl; std::cout << "owner of " << subblock
                 // << " is " << rank << std::endl;
-                decomposed_blocks.push_back({subblock, rank});
-                decomposed_blocks.back().alpha = alpha;
-                decomposed_blocks.back().beta = beta;
+                decomposed_blocks.push_back({subblock, rank,
+                                             final_ordering,
+                                             alpha, beta,
+                                             transpose, conjugate});
             }
 
             col_start = col_end;
@@ -78,9 +85,10 @@ std::vector<message<T>> decompose_block(const block<T> &b,
 }
 
 template <typename T>
-std::vector<message<T>> decompose_blocks(const grid_layout<T> &init_layout,
-                                         const grid_layout<T> &final_layout,
+std::vector<message<T>> decompose_blocks(grid_layout<T> &init_layout,
+                                         grid_layout<T> &final_layout,
                                          const T alpha, const T beta,
+                                         bool transpose, bool conjugate,
                                          int tag = 0) {
     PE(transform_decompose);
     grid_cover g_overlap(init_layout.grid.grid(), final_layout.grid.grid());
@@ -94,7 +102,10 @@ std::vector<message<T>> decompose_blocks(const grid_layout<T> &init_layout,
         blk.tag = tag;
         assert(blk.non_empty());
         std::vector<message<T>> decomposed =
-            decompose_block(blk, g_overlap, final_layout.grid, alpha, beta);
+            decompose_block(blk, g_overlap, 
+                            final_layout.grid,
+                            final_layout.ordering,
+                            alpha, beta, transpose, conjugate);
         messages.insert(messages.end(), decomposed.begin(), decomposed.end());
     }
     PL();
@@ -108,10 +119,11 @@ void merge_messages(std::vector<message<T>> &messages) {
 }
 
 template <typename T>
-communication_data<T> prepare_to_send(const grid_layout<T> &init_layout,
-                                      const grid_layout<T> &final_layout,
+communication_data<T> prepare_to_send(grid_layout<T> &init_layout,
+                                      grid_layout<T> &final_layout,
                                       int rank,
-                                      const T alpha, const T beta) {
+                                      const T alpha, const T beta,
+                                      bool transpose, bool conjugate) {
     // in case ranks were reordered to minimize the communication
     // this might not be the identity function
     // if (rank == 0) {
@@ -119,8 +131,10 @@ communication_data<T> prepare_to_send(const grid_layout<T> &init_layout,
     // }
     // rank = init_layout.reordered_rank(rank);
     std::vector<message<T>> messages =
-        decompose_blocks(init_layout, final_layout, alpha, beta);
+        decompose_blocks(init_layout, final_layout, 
+                         alpha, beta, transpose, conjugate);
     merge_messages(messages);
+
     return communication_data<T>(messages, rank, std::max(final_layout.num_ranks(), init_layout.num_ranks()));
 }
 
@@ -129,29 +143,36 @@ communication_data<T> prepare_to_send(
                                       std::vector<layout_ref<T>>& from,
                                       std::vector<layout_ref<T>>& to,
                                       int rank,
-                                      const T* alpha, const T* beta) {
+                                      const T* alpha, const T* beta,
+                                      bool* transpose,
+                                      bool* conjugate) {
     std::vector<message<T>> messages;
     int n_ranks = 0;
 
     for (unsigned i = 0u; i < from.size(); ++i) {
         auto& init_layout = from[i].get();
         auto& final_layout = to[i].get();
-        auto decomposed_blocks = decompose_blocks(init_layout, final_layout, alpha[i], beta[i], i);
+
+        auto decomposed_blocks = decompose_blocks(init_layout, final_layout, 
+                                                  alpha[i], beta[i], 
+                                                  transpose[i], conjugate[i], i);
         messages.insert(messages.end(), decomposed_blocks.begin(), decomposed_blocks.end());
         n_ranks = std::max(n_ranks, std::max(final_layout.num_ranks(), init_layout.num_ranks()));
     }
     merge_messages(messages);
     return communication_data<T>(messages, rank, n_ranks);
 }
-
-template <typename T>
-communication_data<T> prepare_to_recv(const grid_layout<T> &final_layout,
-                                      const grid_layout<T> &init_layout,
+template <typename T> 
+communication_data<T> prepare_to_recv(grid_layout<T> &final_layout,
+                                      grid_layout<T> &init_layout,
                                       int rank,
-                                      const T alpha, const T beta) {
+                                      const T alpha, const T beta,
+                                      const bool transpose, const bool conjugate) {
     std::vector<message<T>> messages =
-        decompose_blocks(final_layout, init_layout, alpha, beta);
+        decompose_blocks(final_layout, init_layout, 
+                         alpha, beta, transpose, conjugate);
     merge_messages(messages);
+
     return communication_data<T>(messages, rank, std::max(init_layout.num_ranks(), final_layout.num_ranks()));
 }
 
@@ -160,14 +181,19 @@ communication_data<T> prepare_to_recv(
                                       std::vector<layout_ref<T>>& to,
                                       std::vector<layout_ref<T>>& from,
                                       int rank,
-                                      const T* alpha, const T* beta) {
+                                      const T* alpha, const T* beta,
+                                      bool* transpose,
+                                      bool* conjugate) {
     std::vector<message<T>> messages;
     int n_ranks = 0;
 
     for (unsigned i = 0u; i < from.size(); ++i) {
         auto& init_layout = from[i].get();
         auto& final_layout = to[i].get();
-        auto decomposed_blocks = decompose_blocks(final_layout, init_layout, alpha[i], beta[i], i);
+
+        auto decomposed_blocks = decompose_blocks(final_layout, init_layout, 
+                                                  alpha[i], beta[i], 
+                                                  transpose[i], conjugate[i], i);
         messages.insert(messages.end(), decomposed_blocks.begin(), decomposed_blocks.end());
         n_ranks = std::max(n_ranks, std::max(init_layout.num_ranks(), final_layout.num_ranks()));
     }

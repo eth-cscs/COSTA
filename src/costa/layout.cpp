@@ -1,11 +1,11 @@
 #include <costa/layout.hpp>
 #include <complex>
 
-costa::assigned_grid2D costa::custom_grid(int rowblocks,
-                                          int colblocks,
-                                          int* rowsplit,
-                                          int* colsplit,
-                                          int* owners) {
+costa::assigned_grid2D costa::custom_grid(const int rowblocks,
+                                          const int colblocks,
+                                          const int* rowsplit,
+                                          const int* colsplit,
+                                          const int* owners) {
     // Grid specification
     std::vector<int> rows_split(rowblocks + 1);
     std::copy_n(rowsplit, rows_split.size(), rows_split.begin());
@@ -30,13 +30,14 @@ costa::assigned_grid2D costa::custom_grid(int rowblocks,
 }
 
 template <typename T>
-costa::grid_layout<T> costa::custom_layout(int rowblocks,
-                                           int colblocks,
-                                           int* rowsplit,
-                                           int* colsplit,
-                                           int* owners,
-                                           int nlocalblocks,
-                                           block_t* localblocks) {
+costa::grid_layout<T> costa::custom_layout(const int rowblocks,
+                                           const int colblocks,
+                                           const int* rowsplit,
+                                           const int* colsplit,
+                                           const int* owners,
+                                           const int nlocalblocks,
+                                           const block_t* localblocks,
+                                           const char ordering) {
     // Create the local blocks
     std::vector<costa::block<T> > loc_blks;
 
@@ -57,7 +58,7 @@ costa::grid_layout<T> costa::custom_layout(int rowblocks,
     }
 
     auto grid = custom_grid(rowblocks, colblocks, rowsplit, colsplit, owners);
-    return grid_layout<T>{std::move(grid), std::move(loc_blks)};
+    return grid_layout<T>{std::move(grid), std::move(loc_blks), ordering};
 }
 
 costa::assigned_grid2D costa::block_cyclic_grid(
@@ -104,17 +105,21 @@ costa::grid_layout<T> costa::block_cyclic_layout(
                                     // the first row (0-based)
         T* ptr, // local data of matrix A (not the submatrix)
         const int lld, // leading dimension
+        const char data_ordering, // whether each local block is row- or col-major
         const int rank // processor rank
         ) {
 
     // get rank grid ordering
-    char rank_ordering = std::toupper(rank_grid_ordering);
-    assert(rank_ordering == 'R' || rank_ordering == 'C');
-    auto ordering = costa::scalapack::ordering::row_major;
-
-    if (rank_ordering == 'C') {
-        ordering = costa::scalapack::ordering::column_major;
+    char r_ordering = std::toupper(rank_grid_ordering);
+    assert(r_ordering == 'R' || r_ordering == 'C');
+    auto rank_ordering = costa::scalapack::ordering::row_major;
+    if (r_ordering == 'C') {
+        rank_ordering = costa::scalapack::ordering::column_major;
     }
+
+    // get local blocks data ordering
+    char d_ordering = std::toupper(data_ordering);
+    assert(d_ordering == 'R' || d_ordering == 'C');
 
     auto scalapack_layout = costa::get_scalapack_layout<T>(
         lld,
@@ -123,9 +128,10 @@ costa::grid_layout<T> costa::block_cyclic_layout(
         {sub_m, sub_n},
         {block_m, block_n},
         {proc_m, proc_n},
-        ordering,
+        rank_ordering,
         {rsrc, csrc},
         ptr,
+        d_ordering,
         rank);
 
     return scalapack_layout;
@@ -133,37 +139,45 @@ costa::grid_layout<T> costa::block_cyclic_layout(
 
 // template instantiation for custom_layout
 template 
-costa::grid_layout<float> costa::custom_layout(int rowblocks,
-                             int colblocks,
-                             int* rowsplit,
-                             int* colsplit,
-                             int* owners,
-                             int nlocalblocks,
-                             block_t* localblocks);
+costa::grid_layout<float> costa::custom_layout(
+                             const int rowblocks,
+                             const int colblocks,
+                             const int* rowsplit,
+                             const int* colsplit,
+                             const int* owners,
+                             const int nlocalblocks,
+                             const block_t* localblocks,
+                             const char data_ordering);
 template 
-costa::grid_layout<double> costa::custom_layout(int rowblocks,
-                             int colblocks,
-                             int* rowsplit,
-                             int* colsplit,
-                             int* owners,
-                             int nlocalblocks,
-                             block_t* localblocks);
+costa::grid_layout<double> costa::custom_layout(
+                             const int rowblocks,
+                             const int colblocks,
+                             const int* rowsplit,
+                             const int* colsplit,
+                             const int* owners,
+                             const int nlocalblocks,
+                             const block_t* localblocks,
+                             const char data_ordering);
 template 
-costa::grid_layout<std::complex<float>> costa::custom_layout(int rowblocks,
-                             int colblocks,
-                             int* rowsplit,
-                             int* colsplit,
-                             int* owners,
-                             int nlocalblocks,
-                             block_t* localblocks);
+costa::grid_layout<std::complex<float>> costa::custom_layout(
+                             const int rowblocks,
+                             const int colblocks,
+                             const int* rowsplit,
+                             const int* colsplit,
+                             const int* owners,
+                             const int nlocalblocks,
+                             const block_t* localblocks,
+                             const char data_ordering);
 template 
-costa::grid_layout<std::complex<double>> costa::custom_layout(int rowblocks,
-                             int colblocks,
-                             int* rowsplit,
-                             int* colsplit,
-                             int* owners,
-                             int nlocalblocks,
-                             block_t* localblocks);
+costa::grid_layout<std::complex<double>> costa::custom_layout(
+                             const int rowblocks,
+                             const int colblocks,
+                             const int* rowsplit,
+                             const int* colsplit,
+                             const int* owners,
+                             const int nlocalblocks,
+                             const block_t* localblocks,
+                             const char data_ordering);
 
 template
 costa::grid_layout<float> costa::block_cyclic_layout(
@@ -178,6 +192,7 @@ costa::grid_layout<float> costa::block_cyclic_layout(
                                     // (1-based, scalapack-compatible)
         float* ptr, // local data of matrix A (not the submatrix)
         const int lld, // local leading dimension
+        const char data_ordering, // whether each local block is row- or col-major
         const int rank // processor rank
 );
 
@@ -194,6 +209,7 @@ costa::grid_layout<double> costa::block_cyclic_layout(
                                     // (1-based, scalapack-compatible)
         double* ptr, // local data of matrix A (not the submatrix)
         const int lld, // local leading dimension
+        const char data_ordering, // whether each local block is row- or col-major
         const int rank // processor rank
 );
 
@@ -210,6 +226,7 @@ costa::grid_layout<std::complex<float>> costa::block_cyclic_layout(
                                     // (1-based, scalapack-compatible)
         std::complex<float>* ptr, // local data of matrix A (not the submatrix)
         const int lld, // local leading dimension
+        const char data_ordering, // whether each local block is row- or col-major
         const int rank // processor rank
 );
 
@@ -226,7 +243,7 @@ costa::grid_layout<std::complex<double>> costa::block_cyclic_layout(
                                     // (1-based, scalapack-compatible)
         std::complex<double>* ptr, // local data of matrix A (not the submatrix)
         const int lld, // local leading dimension
+        const char data_ordering, // whether each local block is row- or col-major
         const int rank // processor rank
 );
-
 

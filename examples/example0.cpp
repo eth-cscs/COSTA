@@ -103,6 +103,7 @@ int main(int argc, char **argv) {
             0, 0, // coords or ranks oweing the first row (0-based)
             &initial_data[0], // local data of full matrix
             block_size, // local leading dimension
+            'C',
             rank // current rank
     );
 
@@ -134,8 +135,22 @@ int main(int argc, char **argv) {
             0, 0, // coords or ranks oweing the first row (0-based)
             &final_data[0], // local data of full matrix
             block_size, // local leading dimension
+            'R',
             rank // current rank
     );
+
+    /*
+    for (int i = 0; i < P; ++i) {
+        if (rank == i) {
+            std::cout << "Rank = " << rank << std::endl;
+            for (int j = 0; j < final_data.size(); ++j) {
+                std::cout << final_data[i] << ", ";
+            }
+            std::cout << std::endl;
+        }
+        MPI_Barrier(comm);
+    }
+    */
 
     // ***************************************
     // TRANSFORMING: INITIAL->FINAL

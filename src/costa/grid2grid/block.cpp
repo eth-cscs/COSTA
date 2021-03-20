@@ -3,20 +3,23 @@
 #include <complex>
 
 namespace costa {
-
-double conjugate(double el) {
+int conjugate_f(int el) {
     return el; 
 }
 
-float conjugate(float el) {
+double conjugate_f(double el) {
     return el; 
 }
 
-std::complex<float> conjugate(std::complex<float> el) {
+float conjugate_f(float el) {
+    return el; 
+}
+
+std::complex<float> conjugate_f(std::complex<float> el) {
     return std::conj(el); 
 }
 
-std::complex<double> conjugate(std::complex<double> el) {
+std::complex<double> conjugate_f(std::complex<double> el) {
     return std::conj(el); 
 }
 
@@ -82,77 +85,56 @@ template <typename T>
 block<T>::block(const assigned_grid2D &grid,
                 block_coordinates coord,
                 T *ptr,
-                int stride)
+                const int stride)
     : rows_interval(grid.rows_interval(coord.row))
     , cols_interval(grid.cols_interval(coord.col))
     , coordinates(coord)
     , data(ptr)
-    , stride(stride) {}
-
-template <typename T>
-block<T>::block(const assigned_grid2D &grid, block_coordinates coord, T *ptr)
-    : block(grid, coord, ptr, grid.rows_interval(coord.row).length()) {}
-
-template <typename T>
-block<T>::block(const assigned_grid2D &grid,
-                interval r_inter,
-                interval c_inter,
-                T *ptr)
-    : block(grid, r_inter, c_inter, ptr, r_inter.length()) {}
+    , stride(stride)
+{}
 
 template <typename T>
 block<T>::block(const assigned_grid2D &grid,
                 block_range &range,
                 T *ptr,
-                int stride)
+                const int stride)
     : block(grid, range.rows_interval, range.cols_interval, ptr, stride) {}
-
-template <typename T>
-block<T>::block(const assigned_grid2D &grid, block_range &range, T *ptr)
-    : block(grid, range.rows_interval, range.cols_interval, ptr) {}
-
-template <typename T>
-block<T>::block(interval r_inter,
-                interval c_inter,
-                block_coordinates coord,
-                T *ptr,
-                int stride)
-    : rows_interval(r_inter)
-    , cols_interval(c_inter)
-    , coordinates(coord)
-    , data(ptr)
-    , stride(stride) {}
-
-template <typename T>
-block<T>::block(interval r_inter,
-                interval c_inter,
-                block_coordinates coord,
-                T *ptr)
-    : block(r_inter, c_inter, coord, ptr, r_inter.length()) {}
-
-template <typename T>
-block<T>::block(block_range &range, block_coordinates coord, T *ptr, int stride)
-    : block(range.rows_interval, range.cols_interval, coord, ptr, stride) {}
-
-template <typename T>
-block<T>::block(block_range &range, block_coordinates coord, T *ptr)
-    : block(range.rows_interval, range.cols_interval, coord, ptr) {}
 
 template <typename T>
 block<T>::block(const assigned_grid2D &grid,
                 interval r_inter,
                 interval c_inter,
                 T *ptr,
-                int stride)
+                const int stride)
     : rows_interval(r_inter)
     , cols_interval(c_inter)
     , data(ptr)
-    , stride(stride) {
+    , stride(stride)
+{
     // compute the coordinates based on the grid and intervals
     int row_coord = interval_index(grid.grid().rows_split, rows_interval);
     int col_coord = interval_index(grid.grid().cols_split, cols_interval);
     coordinates = block_coordinates(row_coord, col_coord);
 }
+
+template <typename T>
+block<T>::block(interval r_inter,
+                interval c_inter,
+                block_coordinates coord,
+                T *ptr,
+                const int stride)
+    : rows_interval(r_inter)
+    , cols_interval(c_inter)
+    , coordinates(coord)
+    , data(ptr)
+    , stride(stride)
+{}
+
+template <typename T>
+block<T>::block(block_range &range, block_coordinates coord, T *ptr, 
+                const int stride)
+    : block(range.rows_interval, range.cols_interval, coord, ptr, stride) {}
+
 
 // finds the index of the interval inter in splits
 template <typename T>
@@ -177,20 +159,12 @@ block<T> block<T>::subblock(interval r_range, interval c_range) const {
     auto c_interval = cols_interval;
     auto coord = coordinates;
 
-    if (transpose_on_copy) {
-        std::swap(r_range, c_range);
-        std::swap(r_interval, c_interval);
-        coord.transpose();
-    }
     T *ptr = data + (c_range.start - c_interval.start) * stride +
              (r_range.start - r_interval.start);
     // std::cout << "stride = " << stride << std::endl;
     // std::cout << "ptr offset = " << (ptr - data) << std::endl;
     block<T> b(r_range, c_range, coord, ptr, stride); // correct
-    char flag = transpose_on_copy ? 'T' : 'N';
-    if (conjugate_on_copy)
-        flag = 'C';
-    b.transpose_or_conjugate(flag);
+    b._ordering = _ordering;
     b.tag = tag;
     return b;
 }
@@ -226,30 +200,32 @@ bool block<T>::operator<(const block &other) const {
 
 template <typename T>
 const T& block<T>::local_element(int li, int lj) const {
-    if (transpose_on_copy)
-        std::swap(li, lj);
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
+    assert(_ordering == 'C' || _ordering == 'R');
 
     int offset = stride * lj + li;
+    if (_ordering == 'R') {
+        offset = stride * li + lj;
+    }
     return data[offset];
 }
 
 template <typename T>
 T& block<T>::local_element(int li, int lj) {
-    if (transpose_on_copy)
-        std::swap(li, lj);
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
+    assert(_ordering == 'C' || _ordering == 'R');
 
     int offset = stride * lj + li;
+    if (_ordering == 'R') {
+        offset = stride * li + lj;
+    }
     return data[offset];
 }
 
 template <typename T>
 std::pair<int, int> block<T>::local_to_global(int li, int lj) const {
-    if (transpose_on_copy)
-        std::swap(li, lj);
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
 
@@ -261,9 +237,6 @@ std::pair<int, int> block<T>::local_to_global(int li, int lj) const {
 
 template <typename T>
 std::pair<int, int> block<T>::global_to_local(int gi, int gj) const {
-    if (transpose_on_copy)
-        std::swap(gi, gj);
-
     int li = -1;
     int lj = -1;
 
@@ -277,54 +250,22 @@ std::pair<int, int> block<T>::global_to_local(int gi, int gj) const {
     return std::pair<int, int>{li, lj};
 }
 
-// transpose and conjugate if necessary local block
+// transpose local block
 template <typename T>
-void block<T>::transpose_or_conjugate(char flag) {
-    if (flag == 'N') return;
-    /*
+void block<T>::transpose() {
     std::swap(rows_interval, cols_interval);
     coordinates.transpose();
+}
 
-    auto transposed_data = std::unique_ptr<T[]>(new T[total_size()]);
-    if (flag == 'T') {
-        for (int j = 0; j < n_cols(); ++j) {
-            for (int i = 0; i < n_rows(); ++i) {
-                int offset = i * n_cols() + j;
-                auto el = local_element(i, j);
-                *(transposed_data.get()+offset) = local_element(i, j);
-            }
-        }
-    } else {
-        for (int j = 0; j < n_cols(); ++j) {
-            for (int i = 0; i < n_rows(); ++i) {
-                int offset = i * n_cols() + j;
-                auto el = local_element(i, j);
-                *(transposed_data.get()+offset) = std::conj(local_element(i, j));
-            }
-        }
-    }
-
-    memory::copy<T>(total_size(), transposed_data.get(), data);
-    stride = 0;
-    */
-
-    std::swap(rows_interval, cols_interval);
-    coordinates.transpose();
-
-    if (flag == 'T' || flag == 'C') 
-        transpose_on_copy = true;
-
-    if (flag == 'C')
-        conjugate_on_copy = true;
+template <typename T>
+void block<T>::set_ordering(const char ordering) {
+    _ordering = std::toupper(ordering);
+    assert(_ordering == 'R' || _ordering == 'C');
 }
 
 template <typename T>
 void block<T>::scale_by(T beta) {
     if (beta == T{1}) return;
-    // if transposed on copy, we do not know
-    // if copy has already occured, so we do not
-    // want to take a risk, just disable it.
-    assert(transpose_on_copy == false);
 
     int num_rows = n_rows();
     int num_cols = n_cols();
@@ -337,17 +278,6 @@ void block<T>::scale_by(T beta) {
     }
 }
 
-/*
-template <typename T>
-void block<T>::scale_on_copy(T scalar) {
-    this->scalar = scalar;
-}
-
-template <typename T>
-void block<T>::clear_after_transform(T scalar) {
-    this->scalar = std::nullopt;
-}
-*/
 
 template <typename T>
 local_blocks<T>::local_blocks(std::vector<block<T>> &&blocks)
@@ -373,9 +303,9 @@ size_t local_blocks<T>::size() const {
 }
 
 template <typename T>
-void local_blocks<T>::transpose_or_conjugate(char flag) {
+void local_blocks<T>::transpose() {
     for (auto& b: blocks) {
-        b.transpose_or_conjugate(flag);
+        b.transpose();
     }
 }
 

@@ -9,19 +9,24 @@ class grid_layout {
   public:
     grid_layout() = default;
 
-    grid_layout(assigned_grid2D &&g, local_blocks<T> &&b)
+    grid_layout(assigned_grid2D &&g, local_blocks<T> &&b, char ordering)
         : grid(std::forward<assigned_grid2D>(g))
-        , blocks(std::forward<local_blocks<T>>(b)) {}
+        , blocks(std::forward<local_blocks<T>>(b))
+    {
+        this->ordering = std::toupper(ordering);
+        assert(this->ordering == 'R' || this->ordering == 'C');
+
+        for (size_t i = 0; i < blocks.num_blocks(); ++i) {
+            block<T> b = blocks.get_block(i);
+            b.set_ordering(this->ordering);
+        }
+    }
 
     int num_ranks() const { return grid.num_ranks(); }
 
-    void transpose_or_conjugate(char flag) {
-        flag = std::toupper(flag);
-        assert(flag == 'N' || flag == 'T' || flag == 'C');
-        if (flag != 'N') {
-            grid.transpose();
-            blocks.transpose_or_conjugate(flag);
-        }
+    void transpose() {
+        grid.transpose();
+        blocks.transpose();
     }
 
     void reorder_ranks(std::vector<int>& reordering) {
@@ -127,6 +132,7 @@ class grid_layout {
 
     assigned_grid2D grid;
     local_blocks<T> blocks;
+    char ordering = 'C';
 };
 
 template <typename T>

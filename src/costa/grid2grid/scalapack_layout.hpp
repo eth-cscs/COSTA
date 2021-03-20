@@ -396,6 +396,7 @@ get_scalapack_layout(int lld_m_dim,                  // local leading dim
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    T *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template <typename T>
@@ -409,6 +410,7 @@ get_scalapack_layout(int lld_m_dim,                  // local leading dim
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    const T *ptr,
+                   const char data_ordering,
                    const int rank);
 
 // get only the grid, not the full layout
@@ -422,22 +424,4 @@ get_scalapack_grid(
                    scalapack::rank_decomposition r_grid,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src);
-
-// There is not submatrix support here.
-//
-template <typename T>
-grid_layout<T> get_scalapack_layout(scalapack::matrix_dim m_dim,
-                                  scalapack::block_dim b_dim,
-                                  scalapack::rank_decomposition r_grid,
-                                  scalapack::ordering rank_grid_ordering,
-                                  T *ptr,
-                                  int rank);
-
-// Provides a more conveninet wasy to pass arguments. There is no submatrix
-// support.
-//
-template <typename T>
-grid_layout<T>
-get_scalapack_layout(scalapack::data_layout &layout, T *ptr, int rank);
-
 } // namespace costa

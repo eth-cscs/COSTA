@@ -10,13 +10,15 @@
 
 namespace costa {
 
-double conjugate(double el);
+int conjugate_f(int el);
 
-float conjugate(float el);
+double conjugate_f(double el);
 
-std::complex<float> conjugate(std::complex<float> el);
+float conjugate_f(float el);
 
-std::complex<double> conjugate(std::complex<double> el);
+std::complex<float> conjugate_f(std::complex<float> el);
+
+std::complex<double> conjugate_f(std::complex<double> el);
 
 struct block_coordinates {
     int row = 0;
@@ -67,9 +69,6 @@ struct block {
     interval rows_interval;
     interval cols_interval;
 
-    bool transpose_on_copy = false;
-    bool conjugate_on_copy = false;
-
     // std::optional<T> scalar = std::nullopt;
 
     block_coordinates coordinates;
@@ -77,37 +76,32 @@ struct block {
     T *data = nullptr;
     int stride = 0;
 
+    char _ordering = 'C';
+
     block() = default;
 
     block(const assigned_grid2D &grid,
           block_coordinates coord,
           T *ptr,
-          int stride);
+          const int stride);
 
-    block(const assigned_grid2D &grid, block_coordinates coord, T *ptr);
+    block(const assigned_grid2D &grid, block_range &range, T *ptr,
+          const int stride);
+
+    block(const assigned_grid2D &grid,
+          interval r_inter,
+          interval c_inter,
+          T *ptr,
+          const int stride);
 
     block(interval r_inter,
           interval c_inter,
           block_coordinates coord,
           T *ptr,
-          int stride);
+          const int stride);
 
-    block(interval r_inter, interval c_inter, block_coordinates coord, T *ptr);
-    block(block_range &range, block_coordinates coord, T *ptr, int stride);
-    block(block_range &range, block_coordinates coord, T *ptr);
-
-    // without coordinates
-    block(const assigned_grid2D &grid,
-          interval r_inter,
-          interval c_inter,
-          T *ptr,
-          int stride);
-    block(const assigned_grid2D &grid,
-          interval r_inter,
-          interval c_inter,
-          T *ptr);
-    block(const assigned_grid2D &grid, block_range &range, T *ptr, int stride);
-    block(const assigned_grid2D &grid, block_range &range, T *ptr);
+    block(block_range &range, block_coordinates coord, T *ptr, 
+          const int stride);;
 
     // finds the index of the interval inter in splits
     int interval_index(const std::vector<int> &splits, interval inter);
@@ -133,19 +127,11 @@ struct block {
     std::pair<int, int> local_to_global(int li, int lj) const;
     std::pair<int, int> global_to_local(int gi, int gj) const;
 
-    void transpose_or_conjugate(char flag);
+    void transpose();
+    void set_ordering(const char ordering);
 
     // scales the local block by beta
     void scale_by(T beta);
-
-    /*
-    // schedules the local block to be scaled
-    // during transform (packing/unpacking)
-    void scale_on_copy(T scalar);
-
-    // clears the states that were pending on transform
-    void clear_after_transform();
-    */
 };
 
 template <typename T>
@@ -157,8 +143,7 @@ bool operator==(block<T> const &lhs, block<T> const &rhs) noexcept {
            lhs.coordinates.row == rhs.coordinates.row &&
            lhs.coordinates.col == rhs.coordinates.col &&
            lhs.stride == rhs.stride && lhs.data == rhs.data &&
-           lhs.transpose_on_copy == rhs.transpose_on_copy &&
-           lhs.conjugate_on_copy == rhs.conjugate_on_copy;
+           lhs._ordering == rhs._ordering;
 }
 
 template <typename T>
@@ -181,7 +166,7 @@ class local_blocks {
 
     size_t size() const;
 
-    void transpose_or_conjugate(char flag);
+    void transpose();
 
   private:
     template <typename T_>

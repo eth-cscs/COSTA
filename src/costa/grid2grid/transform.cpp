@@ -135,12 +135,13 @@ void transform(grid_layout<T> &initial_layout,
     int rank;
     MPI_Comm_rank(comm, &rank);
 
+    // no transpose, no conjugate (false, false)
     auto send_data = 
         utils::prepare_to_send(initial_layout, final_layout, rank,
-                               T{1}, T{0});
+                               T{1}, T{0}, false, false);
     auto recv_data = 
         utils::prepare_to_recv(final_layout, initial_layout, rank,
-                               T{1}, T{0});
+                               T{1}, T{0}, false, false);
 
     // perform the communication
     exchange_async(send_data, recv_data, comm);
@@ -152,20 +153,39 @@ void transform(grid_layout<T> &initial_layout,
                const char trans,
                const T alpha, const T beta,
                MPI_Comm comm) {
-    // transpose the initial layout if specified
-    initial_layout.transpose_or_conjugate(trans);
-
     int rank;
     MPI_Comm_rank(comm, &rank);
 
+    char flag = std::toupper(trans);
+    assert(flag == 'N' || flag == 'T' || flag == 'C');
+
+    // transposing depends also on the ordering
+    // i.e. whether the initial and the final layouts
+    // have blocks in row- or col-major ordering
+    bool transpose = utils::if_should_transpose(
+                                         initial_layout.ordering, 
+                                         final_layout.ordering, 
+                                         flag);
+    bool conjugate = flag == 'C';
+
+    // transpose if needed to make layouts compatible 
+    // (i.e. same dimensions) before comparing the grids
+    if (transpose) initial_layout.transpose();
+
     auto send_data =
-        utils::prepare_to_send(initial_layout, final_layout, rank, alpha, beta);
+        utils::prepare_to_send(initial_layout, final_layout, rank, 
+                               alpha, beta, transpose, conjugate);
 
     auto recv_data =
-        utils::prepare_to_recv(final_layout, initial_layout, rank, alpha, beta);
+        utils::prepare_to_recv(final_layout, initial_layout, rank, 
+                               alpha, beta, transpose, conjugate);
 
     // perform the communication
     exchange_async(send_data, recv_data, comm);
+
+    // undo the transpose
+    if (transpose) initial_layout.transpose();
+
 }
 
 template <typename T>
@@ -178,10 +198,21 @@ void transform(std::vector<layout_ref<T>>& from,
     MPI_Comm_rank(comm, &rank);
 
     std::vector<T> alpha(from.size(), T{1});
-    std::vector<T> beta(to.size(), T{0});
+    std::vector<T> beta(from.size(), T{0});
 
-    auto send_data = utils::prepare_to_send(from, to, rank, &alpha[0], &beta[0]);
-    auto recv_data = utils::prepare_to_recv(to, from, rank, &alpha[0], &beta[0]);
+    // transpose
+    bool transpose[from.size()];
+    std::fill_n(transpose, from.size(), false);
+    // conjugate
+    bool conjugate[from.size()];
+    std::fill_n(conjugate, from.size(), false);
+
+    auto send_data = utils::prepare_to_send(from, to, rank, 
+                                            &alpha[0], &beta[0], 
+                                            transpose, conjugate);
+    auto recv_data = utils::prepare_to_recv(to, from, rank, 
+                                            &alpha[0], &beta[0], 
+                                            transpose, conjugate);
 
     exchange_async(send_data, recv_data, comm);
 }
@@ -197,15 +228,46 @@ void transform(std::vector<layout_ref<T>>& from,
     int rank;
     MPI_Comm_rank(comm, &rank);
 
+    // transpose
+    bool transpose[from.size()];
+    // conjugate
+    bool conjugate[from.size()];
+
     // transpose each initial layout as specified by flags
     for (unsigned i = 0u; i < from.size(); ++i) {
-        from[i].get().transpose_or_conjugate(trans[i]);
+        char flag = std::toupper(trans[i]);
+        assert(flag == 'N' || flag == 'T' || flag == 'C');
+
+        // transposing depends also on the ordering
+        // i.e. whether the initial and the final layouts
+        // have blocks in row- or col-major ordering
+        transpose[i] = utils::if_should_transpose(from[i].get().ordering,
+                                                  to[i].get().ordering,
+                                                  flag);
+
+        // check if should conjugate
+        conjugate[i] = flag == 'C';
+
+        if (transpose[i]) {
+            from[i].get().transpose();
+        }
     }
 
-    auto send_data = utils::prepare_to_send(from, to, rank, alpha, beta);
-    auto recv_data = utils::prepare_to_recv(to, from, rank, alpha, beta);
+    auto send_data = utils::prepare_to_send(from, to, rank, 
+                                            alpha, beta, 
+                                            transpose, conjugate);
+    auto recv_data = utils::prepare_to_recv(to, from, rank, 
+                                            alpha, beta, 
+                                            transpose, conjugate);
 
     exchange_async(send_data, recv_data, comm);
+
+    // undo the transpose
+    for (unsigned i = 0u; i < from.size(); ++i) {
+        if (transpose[i]) {
+            from[i].get().transpose();
+        }
+    }
 }
 
 // explicit instantiation of transforming a single pair of layouts

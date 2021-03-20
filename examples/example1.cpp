@@ -134,7 +134,8 @@ int main(int argc, char **argv) {
                                             &colsplit[0], // where cols are split
                                             &owners[0], // owner rank of each block
                                             nlocalblocks, // num of local blocks
-                                            &local_blocks[0] // local blocks
+                                            &local_blocks[0], // local blocks
+                                            'R'
                                             );
 
     // ***************************************
@@ -165,6 +166,7 @@ int main(int argc, char **argv) {
             0, 0, // coords or ranks oweing the first row (0-based)
             &local_data[0], // local data of full matrix
             block_size, // local leading dimension
+            'C',
             rank // current rank
     );
 

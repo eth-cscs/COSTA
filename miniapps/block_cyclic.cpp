@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
             0, 0, // coords or ranks oweing the first row (0-based)
             &a[0], // local data of full matrix
             m, // local leading dimension
+            'C', // col-major
             rank // current rank
     );
 
@@ -101,6 +102,7 @@ int main(int argc, char **argv) {
             0, 0, // coords or ranks oweing the first row (0-based)
             &b[0], // local data of full matrix
             n, // local leading dimension
+            'C', // col-major
             rank // current rank
     );
 

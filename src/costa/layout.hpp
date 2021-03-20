@@ -9,6 +9,7 @@ namespace costa {
  * ld: leading dimension or distance between two columns of A_loc
  * row: the global block row index
  * col: the global block colum index
+ * ordering: 'R' (row-major) or 'C' (col-major).
  */
 struct block_t {
     void *data;
@@ -27,22 +28,25 @@ struct block_t {
  *         Owners are given in row-major order as assumed by C++.
  * nlocalblocks: number of blocks owned by the current rank
  * localblcoks: an array of block descriptions of the current rank
+ * ordering: 'R' or 'C' depending on whether each local block is given in
+ *           row- or col-major ordering
  */
 template <typename T>
-grid_layout<T> custom_layout(int rowblocks,
-                             int colblocks,
-                             int* rowsplit,
-                             int* colsplit,
-                             int* owners,
-                             int nlocalblocks,
-                             block_t* localblocks);
+grid_layout<T> custom_layout(const int rowblocks,
+                             const int colblocks,
+                             const int* rowsplit,
+                             const int* colsplit,
+                             const int* owners,
+                             const int nlocalblocks,
+                             const block_t* localblocks,
+                             const char ordering);
 
 // contains only the global grid, without local data
-assigned_grid2D custom_grid(int rowblocks,
-                            int colblocks,
-                            int* rowsplit,
-                            int* colsplit,
-                            int* owners);
+assigned_grid2D custom_grid(const int rowblocks,
+                            const int colblocks,
+                            const int* rowsplit,
+                            const int* colsplit,
+                            const int* owners);
 
 /**
  * creates a block cyclic layout (scalapack data layout) of some matrix A
@@ -59,6 +63,8 @@ assigned_grid2D custom_grid(int rowblocks,
  *                By default, should be set to (0, 0)
  * ptr: pointer to local data of the global matrix A.
  * lld: local leading dimension
+ * ordering: 'R' or 'C' depending on whether each local block is given in 
+ *           row- or col-major ordering
  * rank: MPI rank
  */
 template <typename T>
@@ -75,6 +81,7 @@ grid_layout<T> block_cyclic_layout(
                    T* ptr, // local data of matrix A
                            // (not the submatrix)
                    const int lld, // local leading dimension
+                   const char ordering, // whether local blocks are row/col-major
                    const int rank // processor rank
                );
 

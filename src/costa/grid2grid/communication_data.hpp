@@ -14,8 +14,10 @@ class message {
     message() = default;
 
     message(block<T> b, int rank, 
-            T alpha=T{1}, T beta=T{0}, 
-            char trans='N', char ordering = 'C');
+            char ordering,
+            T alpha, T beta,
+            bool trans, bool conj
+            );
 
     block<T> get_block() const;
 

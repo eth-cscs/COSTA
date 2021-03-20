@@ -10,15 +10,15 @@
 
 namespace costa {
 
-int conjugate(int el);
+int conjugate_f(int el);
 
-double conjugate(double el);
+double conjugate_f(double el);
 
-float conjugate(float el);
+float conjugate_f(float el);
 
-std::complex<float> conjugate(std::complex<float> el);
+std::complex<float> conjugate_f(std::complex<float> el);
 
-std::complex<double> conjugate(std::complex<double> el);
+std::complex<double> conjugate_f(std::complex<double> el);
 
 struct block_coordinates {
     int row = 0;
@@ -76,37 +76,32 @@ struct block {
     T *data = nullptr;
     int stride = 0;
 
-    char ordering = 'C';
-
-    char trans = 'N';
+    char _ordering = 'C';
 
     block() = default;
 
     block(const assigned_grid2D &grid,
           block_coordinates coord,
           T *ptr,
-          const int stride,
-          const char ordering);
+          const int stride);
 
     block(const assigned_grid2D &grid, block_range &range, T *ptr,
-          const int stride, const char ordering);
+          const int stride);
 
     block(const assigned_grid2D &grid,
           interval r_inter,
           interval c_inter,
           T *ptr,
-          const int stride,
-          const char ordering);
+          const int stride);
 
     block(interval r_inter,
           interval c_inter,
           block_coordinates coord,
           T *ptr,
-          const int stride,
-          const char ordering);
+          const int stride);
 
     block(block_range &range, block_coordinates coord, T *ptr, 
-          const int stride, const char ordering);
+          const int stride);;
 
     // finds the index of the interval inter in splits
     int interval_index(const std::vector<int> &splits, interval inter);
@@ -132,7 +127,8 @@ struct block {
     std::pair<int, int> local_to_global(int li, int lj) const;
     std::pair<int, int> global_to_local(int gi, int gj) const;
 
-    void transpose(char flag);
+    void transpose();
+    void set_ordering(const char ordering);
 
     // scales the local block by beta
     void scale_by(T beta);
@@ -147,7 +143,7 @@ bool operator==(block<T> const &lhs, block<T> const &rhs) noexcept {
            lhs.coordinates.row == rhs.coordinates.row &&
            lhs.coordinates.col == rhs.coordinates.col &&
            lhs.stride == rhs.stride && lhs.data == rhs.data &&
-           lhs.ordering == rhs.ordering;
+           lhs._ordering == rhs._ordering;
 }
 
 template <typename T>
@@ -170,7 +166,7 @@ class local_blocks {
 
     size_t size() const;
 
-    void transpose(char flag);
+    void transpose();
 
   private:
     template <typename T_>

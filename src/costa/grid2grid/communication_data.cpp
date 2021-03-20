@@ -9,31 +9,27 @@ namespace costa {
 // *********************
 template <typename T>
 message<T>::message(block<T> b, int rank,
-        T alpha, T beta,
-        char trans, char ordering)
+                    char ordering,
+                    T alpha, T beta,
+                    bool trans, bool conj)
     : b(b)
     , rank(rank)
     , alpha(alpha)
-    , beta(beta) {
+    , beta(beta)
+    , transpose(trans) {
 
     assert(b.non_empty());
 
-    // ignore upper/lower-case
-    trans = std::toupper(trans);
-    ordering = std::toupper(ordering);
-
     // check if the values are valid
-    assert(trans == 'N' || trans == 'T' || trans == 'C');
     assert(ordering == 'R' || ordering == 'C');
 
     // set boolean variables based on given chars
-    transpose = trans != 'N';
     col_major = ordering == 'C';
 
     // check if the data type is complex
     bool is_complex = std::is_same<T, std::complex<double>>::value ||
                       std::is_same<T, std::complex<float>>::value;
-    conjugate = trans == 'C' && is_complex;
+    conjugate = conj && is_complex;
 }
 
 template <typename T>
@@ -148,15 +144,15 @@ void communication_data<T>::copy_to_buffer() {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
             copy_and_transform(b.n_rows(), b.n_cols(),
-                               b.data, b.stride, b.ordering, 
+                               b.data, b.stride, b._ordering, 
                                // dest_ptr
                                data() + offset_per_message[i],
                                0,
                                m.col_major,
                                false, // no transpose on copy to buffer
                                false, // no conjugate on copy to buffer
-                               tiling,
-                               T{1}, T{0} // no scaling on copy to buffer
+                               T{1}, T{0},// no scaling on copy to buffer
+                               tiling
                                );
         }
     }
@@ -173,11 +169,11 @@ void communication_data<T>::copy_from_buffer(int idx) {
             copy_and_transform(b.n_rows(), b.n_cols(),
                                data() + offset_per_message[i],
                                0, m.col_major,
-                               b.data, b.stride, b.ordering,
+                               b.data, b.stride, b._ordering,
                                m.transpose,
                                m.conjugate,
-                               tiling,
-                               m.alpha, m.beta);
+                               m.alpha, m.beta,
+                               tiling);
         }
     }
 }
@@ -208,13 +204,13 @@ void copy_local_blocks(std::vector<message<T>>& from,
             assert(b_src.total_size() == b_dest.total_size());
 
             copy_and_transform(b_src.n_rows(), b_src.n_cols(),
-                               b_src.data, b_src.stride, b_src.ordering,
+                               b_src.data, b_src.stride, b_src._ordering,
                                b_dest.data,
-                               b_dest.stride, b_dest.ordering,
+                               b_dest.stride, b_dest._ordering,
                                from[i].transpose,
                                from[i].conjugate,
-                               tiling,
-                               from[i].alpha, from[i].beta);
+                               from[i].alpha, from[i].beta,
+                               tiling);
     }
     }
 }

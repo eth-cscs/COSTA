@@ -33,7 +33,7 @@ void copy(const std::size_t n, const elem_type *src_ptr,
         for (int i = 0; i < n; ++i) {
             auto el = src_ptr[i];
             if (should_conjugate) {
-                el = conjugate(el);
+                el = conjugate_f(el);
             }
             dest_ptr[i] = beta * dest_ptr[i] + alpha * el;
         }
@@ -87,8 +87,8 @@ void transpose_col_major(const int n_rows, const int n_cols,
                const T* src_ptr, const int src_stride, 
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
-               const tiling_manager<T>& tiling,
-               const T alpha=T{1}, const T beta=T{0}) {
+               const T alpha, const T beta,
+               const tiling_manager<T>& tiling) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -123,7 +123,7 @@ void transpose_col_major(const int n_rows, const int n_cols,
                     // auto el = b.local_element(i, j);
                     // (j, i) in the send buffer, column-major
                     if (should_conjugate)
-                        el = conjugate(el);
+                        el = conjugate_f(el);
                     tiling.buffer[b_offset + j-block_j] = el;
                 }
                 for (int j = block_j; j < upper_j; ++j) {
@@ -144,7 +144,7 @@ void transpose_col_major(const int n_rows, const int n_cols,
                     // auto el = b.local_element(i, j);
                     // (j, i) in the send buffer, column-major
                     if (should_conjugate)
-                        el = conjugate(el);
+                        el = conjugate_f(el);
                     auto& dst = dest_ptr[i*dest_stride + j];
                     if (perform_operation) {
                         dst = beta * dst + alpha * el;
@@ -163,8 +163,8 @@ void transpose_row_major(const int n_rows, const int n_cols,
                const T* src_ptr, const int src_stride, 
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
-               const tiling_manager<T>& tiling,
-               const T alpha=T{1}, const T beta=T{0}) {
+               const T alpha, const T beta,
+               const tiling_manager<T>& tiling) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -199,7 +199,7 @@ void transpose_row_major(const int n_rows, const int n_cols,
                     // auto el = b.local_element(i, j);
                     // (j, i) in the send buffer, column-major
                     if (should_conjugate)
-                        el = conjugate(el);
+                        el = conjugate_f(el);
                     tiling.buffer[b_offset + i-block_i] = el;
                 }
                 for (int i = block_i; i < upper_i; ++i) {
@@ -220,7 +220,7 @@ void transpose_row_major(const int n_rows, const int n_cols,
                     // auto el = b.local_element(i, j);
                     // (j, i) in the send buffer, column-major
                     if (should_conjugate)
-                        el = conjugate(el);
+                        el = conjugate_f(el);
                     auto& dst = dest_ptr[j*dest_stride + i];
                     if (perform_operation) {
                         dst = beta * dst + alpha * el;
@@ -238,23 +238,23 @@ void transpose(const int n_rows, const int n_cols,
                const T* src_ptr, const int src_stride, 
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
-               const tiling_manager<T>& tiling,
-               const T alpha=T{1}, const T beta=T{0},
-               const bool col_major=true) {
+               const T alpha, const T beta,
+               const bool col_major,
+               const tiling_manager<T>& tiling) {
     if (col_major) {
         transpose_col_major(n_rows, n_cols, 
                             src_ptr, src_stride,
                             dest_ptr, dest_stride,
                             should_conjugate,
-                            tiling,
-                            alpha, beta);
+                            alpha, beta,
+                            tiling);
     } else {
         transpose_row_major(n_rows, n_cols, 
                             src_ptr, src_stride,
                             dest_ptr, dest_stride,
                             should_conjugate,
-                            tiling,
-                            alpha, beta);
+                            alpha, beta,
+                            tiling);
     }
 }
 
@@ -278,8 +278,8 @@ void copy_and_transform(const int n_rows, const int n_cols,
                         const bool dest_col_major,
                         const bool should_transpose,
                         const bool should_conjugate,
-                        const tiling_manager<T>& tiling,
-                        const T alpha=T{1}, const T beta=T{0}) {
+                        const T alpha, const T beta,
+                        const tiling_manager<T>& tiling) {
     // BE CAREFUL: transpose and different src and dest orderings might cancel out
     // ===========
     // Row-major + Transpose + Row-major = Transpose (Row-major)
@@ -315,9 +315,9 @@ void copy_and_transform(const int n_rows, const int n_cols,
                   src_ptr, src_stride, 
                   dest_ptr, dest_stride, 
                   should_conjugate, 
-                  tiling,
                   alpha, beta,
-                  src_col_major);
+                  src_col_major,
+                  tiling);
     } else {
         copy2D(n_rows, n_cols,
                src_ptr, src_stride,

@@ -103,6 +103,7 @@ int main(int argc, char **argv) {
             0, 0, // coords or ranks oweing the first row (0-based)
             &initial_data[0], // local data of full matrix
             block_size, // local leading dimension
+            'C',
             rank // current rank
     );
 
@@ -134,6 +135,7 @@ int main(int argc, char **argv) {
             0, 0, // coords or ranks oweing the first row (0-based)
             &final_data[0], // local data of full matrix
             block_size, // local leading dimension
+            'R',
             rank // current rank
     );
 

@@ -46,8 +46,8 @@ TEST(copy2D, row_major) {
                                       false, // => row-major
                                       false, // => no transpose
                                       false, // => no conjugate
-                                      tiling,
-                                      1, 0 // alpha, beta
+                                      1, 0, // alpha, beta
+                                      tiling
                                       );
 
     // ignore stride when checking the correctness
@@ -114,8 +114,8 @@ TEST(copy2D, col_major) {
                                       true, // => col-major
                                       false, // => no transpose
                                       false, // => no conjugate
-                                      tiling,
-                                      1, 0 // alpha, beta
+                                      1, 0, // alpha, beta
+                                      tiling
                                       );
 
     // ignore stride when checking the correctness
@@ -178,8 +178,8 @@ TEST(transpose, row_to_col_major) {
                                       true, // => col-major
                                       false, // => no transpose
                                       false, // => no conjugate
-                                      tiling,
-                                      1, 0 // alpha, beta
+                                      1, 0, // alpha, beta
+                                      tiling
                                       );
 
     // ignore stride when checking the correctness

@@ -132,6 +132,7 @@ void pxtran(
         ordering,
         {rank_src_a.row_src, rank_src_a.col_src},
         a,
+        'C',
         rank);
 
     auto scalapack_layout_c = costa::get_scalapack_layout<T>(
@@ -144,6 +145,7 @@ void pxtran(
         ordering,
         {rank_src_c.row_src, rank_src_c.col_src},
         c,
+        'C',
         rank);
 
 /*

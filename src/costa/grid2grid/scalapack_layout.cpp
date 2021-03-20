@@ -186,6 +186,7 @@ grid_layout<T> get_scalapack_layout(
     scalapack::ordering ranks_grid_ordering,
     scalapack::rank_grid_coord ranks_grid_src_coord,
     T *ptr,
+    const char data_ordering,
     const int rank) {
 
     assert(submatrix_begin.row >= 1);
@@ -264,8 +265,7 @@ grid_layout<T> get_scalapack_layout(
                      {cols_split[j], cols_split[j + 1]}, // cols
                      {i, j},                             // blk coords
                      ptr + data_offset,
-                     lld,
-                     'C'});
+                     lld});
             }
         }
     }
@@ -274,7 +274,8 @@ grid_layout<T> get_scalapack_layout(
     assigned_grid2D assigned_grid(
         std::move(grid), std::move(owners), ranks_grid.n_total());
     local_blocks<T> local_memory(std::move(loc_blocks));
-    grid_layout<T> layout(std::move(assigned_grid), std::move(local_memory));
+    grid_layout<T> layout(std::move(assigned_grid), std::move(local_memory), 
+                          data_ordering);
     return layout;
 }
 
@@ -355,6 +356,7 @@ get_scalapack_layout(int lld,             // local leading dim
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    const T *ptr,
+                   const char data_ordering,
                    const int rank) {
 
     return get_scalapack_layout(lld,
@@ -366,51 +368,10 @@ get_scalapack_layout(int lld,             // local leading dim
                               rank_grid_ordering,
                               rank_src,
                               const_cast<T *>(ptr),
+                              data_ordering,
                               rank);
 }
 
-template <typename T>
-grid_layout<T> get_scalapack_layout(scalapack::matrix_dim m_dim,
-                                  scalapack::block_dim b_dim,
-                                  scalapack::rank_decomposition r_grid,
-                                  scalapack::ordering rank_grid_ordering,
-                                  T *ptr,
-                                  int rank) {
-    // std::cout << "I AM RANK " << rank << std::endl;
-    int n_blocks_row = (int)std::ceil(1.0 * m_dim.row / b_dim.row);
-    int n_blocks_col = (int)std::ceil(1.0 * m_dim.col / b_dim.col);
-
-    scalapack::rank_grid_coord rank_coord =
-        rank_to_grid(rank, r_grid, rank_grid_ordering);
-
-    int n_owning_blocks_row =
-        n_blocks_row / r_grid.row +
-        (rank_coord.row < (n_blocks_row % r_grid.row) ? 1 : 0);
-
-    int stride = n_owning_blocks_row * b_dim.row;
-
-    return get_scalapack_layout(stride, // local leading dim
-                              m_dim,  // global matrix size
-                              {1, 1}, // start of submatrix
-                              m_dim,  // dim of submatrix
-                              b_dim,  // block dimension
-                              r_grid,
-                              rank_grid_ordering,
-                              {0, 0},
-                              ptr,
-                              rank);
-}
-
-template <typename T>
-grid_layout<T>
-get_scalapack_layout(scalapack::data_layout &layout, T *ptr, int rank) {
-    return get_scalapack_layout<T>(layout.matrix_dimension,
-                                 layout.block_dimension,
-                                 layout.rank_grid,
-                                 layout.rank_grid_ordering,
-                                 ptr,
-                                 rank);
-}
 // template instantiation for get_scalapack_layout
 template grid_layout<float>
 get_scalapack_layout(int lld,
@@ -422,6 +383,7 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    float *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template grid_layout<double>
@@ -434,6 +396,7 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    double *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template grid_layout<std::complex<float>>
@@ -446,6 +409,7 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    std::complex<float> *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template grid_layout<std::complex<double>>
@@ -458,6 +422,7 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    std::complex<double> *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template grid_layout<float>
@@ -470,6 +435,7 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    const float *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template grid_layout<double>
@@ -482,6 +448,7 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    const double *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template grid_layout<std::complex<float>>
@@ -494,6 +461,7 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    const std::complex<float> *ptr,
+                   const char data_ordering,
                    const int rank);
 
 template grid_layout<std::complex<double>>
@@ -506,53 +474,6 @@ get_scalapack_layout(int lld,
                    scalapack::ordering rank_grid_ordering,
                    scalapack::rank_grid_coord rank_src,
                    const std::complex<double> *ptr,
+                   const char data_ordering,
                    const int rank);
-
-template grid_layout<float>
-get_scalapack_layout(scalapack::matrix_dim m_dim,
-                   scalapack::block_dim b_dim,
-                   scalapack::rank_decomposition r_grid,
-                   scalapack::ordering rank_grid_ordering,
-                   float *ptr,
-                   int rank);
-
-template grid_layout<double>
-get_scalapack_layout(scalapack::matrix_dim m_dim,
-                   scalapack::block_dim b_dim,
-                   scalapack::rank_decomposition r_grid,
-                   scalapack::ordering rank_grid_ordering,
-                   double *ptr,
-                   int rank);
-
-template grid_layout<std::complex<float>>
-get_scalapack_layout(scalapack::matrix_dim m_dim,
-                   scalapack::block_dim b_dim,
-                   scalapack::rank_decomposition r_grid,
-                   scalapack::ordering rank_grid_ordering,
-                   std::complex<float> *ptr,
-                   int rank);
-
-template grid_layout<std::complex<double>>
-get_scalapack_layout(scalapack::matrix_dim m_dim,
-                   scalapack::block_dim b_dim,
-                   scalapack::rank_decomposition r_grid,
-                   scalapack::ordering rank_grid_ordering,
-                   std::complex<double> *ptr,
-                   int rank);
-
-template grid_layout<float>
-get_scalapack_layout(scalapack::data_layout &layout, float *ptr, int rank);
-
-template grid_layout<double>
-get_scalapack_layout(scalapack::data_layout &layout, double *ptr, int rank);
-
-template grid_layout<std::complex<float>>
-get_scalapack_layout(scalapack::data_layout &layout,
-                   std::complex<float> *ptr,
-                   int rank);
-
-template grid_layout<std::complex<double>>
-get_scalapack_layout(scalapack::data_layout &layout,
-                   std::complex<double> *ptr,
-                   int rank);
 } // namespace costa

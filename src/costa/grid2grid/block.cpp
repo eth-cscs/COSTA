@@ -3,23 +3,23 @@
 #include <complex>
 
 namespace costa {
-int conjugate(int el) {
+int conjugate_f(int el) {
     return el; 
 }
 
-double conjugate(double el) {
+double conjugate_f(double el) {
     return el; 
 }
 
-float conjugate(float el) {
+float conjugate_f(float el) {
     return el; 
 }
 
-std::complex<float> conjugate(std::complex<float> el) {
+std::complex<float> conjugate_f(std::complex<float> el) {
     return std::conj(el); 
 }
 
-std::complex<double> conjugate(std::complex<double> el) {
+std::complex<double> conjugate_f(std::complex<double> el) {
     return std::conj(el); 
 }
 
@@ -85,36 +85,32 @@ template <typename T>
 block<T>::block(const assigned_grid2D &grid,
                 block_coordinates coord,
                 T *ptr,
-                const int stride,
-                const char ordering)
+                const int stride)
     : rows_interval(grid.rows_interval(coord.row))
     , cols_interval(grid.cols_interval(coord.col))
     , coordinates(coord)
     , data(ptr)
     , stride(stride)
-    , ordering(ordering)
 {}
 
 template <typename T>
 block<T>::block(const assigned_grid2D &grid,
                 block_range &range,
                 T *ptr,
-                const int stride,
-                const char ordering)
-    : block(grid, range.rows_interval, range.cols_interval, ptr, stride, ordering) {}
+                const int stride)
+    : block(grid, range.rows_interval, range.cols_interval, ptr, stride) {}
 
 template <typename T>
 block<T>::block(const assigned_grid2D &grid,
                 interval r_inter,
                 interval c_inter,
                 T *ptr,
-                const int stride,
-                const char ordering)
+                const int stride)
     : rows_interval(r_inter)
     , cols_interval(c_inter)
     , data(ptr)
     , stride(stride)
-    , ordering(ordering) {
+{
     // compute the coordinates based on the grid and intervals
     int row_coord = interval_index(grid.grid().rows_split, rows_interval);
     int col_coord = interval_index(grid.grid().cols_split, cols_interval);
@@ -126,19 +122,18 @@ block<T>::block(interval r_inter,
                 interval c_inter,
                 block_coordinates coord,
                 T *ptr,
-                const int stride,
-                const char ordering)
+                const int stride)
     : rows_interval(r_inter)
     , cols_interval(c_inter)
     , coordinates(coord)
     , data(ptr)
     , stride(stride)
-    , ordering(ordering) {}
+{}
 
 template <typename T>
 block<T>::block(block_range &range, block_coordinates coord, T *ptr, 
-                const int stride, const char ordering)
-    : block(range.rows_interval, range.cols_interval, coord, ptr, stride, ordering) {}
+                const int stride)
+    : block(range.rows_interval, range.cols_interval, coord, ptr, stride) {}
 
 
 // finds the index of the interval inter in splits
@@ -168,8 +163,8 @@ block<T> block<T>::subblock(interval r_range, interval c_range) const {
              (r_range.start - r_interval.start);
     // std::cout << "stride = " << stride << std::endl;
     // std::cout << "ptr offset = " << (ptr - data) << std::endl;
-    block<T> b(r_range, c_range, coord, ptr, stride, ordering); // correct
-    b.trans = trans;
+    block<T> b(r_range, c_range, coord, ptr, stride); // correct
+    b._ordering = _ordering;
     b.tag = tag;
     return b;
 }
@@ -207,10 +202,10 @@ template <typename T>
 const T& block<T>::local_element(int li, int lj) const {
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
-    assert(ordering == 'C' || ordering == 'R');
+    assert(_ordering == 'C' || _ordering == 'R');
 
     int offset = stride * lj + li;
-    if (ordering == 'R') {
+    if (_ordering == 'R') {
         offset = stride * li + lj;
     }
     return data[offset];
@@ -220,10 +215,10 @@ template <typename T>
 T& block<T>::local_element(int li, int lj) {
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
-    assert(ordering == 'C' || ordering == 'R');
+    assert(_ordering == 'C' || _ordering == 'R');
 
     int offset = stride * lj + li;
-    if (ordering == 'R') {
+    if (_ordering == 'R') {
         offset = stride * li + lj;
     }
     return data[offset];
@@ -255,16 +250,17 @@ std::pair<int, int> block<T>::global_to_local(int gi, int gj) const {
     return std::pair<int, int>{li, lj};
 }
 
-// transpose and conjugate if necessary local block
+// transpose local block
 template <typename T>
-void block<T>::transpose(char flag) {
-    flag = std::toupper(flag);
-    assert(flag == 'N' || flag == 'T' || flag == 'C');
-    if (flag == 'N') return;
-
+void block<T>::transpose() {
     std::swap(rows_interval, cols_interval);
     coordinates.transpose();
-    trans = flag;
+}
+
+template <typename T>
+void block<T>::set_ordering(const char ordering) {
+    _ordering = std::toupper(ordering);
+    assert(_ordering == 'R' || _ordering == 'C');
 }
 
 template <typename T>
@@ -307,9 +303,9 @@ size_t local_blocks<T>::size() const {
 }
 
 template <typename T>
-void local_blocks<T>::transpose(char flag) {
+void local_blocks<T>::transpose() {
     for (auto& b: blocks) {
-        b.transpose(flag);
+        b.transpose();
     }
 }
 

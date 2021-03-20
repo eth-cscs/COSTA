@@ -57,7 +57,7 @@ if(NOT TARGET costa)
     list(APPEND INSTALLED_TARGETS_LIST "costa")
 endif()
 
-if(NOT TARGET costa_scalapack)
+if(COSTA_SCALAPACK AND NOT TARGET costa_scalapack)
     add_library(costa_scalapack ${costa_scalapack_src_files})
 
     target_link_libraries(costa_scalapack PUBLIC costa 
@@ -74,7 +74,7 @@ if(NOT TARGET costa_scalapack)
     list(APPEND INSTALLED_TARGETS_LIST "costa_scalapack")
 endif()
 
-if(NOT TARGET costa_prefixed_scalapack)
+if(COSTA_SCALAPACK AND NOT TARGET costa_prefixed_scalapack)
     add_library(costa_prefixed_scalapack ${costa_prefixed_scalapack_src_files})
 
     target_link_libraries(costa_prefixed_scalapack PUBLIC costa 

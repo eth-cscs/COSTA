@@ -17,8 +17,7 @@ class grid_layout {
         assert(this->ordering == 'R' || this->ordering == 'C');
 
         for (size_t i = 0; i < blocks.num_blocks(); ++i) {
-            block<T> b = blocks.get_block(i);
-            b.set_ordering(this->ordering);
+            blocks.get_block(i).set_ordering(this->ordering);
         }
     }
 
@@ -87,7 +86,7 @@ class grid_layout {
                     std::cout << "mat(" << gi << ", " << gj << ")"
                               << " = " << (T) f(gi, gj)
                               << std::endl;
-                    */
+                              */
                 }
             }
         }

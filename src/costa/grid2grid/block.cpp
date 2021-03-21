@@ -199,7 +199,7 @@ bool block<T>::operator<(const block &other) const {
 }
 
 template <typename T>
-const T& block<T>::local_element(int li, int lj) const {
+T block<T>::local_element(int li, int lj) const {
     assert(li >= 0 && li < n_rows());
     assert(lj >= 0 && lj < n_cols());
     assert(_ordering == 'C' || _ordering == 'R');

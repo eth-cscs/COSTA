@@ -121,8 +121,8 @@ struct block {
 
     size_t total_size() const { return n_rows() * n_cols(); }
 
-    const T &local_element(int li, int lj) const;
-    T &local_element(int li, int lj);
+    T local_element(int li, int lj) const;
+    T& local_element(int li, int lj);
 
     std::pair<int, int> local_to_global(int li, int lj) const;
     std::pair<int, int> global_to_local(int gi, int gj) const;

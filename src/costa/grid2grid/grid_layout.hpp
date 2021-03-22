@@ -69,7 +69,7 @@ class grid_layout {
         using elem_type = T;
 
         for (size_t i = 0; i < blocks.num_blocks(); ++i) {
-            block<T> b = blocks.get_block(i);
+            auto& b = blocks.get_block(i);
 
             // iterate over local coordinates
             for (int li = 0; li < b.n_rows(); ++li) {

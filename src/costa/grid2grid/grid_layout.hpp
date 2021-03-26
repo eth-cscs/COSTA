@@ -2,6 +2,7 @@
 #include <costa/grid2grid/block.hpp>
 #include <costa/grid2grid/grid2D.hpp>
 #include <costa/grid2grid/mpi_type_wrapper.hpp>
+#include <mpi.h>
 
 namespace costa {
 template <typename T>
@@ -66,8 +67,6 @@ class grid_layout {
     // f(gi, gj) := value of element with global coordinates (gi, gj)
     template <typename Function>
     void initialize(Function f) {
-        using elem_type = T;
-
         for (size_t i = 0; i < blocks.num_blocks(); ++i) {
             auto& b = blocks.get_block(i);
 
@@ -92,13 +91,42 @@ class grid_layout {
         }
     }
 
+    // apply function f(gi, gj, prev_value) to each element
+    // (gi, gj) are the global coordinates and prev_value is the previous value
+    // of this element
+    template <typename Function>
+    void apply(Function f) {
+        for (size_t i = 0; i < blocks.num_blocks(); ++i) {
+            auto& b = blocks.get_block(i);
+
+            // iterate over local coordinates
+            for (int li = 0; li < b.n_rows(); ++li) {
+                for (int lj = 0; lj < b.n_cols(); ++lj) {
+                    int gi, gj;
+                    // local -> global coordinates
+                    std::tie(gi, gj) = b.local_to_global(li, lj);
+                    // check if global coordinates within global matrix dims
+                    assert(gi >= 0 && gj >= 0);
+                    assert(gi < num_rows() && gj < num_cols());
+                    // initialize local elemenent by f(global coordinates)
+                    auto prev_value = b.local_element(li, lj);
+                    b.local_element(li, lj) = (T) f(gi, gj, prev_value);
+                    /*
+                    std::cout << "mat(" << gi << ", " << gj << ")"
+                              << " = " << (T) f(gi, gj)
+                              << std::endl;
+                              */
+                }
+            }
+        }
+    }
+
     // checks whether the matrix elements correspond to the value of function f
     // i.e. it checks if:
     // global element (i, j) is equal to f(i, j) for all i, j
     // taking into account the tolerance
     template <typename Function>
     bool validate(Function f, double tolerance = 1e-12) {
-        using elem_type = T;
         bool ok = true;
 
         for (size_t i = 0; i < blocks.num_blocks(); ++i) {
@@ -127,6 +155,24 @@ class grid_layout {
             }
         }
         return ok;
+    }
+
+    template <typename Function>
+    T accumulate(Function f, T initial_value) {
+        T result = initial_value;
+
+        for (size_t i = 0; i < blocks.num_blocks(); ++i) {
+            auto& b = blocks.get_block(i);
+            // iterate over local coordinates
+            for (int li = 0; li < b.n_rows(); ++li) {
+                for (int lj = 0; lj < b.n_cols(); ++lj) {
+                    auto el = b.local_element(li, lj);
+                    result = f(result, el);
+                }
+            }
+        }
+
+        return result;
     }
 
     assigned_grid2D grid;

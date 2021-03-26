@@ -88,12 +88,23 @@ void pxgemr2d(
     int lld_c = scalapack::leading_dimension(descc);
 
     // check whether rank grid is row-major or col-major
-    auto ordering = scalapack::rank_ordering(ctxt, P);
-    char grid_order =
-        ordering == costa::scalapack::ordering::column_major ? 'C' : 'R';
+    auto ordering_a = scalapack::rank_ordering(ctxt_a, P);
+    char grid_order_a =
+        ordering_a == costa::scalapack::ordering::column_major ? 'C' : 'R';
+    // check whether rank grid is row-major or col-major
+    auto ordering_c = scalapack::rank_ordering(ctxt_c, P);
+    char grid_order_c =
+        ordering_c == costa::scalapack::ordering::column_major ? 'C' : 'R';
 
 #ifdef DEBUG
     if (rank == 0) {
+        // scalapack rank grid decomposition
+        int procrows_a, proccols_a;
+        int procrows_c, proccols_c;
+        int myrow, mycol;
+        blacs::Cblacs_gridinfo(ctxt_a, &procrows_a, &proccols_a, &myrow, &mycol);
+        blacs::Cblacs_gridinfo(ctxt_c, &procrows_c, &proccols_c, &myrow, &mycol);
+
         pxgemr2d_params<T> params(
                              // global dimensions
                              mat_dim_a.rows, mat_dim_a.cols,
@@ -108,23 +119,17 @@ void pxgemr2d(
                              m, n,
                              // leading dimensinons
                              lld_a, lld_c,
-                             // processor grid
-                             procrows, proccols,
+                             // processor grid of A
+                             procrows_a, proccols_a,
+                             // processor grid of C
+                             procrows_c, proccols_c,
                              // processor grid ordering
-                             grid_order,
+                             grid_order_a, grid_order_c,
                              // ranks containing first rows
                              rank_src_a.row_src, rank_src_a.col_src,
                              rank_src_c.row_src, rank_src_c.col_src
                          );
         std::cout << params << std::endl;
-    }
-    MPI_Barrier(comm);
-#endif
-
-#ifdef DEBUG
-    if (rank == 0) {
-        std::cout << strategy << std::endl;
-        std::cout << "============================================" << std::endl;
     }
     MPI_Barrier(comm);
 #endif
@@ -137,7 +142,7 @@ void pxgemr2d(
         {a_subm, a_subn},
         {b_dim_a.rows, b_dim_a.cols},
         {procrows, proccols},
-        ordering,
+        ordering_a,
         {rank_src_a.row_src, rank_src_a.col_src},
         a,
         'C',
@@ -150,7 +155,7 @@ void pxgemr2d(
         {c_subm, c_subn},
         {b_dim_c.rows, b_dim_c.cols},
         {procrows, proccols},
-        ordering,
+        ordering_c,
         {rank_src_c.row_src, rank_src_c.col_src},
         c,
         'C',

@@ -3,6 +3,7 @@
 
 #include <costa/blacs.hpp>
 #include <costa/pxtran/costa_pxtran.hpp>
+#include <costa/pxtran/pxtran_params.hpp>
 
 #include <costa/grid2grid/ranks_reordering.hpp>
 #include <costa/grid2grid/transformer.hpp>
@@ -109,14 +110,6 @@ void pxtran(
                              rank_src_c.row_src, rank_src_c.col_src
                          );
         std::cout << params << std::endl;
-    }
-    MPI_Barrier(comm);
-#endif
-
-#ifdef DEBUG
-    if (rank == 0) {
-        std::cout << strategy << std::endl;
-        std::cout << "============================================" << std::endl;
     }
     MPI_Barrier(comm);
 #endif

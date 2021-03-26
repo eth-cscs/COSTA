@@ -50,13 +50,13 @@ void exchange_async(communication_data<T>& send_data,
     PE(transform_irecv);
     MPI_Request* recv_reqs;
     // protect from empty data
-    if (recv_data.n_packed_messages) {
+    if (recv_data.n_packed_messages > 0) {
         recv_reqs = new MPI_Request[recv_data.n_packed_messages];
     }
     int request_idx = 0;
     // initiate all receives
     for (unsigned i = 0u; i < recv_data.n_ranks; ++i) {
-        if (recv_data.counts[i]) {
+        if (recv_data.counts[i] > 0) {
             MPI_Irecv(recv_data.data() + recv_data.dspls[i],
                       recv_data.counts[i],
                       mpi_type_wrapper<T>::type(),
@@ -75,13 +75,13 @@ void exchange_async(communication_data<T>& send_data,
 
     PE(transform_isend);
     MPI_Request* send_reqs;
-    if (send_data.n_packed_messages) {
+    if (send_data.n_packed_messages > 0) {
         send_reqs = new MPI_Request[send_data.n_packed_messages];
     }
     request_idx = 0;
     // initiate all sends
     for (unsigned i = 0u; i < send_data.n_ranks; ++i) {
-        if (send_data.counts[i]) {
+        if (send_data.counts[i] > 0) {
             MPI_Isend(send_data.data() + send_data.dspls[i], 
                       send_data.counts[i],
                       mpi_type_wrapper<T>::type(),
@@ -115,13 +115,13 @@ void exchange_async(communication_data<T>& send_data,
         PL();
     }
 
-    if (recv_data.n_packed_messages) {
+    if (recv_data.n_packed_messages > 0) {
         delete[] recv_reqs;
     }
 
     PE(transform_waitall);
     // finish up the send requests since all the receive requests are finished
-    if (send_data.n_packed_messages) {
+    if (send_data.n_packed_messages > 0) {
         MPI_Waitall(send_data.n_packed_messages, send_reqs, MPI_STATUSES_IGNORE);
         delete[] send_reqs;
     }

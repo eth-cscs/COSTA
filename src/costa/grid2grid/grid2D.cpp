@@ -98,16 +98,6 @@ void assigned_grid2D::transpose() {
     transposed = !transposed;
 }
 
-void assigned_grid2D::transpose(char trans) {
-    char flag = std::toupper(trans);
-    assert(flag == 'N' || flag == 'T' || flag == 'C');
-    if (flag != 'N') {
-        g.transpose();
-        // ranks = transpose(ranks);
-        transposed = !transposed;
-    }
-}
-
 void assigned_grid2D::reorder_ranks(std::vector<int>& reordering) {
     ranks_reordering = reordering;
 }

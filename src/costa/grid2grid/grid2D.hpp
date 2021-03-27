@@ -70,11 +70,7 @@ class assigned_grid2D {
 
     int block_size(int row_index, int col_index);
 
-    // if flag='N' => no transpose
-    // if flag='T' => transpose
-    // if flag='C' => transpose and conjugate
     void transpose();
-    void transpose(char flag);
 
     void reorder_ranks(std::vector<int>& reordering);
 

@@ -174,7 +174,6 @@ bool block<T>::non_empty() const {
     bool non_empty_intervals =
         cols_interval.non_empty() && rows_interval.non_empty();
     assert(!non_empty_intervals || data);
-    // std::cout << "data = " << data << std::endl;
     return non_empty_intervals;
 }
 

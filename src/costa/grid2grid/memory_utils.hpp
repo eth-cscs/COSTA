@@ -249,7 +249,7 @@ void transpose(const int n_rows, const int n_cols,
                             alpha, beta,
                             tiling);
     } else {
-        transpose_row_major(n_rows, n_cols, 
+        transpose_row_major(n_rows, n_cols,
                             src_ptr, src_stride,
                             dest_ptr, dest_stride,
                             should_conjugate,

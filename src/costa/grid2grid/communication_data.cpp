@@ -128,7 +128,7 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
 
     n_packed_messages = 0;
     for (unsigned i = 0; i < (unsigned) n_ranks; ++i) {
-        if (counts[i]) {
+        if (counts[i] > 0) {
             ++n_packed_messages;
         }
     }
@@ -143,8 +143,9 @@ void communication_data<T>::copy_to_buffer() {
         for (unsigned i = 0; i < mpi_messages.size(); ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
+            bool b_col_major = b._ordering == 'C';
             copy_and_transform(b.n_rows(), b.n_cols(),
-                               b.data, b.stride, b._ordering, 
+                               b.data, b.stride, b_col_major, 
                                // dest_ptr
                                data() + offset_per_message[i],
                                0,
@@ -166,10 +167,11 @@ void communication_data<T>::copy_from_buffer(int idx) {
         for (unsigned i = package_ticks[idx]; i < package_ticks[idx+1]; ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
+            bool b_col_major = b._ordering == 'C';
             copy_and_transform(b.n_rows(), b.n_cols(),
                                data() + offset_per_message[i],
                                0, m.col_major,
-                               b.data, b.stride, b._ordering,
+                               b.data, b.stride, b_col_major,
                                m.transpose,
                                m.conjugate,
                                m.alpha, m.beta,
@@ -203,10 +205,13 @@ void copy_local_blocks(std::vector<message<T>>& from,
             assert(b_dest.non_empty());
             assert(b_src.total_size() == b_dest.total_size());
 
+            bool b_src_col_major = b_src._ordering == 'C';
+            bool b_dest_col_major = b_dest._ordering == 'C';
+
             copy_and_transform(b_src.n_rows(), b_src.n_cols(),
-                               b_src.data, b_src.stride, b_src._ordering,
+                               b_src.data, b_src.stride, b_src_col_major,
                                b_dest.data,
-                               b_dest.stride, b_dest._ordering,
+                               b_dest.stride, b_dest_col_major,
                                from[i].transpose,
                                from[i].conjugate,
                                from[i].alpha, from[i].beta,

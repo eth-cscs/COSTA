@@ -10,7 +10,7 @@ comm_volume communication_volume(assigned_grid2D& g_init,
                                  assigned_grid2D& g_final,
                                  char trans) {
     // transpose
-    g_init.transpose(trans);
+    if (trans != 'N') g_init.transpose();
     grid_cover g_cover(g_init.grid(), g_final.grid());
 
     int n_blocks_row = g_init.grid().n_rows;
@@ -39,7 +39,7 @@ comm_volume communication_volume(assigned_grid2D& g_init,
     }
 
     // transpose back
-    g_init.transpose(trans);
+    if (trans != 'N') g_init.transpose();
     return comm_volume(std::move(weights));
 }
 
@@ -135,16 +135,30 @@ void transform(grid_layout<T> &initial_layout,
     int rank;
     MPI_Comm_rank(comm, &rank);
 
+    // transposing depends also on the ordering
+    // i.e. whether the initial and the final layouts
+    // have blocks in row- or col-major ordering
+    bool transpose = utils::if_should_transpose(
+                                         initial_layout.ordering, 
+                                         final_layout.ordering, 
+                                         'N');
+    // transpose if needed to make layouts compatible 
+    // (i.e. same dimensions) before comparing the grids
+    if (transpose) initial_layout.transpose();
+
     // no transpose, no conjugate (false, false)
     auto send_data = 
         utils::prepare_to_send(initial_layout, final_layout, rank,
-                               T{1}, T{0}, false, false);
+                               T{1}, T{0}, transpose, false);
     auto recv_data = 
         utils::prepare_to_recv(final_layout, initial_layout, rank,
-                               T{1}, T{0}, false, false);
+                               T{1}, T{0}, transpose, false);
 
     // perform the communication
     exchange_async(send_data, recv_data, comm);
+
+    // undo the transpose
+    if (transpose) initial_layout.transpose();
 }
 
 template <typename T>

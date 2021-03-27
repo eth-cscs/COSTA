@@ -6,6 +6,7 @@ bool costa::utils::if_should_transpose(const char src_ordering,
     assert(src_ordering == 'R' || src_ordering == 'C');
     assert(dest_ordering == 'R' || dest_ordering == 'C');
     assert(trans == 'N' || trans == 'T' || trans == 'C');
+    return trans != 'N';
     // BE CAREFUL: transpose and different src and dest orderings might cancel out
     // ===========
     // Row-major + Transpose + Row-major = Transpose (Row-major)
@@ -17,12 +18,14 @@ bool costa::utils::if_should_transpose(const char src_ordering,
     // Col-major + NoTranspose + Col-major = Copy(Col-major)
     // Row-major + NoTranspose + Col-major = Transpose(Row-major)
     // Col-major + NoTranspose + Row-major = Transpose(Col-major)
+    /*
     bool transpose = trans != 'N';
 
     bool should_transpose = (transpose && src_ordering == dest_ordering)
                              ||
                             (!transpose && src_ordering != dest_ordering);
     return should_transpose;
+    */
 }
 std::vector<std::vector<int>> costa::topology_cost(MPI_Comm comm) {
     int P;

@@ -256,9 +256,14 @@ grid_layout<T> get_scalapack_layout(
                 int subblk_loc_col = submatrix_begin.col + cols_split[j] -
                                      (border_blk_col_begin + j) * blk_shape.col;
 
-                int data_offset =
-                    blk_loc_row * blk_shape.row + subblk_loc_row +
-                    lld * (blk_loc_col * blk_shape.col + subblk_loc_col);
+                int data_offset = 0;
+                if (data_ordering == 'R') {
+                    data_offset = blk_loc_col * blk_shape.col + subblk_loc_col +
+                                  lld * (blk_loc_row * blk_shape.row + subblk_loc_row);
+                } else {
+                    data_offset = blk_loc_row * blk_shape.row + subblk_loc_row +
+                                  lld * (blk_loc_col * blk_shape.col + subblk_loc_col);
+                }
 
                 loc_blocks.push_back(
                     {{rows_split[i], rows_split[i + 1]}, // rows

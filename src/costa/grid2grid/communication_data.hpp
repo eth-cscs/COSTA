@@ -1,7 +1,7 @@
 #pragma once
 #include <costa/grid2grid/block.hpp>
 #include <costa/grid2grid/memory_utils.hpp>
-#include <costa/grid2grid/tiling_manager.hpp>
+#include <costa/grid2grid/threads_workspace.hpp>
 
 #include <chrono>
 #include <memory>
@@ -56,20 +56,17 @@ class communication_data {
     int my_rank;
     int n_packed_messages = 0;
 
-    // tiling manager, used only for transposing
-    memory::tiling_manager<T> tiling;
-
     communication_data() = default;
 
     communication_data(std::vector<message<T>> &msgs, int my_rank, int n_ranks);
 
     // copy all mpi_messages to buffer
-    void copy_to_buffer();
+    void copy_to_buffer(memory::threads_workspace<T>& workspace);
 
     // copy mpi_messages within the idx-th package
     // a package includes all mpi_messages
     // received from the same rank
-    void copy_from_buffer(int idx);
+    void copy_from_buffer(int idx, memory::threads_workspace<T>& workspace);
 
     T *data();
 
@@ -82,5 +79,6 @@ class communication_data {
 
 template <typename T>
 void copy_local_blocks(std::vector<message<T>>& from, 
-                       std::vector<message<T>>& to);
+                       std::vector<message<T>>& to,
+                       memory::threads_workspace<T>& workspace);
 } // namespace costa

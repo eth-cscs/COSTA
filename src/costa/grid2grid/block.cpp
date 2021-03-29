@@ -154,18 +154,32 @@ block<T> block<T>::subblock(interval r_range, interval c_range) const {
         throw std::runtime_error(
             "ERROR: current block does not contain requested subblock.");
     }
-    // column-major ordering inside block assumed here
     auto r_interval = rows_interval;
     auto c_interval = cols_interval;
     auto coord = coordinates;
 
-    T *ptr = data + (c_range.start - c_interval.start) * stride +
-             (r_range.start - r_interval.start);
+    // this depends on the block ordering
+    int offset = 0;
+    if (_ordering == 'R') {
+        offset = (r_range.start - r_interval.start) * stride +
+                 (c_range.start - c_interval.start);
+    } else {
+        offset = (c_range.start - c_interval.start) * stride +
+                 (r_range.start - r_interval.start);
+    }
+    T * ptr = data + offset;
     // std::cout << "stride = " << stride << std::endl;
     // std::cout << "ptr offset = " << (ptr - data) << std::endl;
     block<T> b(r_range, c_range, coord, ptr, stride); // correct
-    b._ordering = _ordering;
+    b.set_ordering(_ordering);
     b.tag = tag;
+
+    /*
+    if (r_range.start == 0 && r_range.end == 2 && c_range.start == 4 && c_range.end == 6){
+        std::cout << "offset = " << offset << ", stride = " << stride  << std::endl;
+    }
+    */
+
     return b;
 }
 
@@ -188,9 +202,21 @@ bool block<T>::operator<(const block &other) const {
 
     bool blocks_less = cols_less || 
                        (cols_equal && rows_less);
+    // order the block col-major
+    /*
+    bool blocks_less = rows_less || 
+                       (rows_equal && cols_less);
+                       */
     bool blocks_equal = cols_equal && rows_equal;
 
-    return blocks_less || (blocks_equal && tags_less);
+    bool order_less = _ordering < other._ordering;
+    bool order_equal = _ordering == other._ordering;
+
+    return blocks_less 
+           || 
+           (blocks_equal && order_less) 
+           || 
+           (blocks_equal && order_equal && tags_less);
 
     // return cols_interval.start < other.cols_interval.start ||
     //        (cols_interval.start == other.cols_interval.start &&
@@ -276,7 +302,6 @@ void block<T>::scale_by(T beta) {
         }
     }
 }
-
 
 template <typename T>
 local_blocks<T>::local_blocks(std::vector<block<T>> &&blocks)

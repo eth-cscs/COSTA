@@ -1,6 +1,6 @@
 #pragma once
 #include <costa/grid2grid/block.hpp>
-#include <costa/grid2grid/tiling_manager.hpp>
+#include <costa/grid2grid/threads_workspace.hpp>
 
 #include <algorithm>
 #include <cstring>
@@ -88,22 +88,22 @@ void transpose_col_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               const tiling_manager<T>& tiling) {
+               const threads_workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
     // int block_dim = std::max(8, 128/(int)sizeof(T));
-    int block_dim = tiling.block_dim;
+    int block_dim = workspace.block_dim;
 
     int n_blocks_row = (n_rows+block_dim-1)/block_dim;
     int n_blocks_col = (n_cols+block_dim-1)/block_dim;
     int n_blocks = n_blocks_row * n_blocks_col;
 
-    int n_threads = std::min(n_blocks, tiling.max_threads);
+    int n_threads = std::min(n_blocks, workspace.max_threads);
 
     bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
 
-#pragma omp parallel for num_threads(n_threads)
+// #pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace)
     for (int block = 0; block < n_blocks; ++block) {
         int thread_id = omp_get_thread_num();
         int b_offset = thread_id * block_dim;
@@ -124,14 +124,14 @@ void transpose_col_major(const int n_rows, const int n_cols,
                     // (j, i) in the send buffer, column-major
                     if (should_conjugate)
                         el = conjugate_f(el);
-                    tiling.buffer[b_offset + j-block_j] = el;
+                    workspace.buffer[b_offset + j-block_j] = el;
                 }
                 for (int j = block_j; j < upper_j; ++j) {
                     auto& dst = dest_ptr[i*dest_stride + j];
                     if (perform_operation) {
-                        dst = beta * dst + alpha * tiling.buffer[b_offset + j-block_j];
+                        dst = beta * dst + alpha * workspace.buffer[b_offset + j-block_j];
                     } else {
-                        dst = tiling.buffer[b_offset + j-block_j];
+                        dst = workspace.buffer[b_offset + j-block_j];
                     }
                 }
             }
@@ -164,22 +164,22 @@ void transpose_row_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               const tiling_manager<T>& tiling) {
+               const threads_workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
     // int block_dim = std::max(8, 128/(int)sizeof(T));
-    int block_dim = tiling.block_dim;
+    int block_dim = workspace.block_dim;
 
     int n_blocks_row = (n_rows+block_dim-1)/block_dim;
     int n_blocks_col = (n_cols+block_dim-1)/block_dim;
     int n_blocks = n_blocks_row * n_blocks_col;
 
-    int n_threads = std::min(n_blocks, tiling.max_threads);
+    int n_threads = std::min(n_blocks, workspace.max_threads);
 
     bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
 
-#pragma omp parallel for num_threads(n_threads)
+// #pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace)
     for (int block = 0; block < n_blocks; ++block) {
         int thread_id = omp_get_thread_num();
         int b_offset = thread_id * block_dim;
@@ -198,16 +198,17 @@ void transpose_row_major(const int n_rows, const int n_cols,
                     auto el = src_ptr[i * src_stride + j];
                     // auto el = b.local_element(i, j);
                     // (j, i) in the send buffer, column-major
-                    if (should_conjugate)
+                    if (should_conjugate) {
                         el = conjugate_f(el);
-                    tiling.buffer[b_offset + i-block_i] = el;
+                    }
+                    workspace.buffer[b_offset + i-block_i] = el;
                 }
                 for (int i = block_i; i < upper_i; ++i) {
                     auto& dst = dest_ptr[j*dest_stride + i];
                     if (perform_operation) {
-                        dst = beta * dst + alpha * tiling.buffer[b_offset + i-block_i];
+                        dst = beta * dst + alpha * workspace.buffer[b_offset + i-block_i];
                     } else {
-                        dst = tiling.buffer[b_offset + i-block_i];
+                        dst = workspace.buffer[b_offset + i-block_i];
                     }
                 }
             }
@@ -219,8 +220,9 @@ void transpose_row_major(const int n_rows, const int n_cols,
                     // (i, j) in the original block, column-major
                     // auto el = b.local_element(i, j);
                     // (j, i) in the send buffer, column-major
-                    if (should_conjugate)
+                    if (should_conjugate) {
                         el = conjugate_f(el);
+                    }
                     auto& dst = dest_ptr[j*dest_stride + i];
                     if (perform_operation) {
                         dst = beta * dst + alpha * el;
@@ -240,21 +242,21 @@ void transpose(const int n_rows, const int n_cols,
                const bool should_conjugate, 
                const T alpha, const T beta,
                const bool col_major,
-               const tiling_manager<T>& tiling) {
+               const threads_workspace<T>& workspace) {
     if (col_major) {
         transpose_col_major(n_rows, n_cols, 
                             src_ptr, src_stride,
                             dest_ptr, dest_stride,
                             should_conjugate,
                             alpha, beta,
-                            tiling);
+                            workspace);
     } else {
         transpose_row_major(n_rows, n_cols,
                             src_ptr, src_stride,
                             dest_ptr, dest_stride,
                             should_conjugate,
                             alpha, beta,
-                            tiling);
+                            workspace);
     }
 }
 
@@ -262,9 +264,9 @@ inline
 int default_stride(int n_rows, int n_cols, bool should_transpose, bool col_major) {
     int stride = 0;
     if (should_transpose) {
-        stride = col_major ? n_rows : n_cols;
-    } else {
         stride = col_major ? n_cols : n_rows;
+    } else {
+        stride = col_major ? n_rows : n_cols;
     }
     return stride;
 }
@@ -279,7 +281,7 @@ void copy_and_transform(const int n_rows, const int n_cols,
                         const bool should_transpose,
                         const bool should_conjugate,
                         const T alpha, const T beta,
-                        const tiling_manager<T>& tiling) {
+                        const threads_workspace<T>& workspace) {
     // BE CAREFUL: transpose and different src and dest orderings might cancel out
     // ===========
     // Row-major + Transpose + Row-major = Transpose (Row-major)
@@ -301,24 +303,28 @@ void copy_and_transform(const int n_rows, const int n_cols,
     if (dest_stride == 0) {
         dest_stride = default_stride(n_rows, n_cols,
                                      will_transpose, dest_col_major);
+        // std::cout << "dest_stride=0 -> " << dest_stride << std::endl;
     }
     // if src_stride == 0, then no stride (i.e. default stride)
     if (src_stride == 0) {
         // src is not transposed
         src_stride = default_stride(n_rows, n_cols,
                                     false, src_col_major);
+        // std::cout << "src_stride=0 -> " << src_stride << std::endl;
     }
 
     if (will_transpose) {
         // transpose dimensions
+        // std::cout << "Transpose: src stride = " << src_stride << ", dest_stride = " << dest_stride << std::endl;
         transpose(n_rows, n_cols,
                   src_ptr, src_stride, 
                   dest_ptr, dest_stride, 
                   should_conjugate, 
                   alpha, beta,
                   src_col_major,
-                  tiling);
+                  workspace);
     } else {
+        // std::cout << "copy2D: src stride = " << src_stride << ", dest_stride = " << dest_stride << std::endl;
         copy2D(n_rows, n_cols,
                src_ptr, src_stride,
                dest_ptr, dest_stride,

@@ -37,6 +37,8 @@ std::string message<T>::to_string() const {
     std::string transposed = transpose ? "True" : "False";
     std::string conjugated = conjugate ? "True" : "False";
     std::string col_majored = col_major ? "True" : "False";
+    std::string block_col_majored = b._ordering=='C' ? "Col-major" : "Row-major";
+
 
     std::string res = "";
     res += "Message: \n";
@@ -44,6 +46,7 @@ std::string message<T>::to_string() const {
     res += "conjugate = " + conjugated + "\n";
     res += "col_major = " + col_majored + "\n";
     res += "block: " + std::to_string(b.n_rows()) + " x " + std::to_string(b.n_cols()) + "\n";
+    res += "block ordering: " + block_col_majored + "\n";
     return res;
 }
 
@@ -60,8 +63,42 @@ int message<T>::get_rank() const {
 // implementing comparator
 template <typename T>
 bool message<T>::operator<(const message<T> &other) const {
+    bool ranks_less = get_rank() < other.get_rank();
+    bool ranks_equal = get_rank() == other.get_rank();
+
+    bool alpha_less = std::abs(alpha) < std::abs(other.alpha);
+    bool alpha_equal = std::abs(alpha) == std::abs(other.alpha);
+
+    bool beta_less = std::abs(alpha) < std::abs(other.alpha);
+    bool beta_equal = std::abs(beta) == std::abs(other.beta);
+
+    bool transpose_less = transpose < other.transpose;
+    bool transpose_equal = transpose == other.transpose;
+
+    bool conj_less = conjugate < other.conjugate;
+    bool conj_equal = conjugate == other.conjugate;
+
+    bool order_less = col_major < other.col_major;
+    bool order_equal = col_major == other.col_major;
+
+    bool blocks_less = b < other.get_block();
+    bool blocks_equal = b == other.get_block();
+
+    return ranks_less
+           ||
+           blocks_less
+           ||
+           alpha_less
+           ||
+           beta_less
+           || 
+           conj_less
+           ||
+           order_less;
+    /*
     return get_rank() < other.get_rank() ||
            (get_rank() == other.get_rank() && b < other.get_block()); 
+           */
 }
 
 template <typename T>
@@ -104,9 +141,6 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
         block<T> b = m.get_block();
         assert(b.non_empty());
 
-        // std::cout << "Message " << m.to_string() << std::endl;
-        // std::cout << "rank = " << m.get_rank() << ", Block = " << b << std::endl;
-
         // if the message should be communicated to 
         // a different rank
         if (target_rank != my_rank) {
@@ -137,37 +171,40 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
 }
 
 template <typename T>
-void communication_data<T>::copy_to_buffer() {
-    if (mpi_messages.size()) {
-#pragma omp parallel for schedule(dynamic, 1)
+void communication_data<T>::copy_to_buffer(memory::threads_workspace<T>& workspace) {
+    if (mpi_messages.size() > 0) {
+#pragma omp parallel for shared(mpi_messages, workspace, offset_per_message, buffer)
         for (unsigned i = 0; i < mpi_messages.size(); ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
             bool b_col_major = b._ordering == 'C';
+            // std::cout <<"To buffer: Stride = " << b.stride << " -> 0" << std::endl;
             copy_and_transform(b.n_rows(), b.n_cols(),
                                b.data, b.stride, b_col_major, 
                                // dest_ptr
                                data() + offset_per_message[i],
                                0,
-                               m.col_major,
+                               b_col_major,
                                false, // no transpose on copy to buffer
                                false, // no conjugate on copy to buffer
                                T{1}, T{0},// no scaling on copy to buffer
-                               tiling
+                               workspace 
                                );
         }
     }
 }
 
 template <typename T>
-void communication_data<T>::copy_from_buffer(int idx) {
+void communication_data<T>::copy_from_buffer(int idx, memory::threads_workspace<T>& workspace) {
     assert(idx >= 0 && idx+1 < package_ticks.size());
     if (package_ticks[idx+1] - package_ticks[idx] > 0) {
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for shared(idx, package_ticks, mpi_messages, offset_per_message, buffer)
         for (unsigned i = package_ticks[idx]; i < package_ticks[idx+1]; ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
             bool b_col_major = b._ordering == 'C';
+            // std::cout <<"From buffer: Stride = 0 -> " << b.stride << std::endl;
+            // std::cout <<"Block ordering = " << b._ordering << std::endl;
             copy_and_transform(b.n_rows(), b.n_cols(),
                                data() + offset_per_message[i],
                                0, m.col_major,
@@ -175,7 +212,7 @@ void communication_data<T>::copy_from_buffer(int idx) {
                                m.transpose,
                                m.conjugate,
                                m.alpha, m.beta,
-                               tiling);
+                               workspace);
         }
     }
 }
@@ -187,11 +224,11 @@ T *communication_data<T>::data() {
 
 template <typename T>
 void copy_local_blocks(std::vector<message<T>>& from,
-                       std::vector<message<T>>& to) {
+                       std::vector<message<T>>& to,
+                       memory::threads_workspace<T>& workspace) {
     assert(from.size() == to.size());
     if (from.size() > 0) {
-    memory::tiling_manager<T> tiling;
-#pragma omp parallel for 
+#pragma omp parallel for shared(from, to, workspace)
         for (unsigned i = 0u; i < from.size(); ++i) {
             assert(from[i].alpha == to[i].alpha);
             assert(from[i].beta == to[i].beta);
@@ -207,6 +244,8 @@ void copy_local_blocks(std::vector<message<T>>& from,
 
             bool b_src_col_major = b_src._ordering == 'C';
             bool b_dest_col_major = b_dest._ordering == 'C';
+            // std::cout <<"src = " << b_src._ordering <<", dest = " << b_dest._ordering << std::endl;
+            // std::cout <<"src stride = " << b_src.stride <<", dest stride = " << b_dest.stride << std::endl;
 
             copy_and_transform(b_src.n_rows(), b_src.n_cols(),
                                b_src.data, b_src.stride, b_src_col_major,
@@ -215,7 +254,7 @@ void copy_local_blocks(std::vector<message<T>>& from,
                                from[i].transpose,
                                from[i].conjugate,
                                from[i].alpha, from[i].beta,
-                               tiling);
+                               workspace);
     }
     }
 }
@@ -235,14 +274,18 @@ template class message<std::complex<float>>;
 // template instantiation for copy_local_blocks
 template void
 copy_local_blocks(std::vector<message<double>>& from, 
-                  std::vector<message<double>>& to);
+                  std::vector<message<double>>& to,
+                  memory::threads_workspace<double>& workspace);
 template void
 copy_local_blocks(std::vector<message<float>>& from, 
-                  std::vector<message<float>>& to);
+                  std::vector<message<float>>& to,
+                  memory::threads_workspace<float>& workspace);
 template void
 copy_local_blocks(std::vector<message<std::complex<float>>>& from, 
-                  std::vector<message<std::complex<float>>>& to);
+                  std::vector<message<std::complex<float>>>& to,
+                  memory::threads_workspace<std::complex<float>>& workspace);
 template void
 copy_local_blocks(std::vector<message<std::complex<double>>>& from, 
-                  std::vector<message<std::complex<double>>>& to);
+                  std::vector<message<std::complex<double>>>& to,
+                  memory::threads_workspace<std::complex<double>>& workspace);
 } // namespace costa

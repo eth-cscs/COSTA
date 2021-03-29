@@ -42,23 +42,21 @@ std::vector<message<T>> decompose_block(const block<T> &b,
 
     std::vector<message<T>> decomposed_blocks;
 
-    int row_start = b.rows_interval.start;
     // use start of the interval to get the rank and the end of the interval
     // to get the block which has to be sent
     // skip the last element
-    for (int i = row_first; i < row_last; ++i) {
-        int row_end = std::min(g.grid().rows_split[i + 1], b.rows_interval.end);
-
-        int col_start = b.cols_interval.start;
-        for (int j = col_first; j < col_last; ++j) {
+    int col_start = b.cols_interval.start;
+    for (int j = col_first; j < col_last; ++j) {
+        int row_start = b.rows_interval.start;
+        // use i+1 and j+1 to find out the block
+        int col_end =
+            std::min(g.grid().cols_split[j + 1], b.cols_interval.end);
+        for (int i = row_first; i < row_last; ++i) {
+            int row_end = std::min(g.grid().rows_split[i + 1], b.rows_interval.end);
             // use i, j to find out the rank
             int rank = g.owner(i, j);
             // std::cout << "owner of block " << i << ", " << j << " is " <<
             // rank << std::endl;
-
-            // use i+1 and j+1 to find out the block
-            int col_end =
-                std::min(g.grid().cols_split[j + 1], b.cols_interval.end);
 
             // get pointer to this block of data based on the internal local
             // layout
@@ -76,10 +74,9 @@ std::vector<message<T>> decompose_block(const block<T> &b,
                                              alpha, beta,
                                              transpose, conjugate});
             }
-
-            col_start = col_end;
+            row_start = row_end;
         }
-        row_start = row_end;
+        col_start = col_end;
     }
     return decomposed_blocks;
 }

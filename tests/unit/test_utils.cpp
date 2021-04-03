@@ -162,7 +162,7 @@ TEST(transpose, row_to_col_major) {
 
     std::vector<int> out(result.size());
 
-    costa::memory::threads_workspace<int> workspace;
+    costa::memory::threads_workspace<int> workspace(256);
 
     int n_rows = 8; int n_cols = 3;
     int in_stride = 4;

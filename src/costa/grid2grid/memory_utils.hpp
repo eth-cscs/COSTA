@@ -98,10 +98,13 @@ void transpose_col_major(const int n_rows, const int n_cols,
     int n_blocks_row = (n_rows+block_dim-1)/block_dim;
     int n_blocks_col = (n_cols+block_dim-1)/block_dim;
     int n_blocks = n_blocks_row * n_blocks_col;
+    int n_threads = std::min(n_blocks, workspace.max_threads);
+
+    bool inside_parallel_region = omp_in_parallel();
 
     bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
 
-// #pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace)
+#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace) if(!inside_parallel_region)
     for (int block = 0; block < n_blocks; ++block) {
         int thread_id = omp_get_thread_num();
         int b_offset = thread_id * block_dim;
@@ -173,9 +176,12 @@ void transpose_row_major(const int n_rows, const int n_cols,
     int n_blocks_col = (n_cols+block_dim-1)/block_dim;
     int n_blocks = n_blocks_row * n_blocks_col;
 
+    int n_threads = std::min(n_blocks, workspace.max_threads);
+
+    bool inside_parallel_region = omp_in_parallel();
     bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
 
-// #pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace)
+#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace) if(!inside_parallel_region)
     for (int block = 0; block < n_blocks; ++block) {
         int thread_id = omp_get_thread_num();
         int b_offset = thread_id * block_dim;
@@ -220,160 +226,6 @@ void transpose_row_major(const int n_rows, const int n_cols,
                         el = conjugate_f(el);
                     }
                     auto& dst = dest_ptr[j*dest_stride + i];
-                    if (perform_operation) {
-                        dst = beta * dst + alpha * el;
-                    } else {
-                        dst = el;
-                    }
-                }
-            }
-        }
-    }
-}
-
-// transpose (out of place) data that is in row-major order
-template <typename T>
-void transpose_row_major_parallel(const int n_rows, const int n_cols, 
-               const T* src_ptr, const int src_stride, 
-               T* dest_ptr, const int dest_stride, 
-               const bool should_conjugate, 
-               const T alpha, const T beta,
-               const threads_workspace<T>& workspace) {
-    static_assert(std::is_trivially_copyable<T>(),
-            "Element type must be trivially copyable!");
-    // n_rows and n_cols before transposing
-    // int block_dim = std::max(8, 128/(int)sizeof(T));
-    int block_dim = workspace.block_dim;
-
-    int n_blocks_row = (n_rows+block_dim-1)/block_dim;
-    int n_blocks_col = (n_cols+block_dim-1)/block_dim;
-    int n_blocks = n_blocks_row * n_blocks_col;
-
-    int n_threads = std::min(n_blocks, workspace.max_threads);
-
-    bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
-
-#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace)
-    for (int block = 0; block < n_blocks; ++block) {
-        int thread_id = omp_get_thread_num();
-        int b_offset = thread_id * block_dim;
-
-        // row-major traversing blocks
-        int block_i = (block / n_blocks_row) * block_dim;
-        int block_j = (block % n_blocks_row) * block_dim;
-
-        int upper_i = std::min(n_rows, block_i + block_dim);
-        int upper_j = std::min(n_cols, block_j + block_dim);
-
-        if (block_i == block_j) {
-            for (int j = block_j; j < upper_j; ++j) {
-                for (int i = block_i; i < upper_i; ++i) {
-                    // (i, j) in the original block, column-major
-                    auto el = src_ptr[i * src_stride + j];
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (should_conjugate) {
-                        el = conjugate_f(el);
-                    }
-                    workspace.buffer[b_offset + i-block_i] = el;
-                }
-                for (int i = block_i; i < upper_i; ++i) {
-                    auto& dst = dest_ptr[j*dest_stride + i];
-                    if (perform_operation) {
-                        dst = beta * dst + alpha * workspace.buffer[b_offset + i-block_i];
-                    } else {
-                        dst = workspace.buffer[b_offset + i-block_i];
-                    }
-                }
-            }
-        } else {
-            // #pragma omp task firstprivate(block_i, block_j, dest_ptr, ptr, stride, conj, n_rows_t)
-            for (int j = block_j; j < upper_j; ++j) {
-                for (int i = block_i; i < upper_i; ++i) {
-                    auto el = src_ptr[i * src_stride + j];
-                    // (i, j) in the original block, column-major
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (should_conjugate) {
-                        el = conjugate_f(el);
-                    }
-                    auto& dst = dest_ptr[j*dest_stride + i];
-                    if (perform_operation) {
-                        dst = beta * dst + alpha * el;
-                    } else {
-                        dst = el;
-                    }
-                }
-            }
-        }
-    }
-}
-
-// transpose (out of place) data that is in col-major order
-template <typename T>
-void transpose_col_major_parallel(const int n_rows, const int n_cols, 
-               const T* src_ptr, const int src_stride, 
-               T* dest_ptr, const int dest_stride, 
-               const bool should_conjugate, 
-               const T alpha, const T beta,
-               const threads_workspace<T>& workspace) {
-    static_assert(std::is_trivially_copyable<T>(),
-            "Element type must be trivially copyable!");
-    // n_rows and n_cols before transposing
-    // int block_dim = std::max(8, 128/(int)sizeof(T));
-    int block_dim = workspace.block_dim;
-
-    int n_blocks_row = (n_rows+block_dim-1)/block_dim;
-    int n_blocks_col = (n_cols+block_dim-1)/block_dim;
-    int n_blocks = n_blocks_row * n_blocks_col;
-
-    int n_threads = std::min(n_blocks, workspace.max_threads);
-
-    bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
-
-#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace)
-    for (int block = 0; block < n_blocks; ++block) {
-        int thread_id = omp_get_thread_num();
-        int b_offset = thread_id * block_dim;
-
-        // col-major traversing blocks
-        int block_i = (block % n_blocks_row) * block_dim;
-        int block_j = (block / n_blocks_row) * block_dim;
-
-        int upper_i = std::min(n_rows, block_i + block_dim);
-        int upper_j = std::min(n_cols, block_j + block_dim);
-
-        if (block_i == block_j) {
-            for (int i = block_i; i < upper_i; ++i) {
-                for (int j = block_j; j < upper_j; ++j) {
-                    // (i, j) in the original block, column-major
-                    auto el = src_ptr[j * src_stride + i];
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (should_conjugate)
-                        el = conjugate_f(el);
-                    workspace.buffer[b_offset + j-block_j] = el;
-                }
-                for (int j = block_j; j < upper_j; ++j) {
-                    auto& dst = dest_ptr[i*dest_stride + j];
-                    if (perform_operation) {
-                        dst = beta * dst + alpha * workspace.buffer[b_offset + j-block_j];
-                    } else {
-                        dst = workspace.buffer[b_offset + j-block_j];
-                    }
-                }
-            }
-        } else {
-            // #pragma omp task firstprivate(block_i, block_j, dest_ptr, ptr, stride, conj, n_rows_t)
-            for (int i = block_i; i < upper_i; ++i) {
-                for (int j = block_j; j < upper_j; ++j) {
-                    auto el = src_ptr[j * src_stride + i];
-                    // (i, j) in the original block, column-major
-                    // auto el = b.local_element(i, j);
-                    // (j, i) in the send buffer, column-major
-                    if (should_conjugate)
-                        el = conjugate_f(el);
-                    auto& dst = dest_ptr[i*dest_stride + j];
                     if (perform_operation) {
                         dst = beta * dst + alpha * el;
                     } else {
@@ -402,31 +254,6 @@ void transpose(const int n_rows, const int n_cols,
                             workspace);
     } else {
         transpose_row_major(n_rows, n_cols,
-                            src_ptr, src_stride,
-                            dest_ptr, dest_stride,
-                            should_conjugate,
-                            alpha, beta,
-                            workspace);
-    }
-}
-
-template <typename T>
-void transpose_parallel(const int n_rows, const int n_cols, 
-                        const T* src_ptr, const int src_stride, 
-                        T* dest_ptr, const int dest_stride, 
-                        const bool should_conjugate, 
-                        const T alpha, const T beta,
-                        const bool col_major,
-                        const threads_workspace<T>& workspace) {
-    if (col_major) {
-        transpose_col_major_parallel(n_rows, n_cols, 
-                            src_ptr, src_stride,
-                            dest_ptr, dest_stride,
-                            should_conjugate,
-                            alpha, beta,
-                            workspace);
-    } else {
-        transpose_row_major_parallel(n_rows, n_cols,
                             src_ptr, src_stride,
                             dest_ptr, dest_stride,
                             should_conjugate,

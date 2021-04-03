@@ -45,6 +45,14 @@ if(NOT TARGET costa)
     target_link_libraries(costa PUBLIC MPI::MPI_CXX
                                        OpenMP::OpenMP_CXX)
 
+    # adds the -fPIC flag. This is automatically added by cmake
+    # for shared libraries, but for static libraries it has
+    # to be added manually. It's not needed for COSTA when built in isolation.
+    # However, if a 3rd-party library that is shared and built with the -fPIC
+    # flags is using COSTA built as a static library, it might be a problem 
+    # if COSTA is not compiled with this flag.
+    set_property(TARGET costa PROPERTY POSITION_INDEPENDENT_CODE ON)
+
     if(COSTA_WITH_PROFILING)
         target_link_libraries(costa PRIVATE
             $<BUILD_INTERFACE:semiprof>
@@ -63,6 +71,9 @@ if(COSTA_SCALAPACK AND NOT TARGET costa_scalapack)
     target_link_libraries(costa_scalapack PUBLIC costa 
         ${SCALAPACK_TARGET}
     )
+
+    set_property(TARGET costa_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
+
     if(COSTA_WITH_PROFILING)
         target_link_libraries(costa_scalapack PRIVATE
             $<BUILD_INTERFACE:semiprof>
@@ -80,6 +91,7 @@ if(COSTA_SCALAPACK AND NOT TARGET costa_prefixed_scalapack)
     target_link_libraries(costa_prefixed_scalapack PUBLIC costa 
         ${SCALAPACK_TARGET}
     )
+    set_property(TARGET costa_prefixed_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
     if(COSTA_WITH_PROFILING)
         target_link_libraries(costa_prefixed_scalapack PRIVATE
             $<BUILD_INTERFACE:semiprof>

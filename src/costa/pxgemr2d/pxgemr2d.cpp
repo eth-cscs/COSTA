@@ -3,28 +3,6 @@
 extern "C" {
 #include <costa/pxgemr2d/pxgemr2d.h>
 
-void pigemr2d(const int *m, const int *n,
-              const int *a,
-              const int *ia, const int *ja,
-              const int *desca,
-              int *c,
-              const int *ic, const int *jc,
-              const int *descc,
-              const int *ictxt) {
-    costa::pxgemr2d<int>(
-                  *m,
-                  *n,
-                  a,
-                  *ia,
-                  *ja,
-                  desca,
-                  c,
-                  *ic,
-                  *jc,
-                  descc,
-                  *ictxt);
-}
-
 void psgemr2d(const int *m, const int *n,
               const float *a,
               const int *ia, const int *ja,
@@ -161,17 +139,6 @@ void pzgemr2d_(const int *m, const int *n,
     pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pigemr2d_(const int *m, const int *n,
-               const int *a,
-               const int *ia, const int *ja,
-               const int *desca,
-               int *b,
-               const int *ib, const int *jb,
-               const int *descb,
-               const int *ictxt) {
-    pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
-}
-
 // *********************************************************************************
 // Same as previously, but with added double underscores at the end.
 // This is used for fortran interfaces, in case fortran expects these symbols
@@ -220,17 +187,6 @@ void pzgemr2d__(const int *m, const int *n,
     pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void pigemr2d__(const int *m, const int *n,
-                const int *a,
-                const int *ia, const int *ja,
-                const int *desca,
-                int *b,
-                const int *ib, const int *jb,
-                const int *descb,
-                const int *ictxt) {
-    pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
-}
-
 // *********************************************************************************
 // Same as previously, but CAPITALIZED.
 // This is used for fortran interfaces, in case fortran expects these symbols
@@ -277,16 +233,5 @@ void PZGEMR2D(const int *m, const int *n,
               const int *descb,
               const int *ictxt) {
     pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
-}
-
-void PIGEMR2D(const int *m, const int *n,
-              const int *a,
-              const int *ia, const int *ja,
-              const int *desca,
-              int *b,
-              const int *ib, const int *jb,
-              const int *descb,
-              const int *ictxt) {
-    pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 }

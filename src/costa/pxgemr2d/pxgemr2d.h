@@ -40,15 +40,6 @@ void pzgemr2d(const int *m, const int *n,
               const int *descb,
               const int *ictxt);
 
-void pigemr2d(const int *m, const int *n,
-              const int *a,
-              const int *ia, const int *ja,
-              const int *desca,
-              int *b,
-              const int *ib, const int *jb,
-              const int *descb,
-              const int *ictxt);
-
 // *********************************************************************************
 // Same as previously, but with added underscore at the end.
 // This is used for fortran interfaces, in case fortran expects these symbols
@@ -85,15 +76,6 @@ void pzgemr2d_(const int *m, const int *n,
                const int *ia, const int *ja,
                const int *desca,
                double *b,
-               const int *ib, const int *jb,
-               const int *descb,
-               const int *ictxt);
-
-void pigemr2d_(const int *m, const int *n,
-               const int *a,
-               const int *ia, const int *ja,
-               const int *desca,
-               int *b,
                const int *ib, const int *jb,
                const int *descb,
                const int *ictxt);
@@ -138,15 +120,6 @@ void pzgemr2d__(const int *m, const int *n,
                 const int *descb,
                 const int *ictxt);
 
-void pigemr2d__(const int *m, const int *n,
-                const int *a,
-                const int *ia, const int *ja,
-                const int *desca,
-                int *b,
-                const int *ib, const int *jb,
-                const int *descb,
-                const int *ictxt);
-
 // *********************************************************************************
 // Same as previously, but CAPITALIZED.
 // This is used for fortran interfaces, in case fortran expects these symbols
@@ -183,15 +156,6 @@ void PZGEMR2D(const int *m, const int *n,
               const int *ia, const int *ja,
               const int *desca,
               double *b,
-              const int *ib, const int *jb,
-              const int *descb,
-              const int *ictxt);
-
-void PIGEMR2D(const int *m, const int *n,
-              const int *a,
-              const int *ia, const int *ja,
-              const int *desca,
-              int *b,
               const int *ib, const int *jb,
               const int *descb,
               const int *ictxt);

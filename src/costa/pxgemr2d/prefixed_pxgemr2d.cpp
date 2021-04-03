@@ -3,28 +3,6 @@
 extern "C" {
 #include <costa/pxgemr2d/prefixed_pxgemr2d.h>
 
-void costa_pigemr2d(const int *m, const int *n,
-              const int *a,
-              const int *ia, const int *ja,
-              const int *desca,
-              int *c,
-              const int *ic, const int *jc,
-              const int *descc,
-              const int *ictxt) {
-    costa::pxgemr2d<int>(
-                  *m,
-                  *n,
-                  a,
-                  *ia,
-                  *ja,
-                  desca,
-                  c,
-                  *ic,
-                  *jc,
-                  descc,
-                  *ictxt);
-}
-
 void costa_psgemr2d(const int *m, const int *n,
               const float *a,
               const int *ia, const int *ja,
@@ -161,17 +139,6 @@ void costa_pzgemr2d_(const int *m, const int *n,
     costa_pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void costa_pigemr2d_(const int *m, const int *n,
-               const int *a,
-               const int *ia, const int *ja,
-               const int *desca,
-               int *b,
-               const int *ib, const int *jb,
-               const int *descb,
-               const int *ictxt) {
-    costa_pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
-}
-
 // *********************************************************************************
 // Same as previously, but with added double underscores at the end.
 // This is used for fortran interfaces, in case fortran expects these symbols
@@ -220,17 +187,6 @@ void costa_pzgemr2d__(const int *m, const int *n,
     costa_pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
-void costa_pigemr2d__(const int *m, const int *n,
-                const int *a,
-                const int *ia, const int *ja,
-                const int *desca,
-                int *b,
-                const int *ib, const int *jb,
-                const int *descb,
-                const int *ictxt) {
-    costa_pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
-}
-
 // *********************************************************************************
 // Same as previously, but CAPITALIZED.
 // This is used for fortran interfaces, in case fortran expects these symbols
@@ -277,17 +233,6 @@ void COSTA_PZGEMR2D(const int *m, const int *n,
               const int *descb,
               const int *ictxt) {
     costa_pzgemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
-}
-
-void COSTA_PIGEMR2D(const int *m, const int *n,
-              const int *a,
-              const int *ia, const int *ja,
-              const int *desca,
-              int *b,
-              const int *ib, const int *jb,
-              const int *descb,
-              const int *ictxt) {
-    costa_pigemr2d(m, n, a, ia, ja, desca, b, ib, jb, descb, ictxt);
 }
 
 }

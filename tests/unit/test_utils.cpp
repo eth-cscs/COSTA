@@ -1,6 +1,6 @@
 #include "../gtest.h"
 #include <costa/grid2grid/memory_utils.hpp>
-#include <costa/grid2grid/tiling_manager.hpp>
+#include <costa/grid2grid/threads_workspace.hpp>
 #include <vector>
 #include <cmath>
 
@@ -31,7 +31,7 @@ TEST(copy2D, row_major) {
 
     std::vector<int> out(result.size());
 
-    costa::memory::tiling_manager<int> tiling;
+    costa::memory::threads_workspace<int> workspace(256);
 
     int n_rows = 8; int n_cols = 3;
     int in_stride = 4;
@@ -47,7 +47,7 @@ TEST(copy2D, row_major) {
                                       false, // => no transpose
                                       false, // => no conjugate
                                       1, 0, // alpha, beta
-                                      tiling
+                                      workspace
                                       );
 
     // ignore stride when checking the correctness
@@ -99,7 +99,7 @@ TEST(copy2D, col_major) {
 
     std::vector<int> out(result.size());
 
-    costa::memory::tiling_manager<int> tiling;
+    costa::memory::threads_workspace<int> workspace(256);
 
     int n_rows = 3; int n_cols = 8;
     int in_stride = 4;
@@ -115,7 +115,7 @@ TEST(copy2D, col_major) {
                                       false, // => no transpose
                                       false, // => no conjugate
                                       1, 0, // alpha, beta
-                                      tiling
+                                      workspace
                                       );
 
     // ignore stride when checking the correctness
@@ -162,7 +162,7 @@ TEST(transpose, row_to_col_major) {
 
     std::vector<int> out(result.size());
 
-    costa::memory::tiling_manager<int> tiling;
+    costa::memory::threads_workspace<int> workspace;
 
     int n_rows = 8; int n_cols = 3;
     int in_stride = 4;
@@ -179,7 +179,7 @@ TEST(transpose, row_to_col_major) {
                                       false, // => no transpose
                                       false, // => no conjugate
                                       1, 0, // alpha, beta
-                                      tiling
+                                      workspace
                                       );
 
     // ignore stride when checking the correctness

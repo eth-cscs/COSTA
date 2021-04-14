@@ -264,12 +264,10 @@ void transpose(const int n_rows, const int n_cols,
 
 inline
 int default_stride(int n_rows, int n_cols, bool should_transpose, bool col_major) {
-    int stride = 0;
     if (should_transpose) {
-        stride = col_major ? n_cols : n_rows;
-    } else {
-        stride = col_major ? n_rows : n_cols;
+        std::swap(n_rows, n_cols);
     }
+    auto stride = col_major ? n_rows : n_cols;
     return stride;
 }
 
@@ -298,13 +296,13 @@ void copy_and_transform(const int n_rows, const int n_cols,
     bool will_transpose = (should_transpose && src_col_major == dest_col_major)
                            ||
                           (!should_transpose && src_col_major != dest_col_major);
-
     assert(dest_stride >= 0);
 
     // if dest_stride == 0, then no stride (i.e. default stride)
     if (dest_stride == 0) {
         dest_stride = default_stride(n_rows, n_cols,
                                      will_transpose, dest_col_major);
+        // std::cout << "dest_stride=0 -> " << dest_stride << std::endl;
     }
     // if src_stride == 0, then no stride (i.e. default stride)
     if (src_stride == 0) {

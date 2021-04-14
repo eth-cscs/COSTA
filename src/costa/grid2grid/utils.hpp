@@ -85,7 +85,8 @@ template <typename T>
 std::vector<message<T>> decompose_blocks(grid_layout<T> &init_layout,
                                          grid_layout<T> &final_layout,
                                          const T alpha, const T beta,
-                                         bool transpose, bool conjugate,
+                                         bool transpose,
+                                         bool conjugate,
                                          int tag = 0) {
     PE(transform_decompose);
     grid_cover g_overlap(init_layout.grid.grid(), final_layout.grid.grid());
@@ -105,6 +106,7 @@ std::vector<message<T>> decompose_blocks(grid_layout<T> &init_layout,
                             alpha, beta, transpose, conjugate);
         messages.insert(messages.end(), decomposed.begin(), decomposed.end());
     }
+
     PL();
     return messages;
 }
@@ -152,7 +154,8 @@ communication_data<T> prepare_to_send(
 
         auto decomposed_blocks = decompose_blocks(init_layout, final_layout, 
                                                   alpha[i], beta[i], 
-                                                  transpose[i], conjugate[i], i);
+                                                  transpose[i], conjugate[i], 
+                                                  i);
         messages.insert(messages.end(), decomposed_blocks.begin(), decomposed_blocks.end());
         n_ranks = std::max(n_ranks, std::max(final_layout.num_ranks(), init_layout.num_ranks()));
     }
@@ -190,7 +193,8 @@ communication_data<T> prepare_to_recv(
 
         auto decomposed_blocks = decompose_blocks(final_layout, init_layout, 
                                                   alpha[i], beta[i], 
-                                                  transpose[i], conjugate[i], i);
+                                                  transpose[i], conjugate[i], 
+                                                  i);
         messages.insert(messages.end(), decomposed_blocks.begin(), decomposed_blocks.end());
         n_ranks = std::max(n_ranks, std::max(init_layout.num_ranks(), final_layout.num_ranks()));
     }

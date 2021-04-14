@@ -78,6 +78,8 @@ struct block {
 
     char _ordering = 'C';
 
+    bool transposed = false;
+
     block() = default;
 
     block(const assigned_grid2D &grid,
@@ -143,7 +145,8 @@ bool operator==(block<T> const &lhs, block<T> const &rhs) noexcept {
            lhs.coordinates.row == rhs.coordinates.row &&
            lhs.coordinates.col == rhs.coordinates.col &&
            lhs.stride == rhs.stride && lhs.data == rhs.data &&
-           lhs._ordering == rhs._ordering;
+           lhs._ordering == rhs._ordering &&
+           lhs.tag == rhs.tag;
 }
 
 template <typename T>

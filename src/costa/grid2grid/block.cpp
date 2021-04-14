@@ -158,6 +158,12 @@ block<T> block<T>::subblock(interval r_range, interval c_range) const {
     auto c_interval = cols_interval;
     auto coord = coordinates;
 
+    if (transposed) {
+        std::swap(r_interval, c_interval);
+        std::swap(r_range, c_range);
+        coord.transpose();
+    }
+
     // this depends on the block ordering
     int offset = 0;
     if (_ordering == 'R') {
@@ -173,12 +179,9 @@ block<T> block<T>::subblock(interval r_range, interval c_range) const {
     block<T> b(r_range, c_range, coord, ptr, stride); // correct
     b.set_ordering(_ordering);
     b.tag = tag;
-
-    /*
-    if (r_range.start == 0 && r_range.end == 2 && c_range.start == 4 && c_range.end == 6){
-        std::cout << "offset = " << offset << ", stride = " << stride  << std::endl;
-    }
-    */
+    // transpose the subblock if the origin block is transposed
+    if (transposed)
+        b.transpose();
 
     return b;
 }
@@ -193,40 +196,20 @@ bool block<T>::non_empty() const {
 
 template <typename T>
 bool block<T>::operator<(const block &other) const {
-    bool tags_less = tag < other.tag;
-    bool tags_equal = tag == other.tag;
-    bool cols_less = cols_interval < other.cols_interval;
-    bool cols_equal = cols_interval == other.cols_interval;
-    bool rows_less = rows_interval < other.rows_interval;
-    bool rows_equal = rows_interval == other.rows_interval;
-
-    bool blocks_less = cols_less || 
-                       (cols_equal && rows_less);
-    // order the block col-major
-    /*
-    bool blocks_less = rows_less || 
-                       (rows_equal && cols_less);
-                       */
-    bool blocks_equal = cols_equal && rows_equal;
-
-    bool order_less = _ordering < other._ordering;
-    bool order_equal = _ordering == other._ordering;
-
-    return blocks_less 
-           || 
-           (blocks_equal && order_less) 
-           || 
-           (blocks_equal && order_equal && tags_less);
-
-    // return cols_interval.start < other.cols_interval.start ||
-    //        (cols_interval.start == other.cols_interval.start &&
-    //         rows_interval.start < other.rows_interval.start);
+    return std::tie(tag, rows_interval, cols_interval)
+           <
+           std::tie(other.tag, other.rows_interval, other.cols_interval);
 }
 
 template <typename T>
 T block<T>::local_element(int li, int lj) const {
-    assert(li >= 0 && li < n_rows());
-    assert(lj >= 0 && lj < n_cols());
+    int num_rows = n_rows();
+    int num_cols = n_cols();
+    if (transposed) {
+        std::swap(num_rows, num_cols);
+    }
+    assert(li >= 0 && li < num_rows);
+    assert(lj >= 0 && lj < num_cols);
     assert(_ordering == 'C' || _ordering == 'R');
 
     int offset = stride * lj + li;
@@ -238,8 +221,13 @@ T block<T>::local_element(int li, int lj) const {
 
 template <typename T>
 T& block<T>::local_element(int li, int lj) {
-    assert(li >= 0 && li < n_rows());
-    assert(lj >= 0 && lj < n_cols());
+    int num_rows = n_rows();
+    int num_cols = n_cols();
+    if (transposed) {
+        std::swap(num_rows, num_cols);
+    }
+    assert(li >= 0 && li < num_rows);
+    assert(lj >= 0 && lj < num_cols);
     assert(_ordering == 'C' || _ordering == 'R');
 
     int offset = stride * lj + li;
@@ -251,11 +239,19 @@ T& block<T>::local_element(int li, int lj) {
 
 template <typename T>
 std::pair<int, int> block<T>::local_to_global(int li, int lj) const {
-    assert(li >= 0 && li < n_rows());
-    assert(lj >= 0 && lj < n_cols());
+    int num_rows = n_rows();
+    int num_cols = n_cols();
+    auto r_interval = rows_interval;
+    auto c_interval = cols_interval;
+    if (transposed) {
+        std::swap(num_rows, num_cols);
+        std::swap(r_interval, c_interval);
+    }
+    assert(li >= 0 && li < num_rows);
+    assert(lj >= 0 && lj < num_cols);
 
-    int gi = rows_interval.start + li;
-    int gj = cols_interval.start + lj;
+    int gi = r_interval.start + li;
+    int gj = c_interval.start + lj;
 
     return std::pair<int, int>{gi, gj};
 }
@@ -265,11 +261,17 @@ std::pair<int, int> block<T>::global_to_local(int gi, int gj) const {
     int li = -1;
     int lj = -1;
 
-    if (rows_interval.contains(gi)) {
-        li = gi - rows_interval.start;
+    auto r_interval = rows_interval;
+    auto c_interval = cols_interval;
+    if (transposed) {
+        std::swap(r_interval, c_interval);
     }
-    if (cols_interval.contains(gj)) {
-        lj = gj - cols_interval.start;
+
+    if (r_interval.contains(gi)) {
+        li = gi - r_interval.start;
+    }
+    if (c_interval.contains(gj)) {
+        lj = gj - c_interval.start;
     }
 
     return std::pair<int, int>{li, lj};
@@ -280,6 +282,7 @@ template <typename T>
 void block<T>::transpose() {
     std::swap(rows_interval, cols_interval);
     coordinates.transpose();
+    transposed = !transposed;
 }
 
 template <typename T>
@@ -294,6 +297,10 @@ void block<T>::scale_by(T beta) {
 
     int num_rows = n_rows();
     int num_cols = n_cols();
+
+    if (transposed) {
+        std::swap(num_rows, num_cols);
+    }
 
     for (int lj = 0; lj < num_cols; ++lj) {
         for (int li = 0; li < num_rows; ++li) {

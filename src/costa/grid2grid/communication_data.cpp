@@ -42,10 +42,12 @@ std::string message<T>::to_string() const {
 
     std::string res = "";
     res += "Message: \n";
+    res += "rank = " + std::to_string(rank) + "\n";
     res += "transpose = " + transposed + "\n";
     res += "conjugate = " + conjugated + "\n";
     res += "col_major = " + col_majored + "\n";
     res += "block: " + std::to_string(b.n_rows()) + " x " + std::to_string(b.n_cols()) + "\n";
+    res += "block tag: " + std::to_string(b.tag) + "\n";
     res += "block ordering: " + block_col_majored + "\n";
     return res;
 }
@@ -63,42 +65,19 @@ int message<T>::get_rank() const {
 // implementing comparator
 template <typename T>
 bool message<T>::operator<(const message<T> &other) const {
-    bool ranks_less = get_rank() < other.get_rank();
-    bool ranks_equal = get_rank() == other.get_rank();
+    int rank = get_rank();
+    int other_rank = other.get_rank();
 
-    bool alpha_less = std::abs(alpha) < std::abs(other.alpha);
-    bool alpha_equal = std::abs(alpha) == std::abs(other.alpha);
+    const double alpha = std::abs(this->alpha);
+    const double beta = std::abs(this->beta);
 
-    bool beta_less = std::abs(alpha) < std::abs(other.alpha);
-    bool beta_equal = std::abs(beta) == std::abs(other.beta);
+    const double other_alpha = std::abs(other.alpha);
+    const double other_beta = std::abs(other.beta);
 
-    bool transpose_less = transpose < other.transpose;
-    bool transpose_equal = transpose == other.transpose;
-
-    bool conj_less = conjugate < other.conjugate;
-    bool conj_equal = conjugate == other.conjugate;
-
-    bool order_less = col_major < other.col_major;
-    bool order_equal = col_major == other.col_major;
-
-    bool blocks_less = b < other.get_block();
-    bool blocks_equal = b == other.get_block();
-
-    return ranks_less
-           ||
-           blocks_less
-           ||
-           alpha_less
-           ||
-           beta_less
-           || 
-           conj_less
-           ||
-           order_less;
-    /*
-    return get_rank() < other.get_rank() ||
-           (get_rank() == other.get_rank() && b < other.get_block()); 
-           */
+    return std::tie(rank, b, alpha, beta, transpose, conjugate)
+           <
+           std::tie(other_rank, other.b, other_alpha, other_beta, other.transpose, other.conjugate)
+           ;
 }
 
 template <typename T>
@@ -150,10 +129,22 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
             counts[target_rank] += b.total_size();
             total_size += b.total_size();
             prev_rank = target_rank;
+
         } else {
+            /*
+            if (rank == 0) {
+                std::cout << "message " << i << ":\n";
+                std::cout << m.to_string() << std::endl;
+            }
+            */
             local_messages.push_back(m);
         }
     }
+    /*
+    if(rank == 0) {
+        std::cout << "==========================" <<std::endl;
+    }
+    */
 
     buffer = std::unique_ptr<T[]>(new T[total_size]);
     for (unsigned i = 1; i < (unsigned)n_ranks; ++i) {
@@ -179,7 +170,10 @@ void communication_data<T>::copy_to_buffer(memory::threads_workspace<T>& workspa
             block<T> b = m.get_block();
             bool b_col_major = b._ordering == 'C';
             // std::cout <<"To buffer: Stride = " << b.stride << " -> 0" << std::endl;
-            copy_and_transform(b.n_rows(), b.n_cols(),
+            int num_rows = b.n_rows();
+            int num_cols = b.n_cols();
+            if (b.transposed) std::swap(num_rows, num_cols);
+            copy_and_transform(num_rows, num_cols,
                                b.data, b.stride, b_col_major, 
                                // dest_ptr
                                data() + offset_per_message[i],
@@ -203,9 +197,12 @@ void communication_data<T>::copy_from_buffer(int idx, memory::threads_workspace<
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
             bool b_col_major = b._ordering == 'C';
+            int num_rows = b.n_rows();
+            int num_cols = b.n_cols();
+            if (m.transpose) std::swap(num_rows, num_cols);
             // std::cout <<"From buffer: Stride = 0 -> " << b.stride << std::endl;
             // std::cout <<"Block ordering = " << b._ordering << std::endl;
-            copy_and_transform(b.n_rows(), b.n_cols(),
+            copy_and_transform(num_rows, num_cols,
                                data() + offset_per_message[i],
                                0, m.col_major,
                                b.data, b.stride, b_col_major,
@@ -230,6 +227,11 @@ void copy_local_blocks(std::vector<message<T>>& from,
     if (from.size() > 0) {
 #pragma omp parallel for shared(from, to, workspace)
         for (unsigned i = 0u; i < from.size(); ++i) {
+            /*
+            if (from[i].transpose != to[i].transpose) {
+                std::cout << "from = " << from[i].to_string() <<", to = " << to[i].to_string() <<std::endl;
+            }
+            */
             assert(from[i].alpha == to[i].alpha);
             assert(from[i].beta == to[i].beta);
             assert(from[i].transpose == to[i].transpose);
@@ -240,14 +242,25 @@ void copy_local_blocks(std::vector<message<T>>& from,
             auto b_dest = to[i].get_block();
             assert(b_src.non_empty());
             assert(b_dest.non_empty());
+            /*
+            if (b_src.total_size() != b_dest.total_size()) {
+                std::cout << "bsrc size = " << b_src.total_size() <<", bdest size" << b_dest.total_size() <<std::endl;
+            }
+            */
             assert(b_src.total_size() == b_dest.total_size());
+            assert(b_src.tag == b_dest.tag);
+            assert(from[i].transpose == b_src.transposed);
+            assert(!b_dest.transposed);
 
             bool b_src_col_major = b_src._ordering == 'C';
             bool b_dest_col_major = b_dest._ordering == 'C';
             // std::cout <<"src = " << b_src._ordering <<", dest = " << b_dest._ordering << std::endl;
-            // std::cout <<"src stride = " << b_src.stride <<", dest stride = " << b_dest.stride << std::endl;
+            // std::cout <<"LOCAL: src stride = " << b_src.stride <<", dest stride = " << b_dest.stride << std::endl;
+            int num_rows = b_src.n_rows();
+            int num_cols = b_src.n_cols();
+            if (b_src.transposed) std::swap(num_rows, num_cols);
 
-            copy_and_transform(b_src.n_rows(), b_src.n_cols(),
+            copy_and_transform(num_rows, num_cols,
                                b_src.data, b_src.stride, b_src_col_major,
                                b_dest.data,
                                b_dest.stride, b_dest_col_major,

@@ -156,12 +156,11 @@ void transform(grid_layout<T> &initial_layout,
     auto recv_data = 
         utils::prepare_to_recv(final_layout, initial_layout, rank,
                                T{1}, T{0}, transpose, false);
+    // undo the transpose
+    if (transpose) initial_layout.transpose();
 
     // perform the communication
     exchange_async(send_data, recv_data, comm);
-
-    // undo the transpose
-    if (transpose) initial_layout.transpose();
 }
 
 template <typename T>
@@ -197,12 +196,11 @@ void transform(grid_layout<T> &initial_layout,
         utils::prepare_to_recv(final_layout, initial_layout, rank, 
                                alpha, beta, transpose, conjugate);
 
-    // perform the communication
-    exchange_async(send_data, recv_data, comm);
-
     // undo the transpose
     if (transpose) initial_layout.transpose();
 
+    // perform the communication
+    exchange_async(send_data, recv_data, comm);
 }
 
 template <typename T>
@@ -277,14 +275,14 @@ void transform(std::vector<layout_ref<T>>& from,
                                             alpha, beta, 
                                             transpose, conjugate);
 
-    exchange_async(send_data, recv_data, comm);
-
     // undo the transpose
     for (unsigned i = 0u; i < from.size(); ++i) {
         if (transpose[i]) {
             from[i].get().transpose();
         }
     }
+
+    exchange_async(send_data, recv_data, comm);
 }
 
 // explicit instantiation of transforming a single pair of layouts

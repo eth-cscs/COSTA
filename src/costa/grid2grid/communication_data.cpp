@@ -192,7 +192,7 @@ template <typename T>
 void communication_data<T>::copy_from_buffer(int idx, memory::threads_workspace<T>& workspace) {
     assert(idx >= 0 && idx+1 < package_ticks.size());
     if (package_ticks[idx+1] - package_ticks[idx] > 0) {
-#pragma omp parallel for shared(idx, package_ticks, mpi_messages, offset_per_message, buffer)
+#pragma omp parallel for shared(idx, package_ticks, mpi_messages, offset_per_message, buffer, workspace)
         for (unsigned i = package_ticks[idx]; i < package_ticks[idx+1]; ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();

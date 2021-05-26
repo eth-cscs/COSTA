@@ -36,6 +36,8 @@ endif()
 
 project(costa VERSION 1.0.0 LANGUAGES CXX)
 
+include(GNUInstallDirs)
+
 # preserve rpaths when installing and make the install folder relocatable
 # use `CMAKE_SKIP_INSTALL_RPATH` to skip this
 # https://spack.readthedocs.io/en/latest/workflows.html#write-the-cmake-build
@@ -52,11 +54,6 @@ if(isSystemDir STREQUAL "-1")
     file(RELATIVE_PATH relDir ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
     set(CMAKE_INSTALL_RPATH ${basePoint} ${basePoint}/${relDir})
-endif()
-
-# include this so that all paths are set-up before adding subdirectories
-if(COSTA_WITH_INSTALL)
-    include(GNUInstallDirs)
 endif()
 
 # Dependencies

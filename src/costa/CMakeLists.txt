@@ -51,7 +51,8 @@ if(NOT TARGET costa)
     # However, if a 3rd-party library that is shared and built with the -fPIC
     # flags is using COSTA built as a static library, it might be a problem 
     # if COSTA is not compiled with this flag.
-    set_property(TARGET costa PROPERTY POSITION_INDEPENDENT_CODE ON)
+    # if needed, can be enforced by -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    # set_property(TARGET costa PROPERTY POSITION_INDEPENDENT_CODE ON)
 
     if(COSTA_WITH_PROFILING)
         target_link_libraries(costa PRIVATE

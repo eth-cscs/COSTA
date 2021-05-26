@@ -88,7 +88,7 @@ void transpose_col_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               const threads_workspace<T>& workspace) {
+               threads_workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -104,9 +104,13 @@ void transpose_col_major(const int n_rows, const int n_cols,
 
     bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
 
-#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace) if(!inside_parallel_region)
+    int thread_id = omp_get_thread_num();
+
+#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace, inside_parallel_region) firstprivate(thread_id) if(!inside_parallel_region)
     for (int block = 0; block < n_blocks; ++block) {
-        int thread_id = omp_get_thread_num();
+        if (!inside_parallel_region) {
+            thread_id = omp_get_thread_num();
+        }
         int b_offset = thread_id * block_dim;
 
         // col-major traversing blocks
@@ -165,7 +169,7 @@ void transpose_row_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               const threads_workspace<T>& workspace) {
+               threads_workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -179,11 +183,16 @@ void transpose_row_major(const int n_rows, const int n_cols,
     int n_threads = std::min(n_blocks, workspace.max_threads);
 
     bool inside_parallel_region = omp_in_parallel();
+
     bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
 
-#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace) if(!inside_parallel_region)
+    int thread_id = omp_get_thread_num();
+
+#pragma omp parallel for num_threads(n_threads) shared(src_ptr, dest_ptr, workspace, inside_parallel_region) firstprivate(thread_id) if(!inside_parallel_region)
     for (int block = 0; block < n_blocks; ++block) {
-        int thread_id = omp_get_thread_num();
+        if (!inside_parallel_region) {
+            thread_id = omp_get_thread_num();
+        }
         int b_offset = thread_id * block_dim;
 
         // row-major traversing blocks
@@ -244,7 +253,7 @@ void transpose(const int n_rows, const int n_cols,
                const bool should_conjugate, 
                const T alpha, const T beta,
                const bool col_major,
-               const threads_workspace<T>& workspace) {
+               threads_workspace<T>& workspace) {
     if (col_major) {
         transpose_col_major(n_rows, n_cols, 
                             src_ptr, src_stride,
@@ -281,7 +290,7 @@ void copy_and_transform(const int n_rows, const int n_cols,
                         const bool should_transpose,
                         const bool should_conjugate,
                         const T alpha, const T beta,
-                        const threads_workspace<T>& workspace) {
+                        threads_workspace<T>& workspace) {
     // BE CAREFUL: transpose and different src and dest orderings might cancel out
     // ===========
     // Row-major + Transpose + Row-major = Transpose (Row-major)

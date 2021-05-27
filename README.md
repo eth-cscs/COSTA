@@ -92,7 +92,7 @@ For a complete example of transforming between two block-cyclic matrix layouts, 
 
 ### Custom (Arbitrary) Layout
 
-To represent an arbitrary block-cyclic (scalapack) layout, we can use the following function defined in `costa/layout.hpp` header:
+To represent an arbitrary grid-like layout, we can use the following function defined in `costa/layout.hpp` header:
 ```cpp
 #include <costa/layout.hpp>
 // ...

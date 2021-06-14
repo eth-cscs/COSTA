@@ -47,7 +47,7 @@ template <typename T>
 void exchange_async(communication_data<T>& send_data, 
                     communication_data<T>& recv_data,
                     MPI_Comm comm) {
-    memory::threads_workspace<T> workspace(256);
+    memory::threads_workspace<T> workspace(128);
 
     PE(transform_irecv);
     MPI_Request* recv_reqs;

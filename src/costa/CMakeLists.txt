@@ -73,7 +73,7 @@ if(COSTA_SCALAPACK AND NOT TARGET costa_scalapack)
         ${SCALAPACK_TARGET}
     )
 
-    set_property(TARGET costa_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
+    # set_property(TARGET costa_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
 
     if(COSTA_WITH_PROFILING)
         target_link_libraries(costa_scalapack PRIVATE
@@ -92,7 +92,7 @@ if(COSTA_SCALAPACK AND NOT TARGET costa_prefixed_scalapack)
     target_link_libraries(costa_prefixed_scalapack PUBLIC costa 
         ${SCALAPACK_TARGET}
     )
-    set_property(TARGET costa_prefixed_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
+    # set_property(TARGET costa_prefixed_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
     if(COSTA_WITH_PROFILING)
         target_link_libraries(costa_prefixed_scalapack PRIVATE
             $<BUILD_INTERFACE:semiprof>

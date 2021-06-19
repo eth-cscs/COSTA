@@ -19,6 +19,7 @@
     - [Data-redistribution with pxgemr2d](#data-redistribution-with-pxgemr2d)
     - [Scale and Transpose with pxtran and pxtranu](#scale-and-transpose-with-pxtran-and-pxtranu)
     - [Communication Volume Reduction](#communication-volume-reduction)
+- [Citation(#citation)
 - [Questions?](#questions)
 - [Acknowledgements](#acknowledgements)
 
@@ -431,6 +432,23 @@ Measuring the total communication volume reduction (in \%) that can be achieved 
                        --block_c=100,100 --p_grid_c=4,2
 output:
 Comm volume reduction [%] = 33.3333
+```
+
+## Citation
+
+This paper can be cited as: 
+```
+@InProceedings{costa_algorithm_2021,
+    author="Kabi{\'{c}}, Marko and Pintarelli, Simon and Kozhevnikov, Anton and VandeVondele, Joost",
+    editor="Chamberlain, Bradford L. and Varbanescu, Ana-Lucia and Ltaief, Hatem and Luszczek, Piotr",
+    title="COSTA: Communication-Optimal Shuffle and Transpose Algorithm with Process Relabeling",
+    booktitle="High Performance Computing",
+    year="2021",
+    publisher="Springer International Publishing",
+    address="Cham",
+    pages="217--236",
+    isbn="978-3-030-78713-4"
+}
 ```
 
 ## Questions?

@@ -2,6 +2,7 @@
 
 ## Table of Contents
 - [Overview](#overview)
+- [Publication](#publication)
 - [Features](#features)
 - [Installing in 30 seconds](#installing-in-30-seconds)
 - [Examples](#examples)
@@ -19,7 +20,6 @@
     - [Data-redistribution with pxgemr2d](#data-redistribution-with-pxgemr2d)
     - [Scale and Transpose with pxtran and pxtranu](#scale-and-transpose-with-pxtran-and-pxtranu)
     - [Communication Volume Reduction](#communication-volume-reduction)
-- [Citation(#citation)
 - [Questions?](#questions)
 - [Acknowledgements](#acknowledgements)
 
@@ -30,6 +30,27 @@ COSTA is a communication-optimal, highly-optimised algorithm for data redistribu
 What makes COSTA more general than scalapack routines is that it is not limited only to block-cyclic data distributions, but can deal with completely arbitrary and irregular matrix distributions and can be easily generalized for n-dimensional tensors. 
 
 Thanks to its scalapack wrappers, scalapack users do not need to change their code in order to use COSTA: it is enough to link your library to COSTA before linking to scalapack and all `pxtran, pxtranu` and `pxgemr2d` routines will automatically be using the COSTA algorithm.
+
+## Publication
+
+This work is published in the **Proceedings of the International Conference on High Performance Computing (ISC21)** and is available under the following links:
+- **published version:** https://link.springer.com/chapter/10.1007/978-3-030-78713-4_12
+- **arxiv preprint:** https://arxiv.org/abs/2106.06601
+
+It can be cited as:
+```
+@InProceedings{costa_algorithm_2021,
+    author="Kabi{\'{c}}, Marko and Pintarelli, Simon and Kozhevnikov, Anton and VandeVondele, Joost",
+    editor="Chamberlain, Bradford L. and Varbanescu, Ana-Lucia and Ltaief, Hatem and Luszczek, Piotr",
+    title="COSTA: Communication-Optimal Shuffle and Transpose Algorithm with Process Relabeling",
+    booktitle="High Performance Computing",
+    year="2021",
+    publisher="Springer International Publishing",
+    address="Cham",
+    pages="217--236",
+    isbn="978-3-030-78713-4"
+}
+```
 
 ## Features
 
@@ -432,23 +453,6 @@ Measuring the total communication volume reduction (in \%) that can be achieved 
                        --block_c=100,100 --p_grid_c=4,2
 output:
 Comm volume reduction [%] = 33.3333
-```
-
-## Citation
-
-This paper can be cited as: 
-```
-@InProceedings{costa_algorithm_2021,
-    author="Kabi{\'{c}}, Marko and Pintarelli, Simon and Kozhevnikov, Anton and VandeVondele, Joost",
-    editor="Chamberlain, Bradford L. and Varbanescu, Ana-Lucia and Ltaief, Hatem and Luszczek, Piotr",
-    title="COSTA: Communication-Optimal Shuffle and Transpose Algorithm with Process Relabeling",
-    booktitle="High Performance Computing",
-    year="2021",
-    publisher="Springer International Publishing",
-    address="Cham",
-    pages="217--236",
-    isbn="978-3-030-78713-4"
-}
 ```
 
 ## Questions?

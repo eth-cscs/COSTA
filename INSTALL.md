@@ -4,7 +4,7 @@
 
 In order to build COSTA, the first step it to clone the git repo as follows:
 ```bash
-git clone https://github.com/kabicm/COSTA costa && cd costa
+git clone https://github.com/eth-cscs/COSTA costa && cd costa
 mkdir build && cd build
 ```
 ### Step 2 - building \& installing

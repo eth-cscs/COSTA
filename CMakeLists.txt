@@ -71,6 +71,8 @@ endif()
 
 # Bundled dependencies
 #
+# umpire memory pool
+add_subdirectory(libs/Umpire)
 
 # Do not install cxxopts when including it.
 if (COSTA_WITH_TESTS OR COSTA_WITH_APPS)

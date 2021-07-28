@@ -3,6 +3,7 @@
 #include <costa/grid2grid/utils.hpp>
 #include <assert.h>
 #include <complex>
+#include <thread>
 
 namespace costa {
 
@@ -47,7 +48,7 @@ template <typename T>
 void exchange_async(communication_data<T>& send_data, 
                     communication_data<T>& recv_data,
                     MPI_Comm comm) {
-    memory::threads_workspace<T> workspace(128);
+    memory::threads_workspace<T> workspace(64);
 
     PE(transform_irecv);
     MPI_Request* recv_reqs;
@@ -132,6 +133,41 @@ void exchange_async(communication_data<T>& send_data,
 }
 
 template <typename T>
+void exchange(communication_data<T>& send_data, communication_data<T>& recv_data, MPI_Comm comm) {
+    memory::threads_workspace<T> workspace(64);
+
+    // copy blocks to temporary send buffers
+    PE(transformation_copy2buffer);
+    send_data.copy_to_buffer(workspace);
+
+    PE(transformation_all2all);
+    MPI_Alltoallv(send_data.data(),
+                  send_data.counts.data(),
+                  send_data.dspls.data(),
+                  mpi_type_wrapper<T>::type(),
+                  recv_data.data(),
+                  recv_data.counts.data(),
+                  recv_data.dspls.data(),
+                  mpi_type_wrapper<T>::type(),
+                  comm);
+    PL();
+
+    PE(transformation_copyfrombuffer);
+    recv_data.copy_from_buffer(workspace);
+    PL();
+
+    // copy local data (that are on the same rank in both initial and final layout)
+    // this is independent of MPI and can be executed in parallel
+    PE(transformation_localblocks);
+    // copy local data (that are on the same rank in both initial and final layout)
+    // this is independent of MPI and can be executed in parallel
+    copy_local_blocks(send_data.local_messages,
+                      recv_data.local_messages,
+                      workspace);
+    PL();
+}
+
+template <typename T>
 void transform(grid_layout<T> &initial_layout,
                grid_layout<T> &final_layout,
                MPI_Comm comm) {
@@ -150,17 +186,26 @@ void transform(grid_layout<T> &initial_layout,
     if (transpose) initial_layout.transpose();
 
     // no transpose, no conjugate (false, false)
-    auto send_data = 
-        utils::prepare_to_send(initial_layout, final_layout, rank,
+    costa::communication_data<T> send_data;
+    costa::communication_data<T> recv_data;
+    costa::memory::memory_buffer<message<T>> messages_buffer;
+#pragma omp parallel sections
+    {
+#pragma omp section
+    send_data = 
+        utils::prepare_to_send(messages_buffer, initial_layout, final_layout, rank,
                                T{1}, T{0}, transpose, false);
-    auto recv_data = 
-        utils::prepare_to_recv(final_layout, initial_layout, rank,
+#pragma omp section
+    recv_data = 
+        utils::prepare_to_recv(messages_buffer, final_layout, initial_layout, rank,
                                T{1}, T{0}, transpose, false);
+    }
     // undo the transpose
     if (transpose) initial_layout.transpose();
 
     // perform the communication
-    exchange_async(send_data, recv_data, comm);
+    // exchange_async(send_data, recv_data, comm);
+    exchange(send_data, recv_data, comm);
 }
 
 template <typename T>
@@ -188,19 +233,30 @@ void transform(grid_layout<T> &initial_layout,
     // (i.e. same dimensions) before comparing the grids
     if (transpose) initial_layout.transpose();
 
-    auto send_data =
-        utils::prepare_to_send(initial_layout, final_layout, rank, 
+    costa::communication_data<T> send_data;
+    costa::communication_data<T> recv_data;
+    costa::memory::memory_buffer<message<T>> messages_buffer;
+#pragma omp parallel sections
+    {
+#pragma omp section
+    send_data =
+        utils::prepare_to_send(messages_buffer, 
+                               initial_layout, final_layout, rank, 
                                alpha, beta, transpose, conjugate);
 
-    auto recv_data =
-        utils::prepare_to_recv(final_layout, initial_layout, rank, 
+#pragma omp section
+    recv_data =
+        utils::prepare_to_recv(messages_buffer,
+                               final_layout, initial_layout, rank, 
                                alpha, beta, transpose, conjugate);
+    }
 
     // undo the transpose
     if (transpose) initial_layout.transpose();
 
     // perform the communication
-    exchange_async(send_data, recv_data, comm);
+    // exchange_async(send_data, recv_data, comm);
+    exchange(send_data, recv_data, comm);
 }
 
 template <typename T>
@@ -222,14 +278,25 @@ void transform(std::vector<layout_ref<T>>& from,
     bool conjugate[from.size()];
     std::fill_n(conjugate, from.size(), false);
 
-    auto send_data = utils::prepare_to_send(from, to, rank, 
-                                            &alpha[0], &beta[0], 
-                                            transpose, conjugate);
-    auto recv_data = utils::prepare_to_recv(to, from, rank, 
-                                            &alpha[0], &beta[0], 
-                                            transpose, conjugate);
+    costa::communication_data<T> send_data;
+    costa::communication_data<T> recv_data;
+    costa::memory::memory_buffer<message<T>> messages_buffer;
+#pragma omp parallel sections
+    {
+#pragma omp section
+    send_data = utils::prepare_to_send(messages_buffer,
+                                       from, to, rank, 
+                                       &alpha[0], &beta[0], 
+                                       transpose, conjugate);
+#pragma omp section
+    recv_data = utils::prepare_to_recv(messages_buffer,
+                                       to, from, rank, 
+                                       &alpha[0], &beta[0], 
+                                       transpose, conjugate);
+    }
 
-    exchange_async(send_data, recv_data, comm);
+    // exchange_async(send_data, recv_data, comm);
+    exchange(send_data, recv_data, comm);
 }
 
 template <typename T>
@@ -238,6 +305,7 @@ void transform(std::vector<layout_ref<T>>& from,
                const char* trans,
                const T* alpha, const T* beta,
                MPI_Comm comm) {
+    // THIS IS THE ONE
     assert(from.size() == to.size());
 
     int rank;
@@ -268,12 +336,41 @@ void transform(std::vector<layout_ref<T>>& from,
         }
     }
 
-    auto send_data = utils::prepare_to_send(from, to, rank, 
-                                            alpha, beta, 
-                                            transpose, conjugate);
-    auto recv_data = utils::prepare_to_recv(to, from, rank, 
-                                            alpha, beta, 
-                                            transpose, conjugate);
+    costa::memory::memory_buffer<message<T>> messages_buffer;
+
+    costa::communication_data<T> send_data;
+    costa::communication_data<T> recv_data;
+//#pragma omp parallel sections num_threads(2)
+    {
+// #pragma omp section
+        {
+            auto start = std::chrono::steady_clock::now();
+            send_data = utils::prepare_to_send(messages_buffer,
+                    from, to, rank, 
+                    alpha, beta, 
+                    transpose, conjugate);
+            auto end = std::chrono::steady_clock::now();
+            auto timing = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            /*
+            if (rank ==0)
+                std::cout << "Preparation Time for send [ms] = " << timing << std::endl;
+                */
+        }
+// #pragma omp section
+        {
+            auto start = std::chrono::steady_clock::now();
+            recv_data = utils::prepare_to_recv(messages_buffer,
+                    to, from, rank, 
+                    alpha, beta, 
+                    transpose, conjugate);
+            auto end = std::chrono::steady_clock::now();
+            auto timing = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            /*
+            if (rank ==0)
+                std::cout << "Preparation Time for recv [ms] = " << timing << std::endl;
+                */
+        }
+    }
 
     // undo the transpose
     for (unsigned i = 0u; i < from.size(); ++i) {
@@ -282,7 +379,15 @@ void transform(std::vector<layout_ref<T>>& from,
         }
     }
 
+    auto start = std::chrono::steady_clock::now();
     exchange_async(send_data, recv_data, comm);
+    // exchange(send_data, recv_data, comm);
+    auto end = std::chrono::steady_clock::now();
+    auto timing = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    /*
+    if (rank ==0)
+        std::cout << "Exchange async [ms] = " << timing << std::endl;
+        */
 }
 
 // explicit instantiation of transforming a single pair of layouts

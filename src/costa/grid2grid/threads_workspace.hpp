@@ -12,6 +12,7 @@ struct threads_workspace {
     threads_workspace(int block_dim, int max_threads=omp_get_max_threads())
         : block_dim(block_dim)
         , max_threads(max_threads) {
+        // std::cout << "max_threads = " << max_threads << std::endl;
         buffer = std::unique_ptr<T[]>(new T[block_dim * max_threads]);
     }
 

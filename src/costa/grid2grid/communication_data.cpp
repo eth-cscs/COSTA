@@ -129,24 +129,32 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
             counts[target_rank] += b.total_size();
             total_size += b.total_size();
             prev_rank = target_rank;
-
-        } else {
             /*
             if (rank == 0) {
                 std::cout << "message " << i << ":\n";
                 std::cout << m.to_string() << std::endl;
             }
             */
+        } else {
             local_messages.push_back(m);
         }
     }
     /*
     if(rank == 0) {
+        std::cout << "Amount of local messages = " << local_messages.size() << std::endl;
         std::cout << "==========================" <<std::endl;
     }
     */
 
-    buffer = std::unique_ptr<T[]>(new T[total_size]);
+    // Get starting timepoint
+    auto start = std::chrono::steady_clock::now();
+    buffer = memory::memory_buffer<T>(total_size);
+    auto end = std::chrono::steady_clock::now();
+    auto timing = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    /*
+    if (my_rank == 0)
+        std::cout << "Allocation Time [ms] = " << timing << std::endl;
+        */
     for (unsigned i = 1; i < (unsigned)n_ranks; ++i) {
         dspls[i] = dspls[i - 1] + counts[i - 1];
     }
@@ -189,6 +197,31 @@ void communication_data<T>::copy_to_buffer(memory::threads_workspace<T>& workspa
 }
 
 template <typename T>
+void communication_data<T>::copy_from_buffer(memory::threads_workspace<T>& workspace) {
+    if (mpi_messages.size() > 0) {
+#pragma omp parallel for shared(mpi_messages, workspace, offset_per_message, buffer)
+        for (unsigned i = 0; i < mpi_messages.size(); ++i) {
+            const auto &m = mpi_messages[i];
+            block<T> b = m.get_block();
+            bool b_col_major = b._ordering == 'C';
+            int num_rows = b.n_rows();
+            int num_cols = b.n_cols();
+            if (m.transpose) std::swap(num_rows, num_cols);
+            // std::cout <<"From buffer: Stride = 0 -> " << b.stride << std::endl;
+            // std::cout <<"Block ordering = " << b._ordering << std::endl;
+            copy_and_transform(num_rows, num_cols,
+                               data() + offset_per_message[i],
+                               0, m.col_major,
+                               b.data, b.stride, b_col_major,
+                               m.transpose,
+                               m.conjugate,
+                               m.alpha, m.beta,
+                               workspace);
+        }
+    }
+}
+
+template <typename T>
 void communication_data<T>::copy_from_buffer(int idx, memory::threads_workspace<T>& workspace) {
     assert(idx >= 0 && idx+1 < package_ticks.size());
     if (package_ticks[idx+1] - package_ticks[idx] > 0) {
@@ -216,7 +249,7 @@ void communication_data<T>::copy_from_buffer(int idx, memory::threads_workspace<
 
 template <typename T>
 T *communication_data<T>::data() {
-    return buffer.get();
+    return buffer(0);
 }
 
 template <typename T>
@@ -272,17 +305,17 @@ void copy_local_blocks(std::vector<message<T>>& from,
     }
 }
 
-// template instantiation for communication_data
-template class communication_data<double>;
-template class communication_data<std::complex<double>>;
-template class communication_data<float>;
-template class communication_data<std::complex<float>>;
-
 // template instantiation for message
 template class message<double>;
 template class message<std::complex<double>>;
 template class message<float>;
 template class message<std::complex<float>>;
+
+// template instantiation for communication_data
+template class communication_data<double>;
+template class communication_data<std::complex<double>>;
+template class communication_data<float>;
+template class communication_data<std::complex<float>>;
 
 // template instantiation for copy_local_blocks
 template void

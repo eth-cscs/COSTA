@@ -2,6 +2,7 @@
 #include <costa/grid2grid/block.hpp>
 #include <costa/grid2grid/memory_utils.hpp>
 #include <costa/grid2grid/threads_workspace.hpp>
+#include <costa/grid2grid/memory_buffer.hpp>
 
 #include <chrono>
 #include <memory>
@@ -41,7 +42,7 @@ class message {
 template <typename T>
 class communication_data {
   public:
-    std::unique_ptr<T[]> buffer;
+    memory::memory_buffer<T> buffer;
     // std::vector<double, cosma::mpi_allocator<double>> buffer;
     std::vector<int> dspls;
     std::vector<int> counts;
@@ -57,7 +58,6 @@ class communication_data {
     int n_packed_messages = 0;
 
     communication_data() = default;
-
     communication_data(std::vector<message<T>> &msgs, int my_rank, int n_ranks);
 
     // copy all mpi_messages to buffer
@@ -67,6 +67,7 @@ class communication_data {
     // a package includes all mpi_messages
     // received from the same rank
     void copy_from_buffer(int idx, memory::threads_workspace<T>& workspace);
+    void copy_from_buffer(memory::threads_workspace<T>& workspace);
 
     T *data();
 

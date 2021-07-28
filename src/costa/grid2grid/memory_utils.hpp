@@ -18,8 +18,8 @@ namespace memory {
 // if alpha!=1 or beta != 0, then also performs: 
 //     dest[i] = alpha * src[i] + beta*dest[i]
 template <typename elem_type>
-void copy(const std::size_t n, const elem_type *src_ptr,
-          elem_type *dest_ptr,
+void copy(const std::size_t n, const elem_type * __restrict__ src_ptr,
+          elem_type * __restrict__ dest_ptr,
           const bool should_conjugate = false,
           const elem_type alpha=elem_type{1},
           const elem_type beta=elem_type{0}) {
@@ -44,8 +44,8 @@ void copy(const std::size_t n, const elem_type *src_ptr,
 // to dest_ptr with stride ld_dest
 template <class elem_type>
 void copy2D(int n_rows, int n_cols,
-            const elem_type *src_ptr, const int ld_src,
-            elem_type *dest_ptr, const int ld_dest,
+            const elem_type * __restrict__ src_ptr, const int ld_src,
+            elem_type * __restrict__ dest_ptr, const int ld_dest,
             const bool should_conjugate = false,
             const elem_type alpha = elem_type{1},
             const elem_type beta = elem_type{0},
@@ -84,8 +84,8 @@ void copy2D(int n_rows, int n_cols,
 // transpose (out of place) data that is in col-major order
 template <typename T>
 void transpose_col_major(const int n_rows, const int n_cols, 
-               const T* src_ptr, const int src_stride, 
-               T* dest_ptr, const int dest_stride, 
+               const T* __restrict__ src_ptr, const int src_stride, 
+               T* __restrict__ dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
                threads_workspace<T>& workspace) {
@@ -165,8 +165,8 @@ void transpose_col_major(const int n_rows, const int n_cols,
 // transpose (out of place) data that is in row-major order
 template <typename T>
 void transpose_row_major(const int n_rows, const int n_cols, 
-               const T* src_ptr, const int src_stride, 
-               T* dest_ptr, const int dest_stride, 
+               const T* __restrict__ src_ptr, const int src_stride, 
+               T* __restrict__ dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
                threads_workspace<T>& workspace) {

@@ -13,6 +13,7 @@ if(NOT TARGET costa)
                       grid2grid/utils.cpp
                       grid2grid/transform.cpp
                       grid2grid/transformer.hpp
+                      grid2grid/memory_buffer.cpp
                       layout.cpp
     )
     set(costa_prefixed_scalapack_src_files 
@@ -29,7 +30,7 @@ if(NOT TARGET costa)
                         # templatized cpp implementations
                         pxtran/costa_pxtran.cpp
                         pxgemr2d/costa_pxgemr2d.cpp
-                        # scalapck api overwritten
+                        # scalapack api overwritten
                         pxtran/pxtran.cpp
                         pxgemr2d/pxgemr2d.cpp
     )
@@ -43,7 +44,9 @@ if(NOT TARGET costa)
     )
     target_compile_features(costa PUBLIC cxx_std_14)
     target_link_libraries(costa PUBLIC MPI::MPI_CXX
-                                       OpenMP::OpenMP_CXX)
+                                       OpenMP::OpenMP_CXX
+                                       # PRIVATE
+                                       umpire)
 
     # adds the -fPIC flag. This is automatically added by cmake
     # for shared libraries, but for static libraries it has

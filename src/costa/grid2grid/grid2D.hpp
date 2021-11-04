@@ -81,7 +81,7 @@ class assigned_grid2D {
     friend std::ostream &operator<<(std::ostream &os, const assigned_grid2D &other) {
         for (int i = 0; i < other.num_blocks_row(); ++i) {
             for (int j = 0; j < other.num_blocks_col(); ++j) {
-                os << "block (" << i << ", " << j << ") owned by " 
+                os << "block " << other.rows_interval(i) << " x " << other.cols_interval(j) <<  " is owned by rank " 
                    << other.owner(i, j) << std::endl;
             }
         }

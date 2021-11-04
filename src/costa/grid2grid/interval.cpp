@@ -89,7 +89,6 @@ interval::overlapping_intervals(const std::vector<int> &v) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const interval &other) {
-    return os << "interval[" << other.start << ", " << other.end << ")"
-              << std::endl;
+    return os << "[" << other.start << ", " << other.end << ")";
 }
 } // namespace costa

@@ -15,9 +15,12 @@ umpire::Allocator& get_memory_allocator() {
     static auto pool = rm.makeAllocator<umpire::strategy::QuickPool>
         ("pool", rm.getAllocator("HOST"));
 
+    /*
     static auto thread_safe_pool = rm.makeAllocator
         <umpire::strategy::ThreadSafeAllocator>("thread_safe_pool", pool);
     return thread_safe_pool;
+    */
+    return pool;
 }
 
 /*

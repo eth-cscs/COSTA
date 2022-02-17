@@ -48,7 +48,7 @@ template <typename T>
 void exchange_async(communication_data<T>& send_data, 
                     communication_data<T>& recv_data,
                     MPI_Comm comm) {
-    memory::threads_workspace<T> workspace(64);
+    memory::threads_workspace<T> workspace(128);
 
     PE(transform_irecv);
     MPI_Request* recv_reqs;
@@ -134,7 +134,7 @@ void exchange_async(communication_data<T>& send_data,
 
 template <typename T>
 void exchange(communication_data<T>& send_data, communication_data<T>& recv_data, MPI_Comm comm) {
-    memory::threads_workspace<T> workspace(64);
+    memory::threads_workspace<T> workspace(128);
 
     // copy blocks to temporary send buffers
     PE(transformation_copy2buffer);
@@ -189,13 +189,13 @@ void transform(grid_layout<T> &initial_layout,
     costa::communication_data<T> send_data;
     costa::communication_data<T> recv_data;
     costa::memory::memory_buffer<message<T>> messages_buffer;
-#pragma omp parallel sections
+// #pragma omp parallel sections
     {
-#pragma omp section
+// #pragma omp section
     send_data = 
         utils::prepare_to_send(messages_buffer, initial_layout, final_layout, rank,
                                T{1}, T{0}, transpose, false);
-#pragma omp section
+// #pragma omp section
     recv_data = 
         utils::prepare_to_recv(messages_buffer, final_layout, initial_layout, rank,
                                T{1}, T{0}, transpose, false);
@@ -236,15 +236,15 @@ void transform(grid_layout<T> &initial_layout,
     costa::communication_data<T> send_data;
     costa::communication_data<T> recv_data;
     costa::memory::memory_buffer<message<T>> messages_buffer;
-#pragma omp parallel sections
+// #pragma omp parallel sections
     {
-#pragma omp section
+// #pragma omp section
     send_data =
         utils::prepare_to_send(messages_buffer, 
                                initial_layout, final_layout, rank, 
                                alpha, beta, transpose, conjugate);
 
-#pragma omp section
+// #pragma omp section
     recv_data =
         utils::prepare_to_recv(messages_buffer,
                                final_layout, initial_layout, rank, 
@@ -281,14 +281,14 @@ void transform(std::vector<layout_ref<T>>& from,
     costa::communication_data<T> send_data;
     costa::communication_data<T> recv_data;
     costa::memory::memory_buffer<message<T>> messages_buffer;
-#pragma omp parallel sections
+// #pragma omp parallel sections
     {
-#pragma omp section
+// #pragma omp section
     send_data = utils::prepare_to_send(messages_buffer,
                                        from, to, rank, 
                                        &alpha[0], &beta[0], 
                                        transpose, conjugate);
-#pragma omp section
+// #pragma omp section
     recv_data = utils::prepare_to_recv(messages_buffer,
                                        to, from, rank, 
                                        &alpha[0], &beta[0], 

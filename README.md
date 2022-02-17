@@ -375,7 +375,7 @@ COSTA is used by communication-optimal matrix-multiplication algorithm [COSMA](h
 
 COSTA implements ScaLAPACK `pxgemr2d` routines that transforms the matrix between two block-cyclic data layouts (`sub(C) = sub(A)`) where the two matrices do not necessarily have to belong to the same MPI communicators. In addition, COSTA will propose the MPI rank relabelling that minimizes the data reshuffling cost and that user is free to choose whether to use it. 
 
-The miniapp consists of an executable `./build/examples/pxgemr2d_miniapp` which can be run as follows (assuming we are in the root folder of the project):
+The miniapp consists of an executable [`./build/miniapps/pxgemr2d_miniapp`](https://github.com/eth-cscs/COSTA/blob/master/miniapps/pxgemr2d_miniapp.cpp) which can be run as follows (assuming we are in the root folder of the project):
 
 ```bash
 # set the number of threads to be used by each MPI rank
@@ -383,13 +383,13 @@ export OMP_NUM_THREADS=18
 # if using CPU version with MKL backend, set MKL_NUM_THREADS as well
 export MKL_NUM_THREADS=18 
 # run the miniapp
-mpirun -np 4 ./build/examples/pxgemr2d_miniapp -m 1000 -n 1000 \
-                                            --block_a=128,128 \ 
-                                            --block_c=128,128 \
-                                            --p_grid_a=2,2 \
-                                            --p_grid_c=2,2 \
-                                            --type=double \
-                                            --algorithm=costa
+mpirun -np 4 ./build/miniapps/pxgemr2d_miniapp -m 1000 -n 1000 \
+                                               --block_a=128,128 \ 
+                                               --block_c=128,128 \
+                                               --p_grid_a=2,2 \
+                                               --p_grid_c=2,2 \
+                                               --type=double \
+                                               --algorithm=costa
 ```
 
 The overview of all supported options is given below:
@@ -411,7 +411,7 @@ COSTA implements ScaLAPACK `pxtran` and `pxtranu` routines that performs the sca
 ```sub(C) = alpha * sub(A)^T + beta * sub(C)```
 In addition, COSTA will propose the MPI rank relabelling that minimizes the data reshuffling cost and that user is free to choose whether to use it. 
 
-The miniapp consists of an executable `./build/examples/pxtran_miniapp` which can be run as follows (assuming we are in the root folder of the project):
+The miniapp consists of an executable [`./build/miniapps/pxtran_miniapp`](https://github.com/eth-cscs/COSTA/blob/master/miniapps/pxtran_miniapp.cpp) which can be run as follows (assuming we are in the root folder of the project):
 
 ```bash
 # set the number of threads to be used by each MPI rank
@@ -419,14 +419,14 @@ export OMP_NUM_THREADS=18
 # if using CPU version with MKL backend, set MKL_NUM_THREADS as well
 export MKL_NUM_THREADS=18 
 # run the miniapp
-mpirun -np 4 ./build/examples/pxtran_miniapp -m 1000 -n 1000 -k 1000 \
-                                            --block_a=128,128 \ 
-                                            --block_c=128,128 \
-                                            --p_grid=2,2 \
-                                            --alpha=1 \
-                                            --beta=1 \
-                                            --type=double \
-                                            --algorithm=costa
+mpirun -np 4 ./build/miniapps/pxtran_miniapp -m 1000 -n 1000 -k 1000 \
+                                             --block_a=128,128 \ 
+                                             --block_c=128,128 \
+                                             --p_grid=2,2 \
+                                             --alpha=1 \
+                                             --beta=1 \
+                                             --type=double \
+                                             --algorithm=costa
 ```
 
 The overview of all supported options is given below:
@@ -445,12 +445,12 @@ The overview of all supported options is given below:
 
 ### Communication Volume Reduction
 
-Measuring the total communication volume reduction (in \%) that can be achieved by process relabeling can be done by running the `comm_volume` miniapp, without using `MPI`. The miniapps assumes a matrix with dimensions `m x n` is transformed between two block-cyclic layouts which are specified by block sizes and process grids. The suffix `_a` refers to the initial layout and the suffix `_b` refers to the target layout.
+Measuring the total communication volume reduction (in \%) that can be achieved by process relabeling can be done by running the [./build/miniapps/comm_volume](https://github.com/eth-cscs/COSTA/blob/master/miniapps/comm_volume.cpp) miniapp, without using `MPI`. The miniapps assumes a matrix with dimensions `m x n` is transformed between two block-cyclic layouts which are specified by block sizes and process grids. The suffix `_a` refers to the initial layout and the suffix `_b` refers to the target layout.
 
 ```bash
-./miniapps/comm_volume -m 100000 -n 100000 \
-                       --block_a=100,100 --p_grid_a=2,4 \
-                       --block_c=100,100 --p_grid_c=4,2
+./build/miniapps/comm_volume -m 100000 -n 100000 \
+                             --block_a=100,100 --p_grid_a=2,4 \
+                             --block_c=100,100 --p_grid_c=4,2
 output:
 Comm volume reduction [%] = 33.3333
 ```

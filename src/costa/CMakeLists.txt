@@ -45,8 +45,9 @@ if(NOT TARGET costa)
     target_compile_features(costa PUBLIC cxx_std_14)
     target_link_libraries(costa PUBLIC MPI::MPI_CXX
                                        OpenMP::OpenMP_CXX
-                                       # PRIVATE
-                                       umpire)
+                                PRIVATE
+                                       $<BUILD_INTERFACE:umpire>
+                         )
 
     # adds the -fPIC flag. This is automatically added by cmake
     # for shared libraries, but for static libraries it has

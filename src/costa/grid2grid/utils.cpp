@@ -306,7 +306,7 @@ std::vector<costa::message<T>> decompose_blocks(
     int half_threads = std::max(1, omp_get_max_threads());
     int n_threads = std::min(half_threads, init_layout.blocks.num_blocks());
 
-    messages_vector<T> messages = get_messages_vector<T>();
+    // messages_vector<T> messages = get_messages_vector<T>();
 
     if (init_layout.blocks.num_blocks() == 1) {
         std::vector<costa::message<T>> result;
@@ -323,7 +323,11 @@ std::vector<costa::message<T>> decompose_blocks(
             // result.insert(result.end(), decomposed_blocks.begin(), decomposed_blocks.end());
         }
 
-        parallel_sort(result);
+        if (result.size() > 1000)
+            parallel_sort(result);
+        else 
+#pragma omp single
+            std::sort(result.begin(), result.end());
         return result;
     }
 

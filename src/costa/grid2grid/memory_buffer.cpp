@@ -5,22 +5,32 @@
 
 #include <umpire/ResourceManager.hpp>
 #include <umpire/strategy/QuickPool.hpp>
+#include <umpire/strategy/QuickPool.hpp>
+#include <umpire/strategy/DynamicPoolList.hpp>
 #include <umpire/strategy/ThreadSafeAllocator.hpp>
+#include <umpire/TypedAllocator.hpp>
 
 namespace costa {
 namespace memory {
 
-umpire::Allocator& get_memory_allocator() {
-    auto& rm = umpire::ResourceManager::getInstance();
-    static auto pool = rm.makeAllocator<umpire::strategy::QuickPool>
-        ("pool", rm.getAllocator("HOST"));
+template <typename T>
+umpire::TypedAllocator<T>& get_memory_allocator() {
+    static auto& rm = umpire::ResourceManager::getInstance();
+    static auto alloc = rm.getAllocator("HOST");
+    // static umpire::TypedAllocator<T> typed_allocator{alloc};
+    // static auto pool = rm.makeAllocator<umpire::strategy::QuickPool, false>
+    //   ("NO_INTROSPECTION_POOL", rm.getAllocator("HOST"));
 
     /*
-    static auto thread_safe_pool = rm.makeAllocator
-        <umpire::strategy::ThreadSafeAllocator>("thread_safe_pool", pool);
-    return thread_safe_pool;
-    */
-    return pool;
+    static auto dynamic_allocator = rm.makeAllocator
+        <umpire::strategy::DynamicPoolList>("dynamic_pool", alloc);
+
+    static auto thread_safe_allocator = rm.makeAllocator
+        <umpire::strategy::ThreadSafeAllocator>("thread_safe_pool", dynamic_allocator);
+        */
+
+    static umpire::TypedAllocator<T> typed_allocator{alloc};
+    return typed_allocator;
 }
 
 /*
@@ -40,8 +50,9 @@ template <typename T>
 memory_buffer<T>::memory_buffer(std::size_t size): size_(size), ptr_(nullptr), allocated_(true) {
     if (size == 0) return;
 
-    std::size_t buffer_size = static_cast<std::size_t>(size_) * sizeof(T);
-    ptr_ = static_cast<T*>(get_memory_allocator().allocate(buffer_size));
+    // std::size_t buffer_size = static_cast<std::size_t>(size_) * sizeof(T);
+    std::size_t buffer_size = size_;
+    ptr_ = static_cast<T*>(get_memory_allocator<T>().allocate(buffer_size));
 }
 
 // template <typename T>
@@ -86,13 +97,13 @@ memory_buffer<T>::~memory_buffer() {
 template <typename T>
 T* memory_buffer<T>::operator()(std::size_t index) {
     assert(index < size_ && index >= 0);
-    return ptr_ + index;
+    return &ptr_[index];
 }
 
 template <typename T>
 const T* memory_buffer<T>::operator()(std::size_t index) const {
     assert(index < size_ && index >= 0);
-    return ptr_ + index;
+    return &ptr_[index];
 }
 
 /// Returns a pointer to the underlying memory.
@@ -115,7 +126,7 @@ std::size_t memory_buffer<T>::size() const {
 template <typename T>
 void memory_buffer<T>::deallocate() {
     if (allocated_) {
-        get_memory_allocator().deallocate(ptr_);
+        get_memory_allocator<T>().deallocate(ptr_, size_);
         allocated_ = false;
     }
 }
@@ -131,4 +142,3 @@ template class costa::memory::memory_buffer<costa::message<float>>;
 template class costa::memory::memory_buffer<costa::message<double>>;
 template class costa::memory::memory_buffer<costa::message<std::complex<float>>>;
 template class costa::memory::memory_buffer<costa::message<std::complex<double>>>;
-

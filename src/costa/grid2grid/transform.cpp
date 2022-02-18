@@ -340,7 +340,7 @@ void transform(std::vector<layout_ref<T>>& from,
 
     costa::communication_data<T> send_data;
     costa::communication_data<T> recv_data;
-//#pragma omp parallel sections num_threads(2)
+// #pragma omp parallel sections num_threads(2)
     {
 // #pragma omp section
         {

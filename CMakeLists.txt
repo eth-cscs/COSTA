@@ -34,7 +34,7 @@ if(COSTA_SCALAPACK AND NOT COSTA_SCALAPACK IN_LIST BACKEND_LIST)
     message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK!")
 endif()
 
-project(costa VERSION 1.0.0 LANGUAGES CXX)
+project(costa VERSION 2.1 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 

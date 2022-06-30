@@ -202,7 +202,22 @@ For complete examples please refer to `examples`.
 
 ### Scalapack Wrappers
 
-If installed with cmake option `COSTA_SCALAPACK` (e.g. with `cmake -DCOSTA_SCALAPACK=MKL ..`, which can also have values `CRAY_LIBSCI` or `CUSTOM`), then also the scalapack wrappers will be available for `pxgemr2d` (redistribute), `pxtran(u)` (transpose) and `pxtran(c)` (conjugate-transpose) routines. In this case, it is enough to link your library to `costa_scalapack` before linking to scalapack and these functions (for all types) will be overwritten by the COSTA implementation. Therefore, if you code is already using scalapack, there is no need to change your code, just linking is enough!
+If installed with cmake option `COSTA_SCALAPACK` (e.g. with `cmake -DCOSTA_SCALAPACK=MKL ..`, which can also have values `CRAY_LIBSCI` or `CUSTOM`), then also the scalapack wrappers will be available for `pxgemr2d` (redistribute), `pxtran(u)` (transpose) and `pxtran(c)` (conjugate-transpose) routines. 
+
+For this purpose, the following libraries are available:
+- **`costa_scalapack`:** implements the following scalapack routines:
+    > `pdgemr2d`, `psgemr2d`, `pcgemr2d`, `pzgemr2d`
+
+    > `pstran`, `pdtran`, `pctranu`, `pztranu`, `pctranc`, `pztranc`
+
+    In this case, it is enough to link your library to **`costa_scalapack`** before linking to scalapack and these functions will be overwritten by the COSTA implementation. Therefore, if you code is already using scalapack, there is no need to change your code, just linking is enough!
+
+- **`prefixed_costa_scalapack`:** implements the following routines (same as above, but with a `costa_` prefix):
+    > `costa_pdgemr2d`, `costa_psgemr2d`, `costa_pcgemr2d`, `costa_pzgemr2d`
+
+    > `costa_pstran`, `costa_pdtran`, `costa_pctranu`, `costa_pztranu`, `costa_pctranc`, `costa_pztranc`
+
+    This way, you can keep scalapack implementation, and at the same time have the COSTA-implementation as well!
 
 ## Advanced Features
 

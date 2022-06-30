@@ -202,7 +202,7 @@ For complete examples please refer to `examples`.
 
 ### Scalapack Wrappers
 
-If installed with cmake option `COSTA_SCALAPACK` (e.g. with `cmake -DCOSTA_SCALAPACK=MKL ..`, which can also have values `CRAY_LIBSCI` or `CUSTOM`), then also the scalapack wrappers will be available for `pxgemr2d` (redistribute) and for `pxtran(u)` (transpose) routines. In this case, it is enough to link your library to `costa_scalapack` before linking to scalapack and these functions (for all types) will be overwritten by the COSTA implementation. Therefore, if you code is already using scalapack, there is no need to change your code, just linking is enough!
+If installed with cmake option `COSTA_SCALAPACK` (e.g. with `cmake -DCOSTA_SCALAPACK=MKL ..`, which can also have values `CRAY_LIBSCI` or `CUSTOM`), then also the scalapack wrappers will be available for `pxgemr2d` (redistribute), `pxtran(u)` (transpose) and `pxtran(c)` (conjugate-transpose) routines. In this case, it is enough to link your library to `costa_scalapack` before linking to scalapack and these functions (for all types) will be overwritten by the COSTA implementation. Therefore, if you code is already using scalapack, there is no need to change your code, just linking is enough!
 
 ## Advanced Features
 

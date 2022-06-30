@@ -10,7 +10,7 @@ using zdouble_t = std::complex<double>;
 using zfloat_t = std::complex<float>;
 
 template <typename T>
-void pxtran(
+void pxtran_op(
            const int m,
            const int n,
            const T alpha,
@@ -22,6 +22,7 @@ void pxtran(
            T *c,
            const int ic,
            const int jc,
-           const int *descc);
+           const int *descc,
+           char op);
 } // namespace costa
 

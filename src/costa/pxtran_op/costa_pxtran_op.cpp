@@ -2,8 +2,8 @@
 #include <mpi.h>
 
 #include <costa/blacs.hpp>
-#include <costa/pxtran/costa_pxtran.hpp>
-#include <costa/pxtran/pxtran_params.hpp>
+#include <costa/pxtran_op/costa_pxtran_op.hpp>
+#include <costa/pxtran_op/pxtran_op_params.hpp>
 
 #include <costa/grid2grid/ranks_reordering.hpp>
 #include <costa/grid2grid/transformer.hpp>
@@ -13,7 +13,7 @@
 
 namespace costa {
 template <typename T>
-void pxtran(
+void pxtran_op(
            const int m,
            const int n,
            const T alpha,
@@ -25,7 +25,8 @@ void pxtran(
            T *c, // result
            const int ic,
            const int jc,
-           const int *descc) {
+           const int *descc,
+           char op) {
     // clear the profiler
     // empty if compiled without profiler
     PC();
@@ -85,7 +86,7 @@ void pxtran(
 
 #ifdef DEBUG
     if (rank == 0) {
-        pxtran_params<T> params(
+        pxtran_op_params<T> params(
                              // global dimensions
                              mat_dim_a.rows, mat_dim_a.cols,
                              mat_dim_c.rows, mat_dim_c.cols,
@@ -107,7 +108,9 @@ void pxtran(
                              grid_order,
                              // ranks containing first rows
                              rank_src_a.row_src, rank_src_a.col_src,
-                             rank_src_c.row_src, rank_src_c.col_src
+                             rank_src_c.row_src, rank_src_c.col_src,
+                             // transpose or conjugate-transpose
+                             op
                          );
         std::cout << params << std::endl;
     }
@@ -152,7 +155,7 @@ void pxtran(
 #endif
 */
 
-    costa::transform<T>(scalapack_layout_a, scalapack_layout_c, 'T', alpha, beta, comm);
+    costa::transform<T>(scalapack_layout_a, scalapack_layout_c, std::toupper(op), alpha, beta, comm);
 
 /*
 #ifdef DEBUG
@@ -171,8 +174,8 @@ void pxtran(
     }
 }
 
-// explicit instantiation for pxtran
-template void pxtran<double>(
+// explicit instantiation for pxtran_op
+template void pxtran_op<double>(
                             const int m,
                             const int n,
                             const double alpha,
@@ -184,9 +187,10 @@ template void pxtran<double>(
                             double *c,
                             const int ic,
                             const int jc,
-                            const int *descc);
+                            const int *descc,
+                            char op);
 
-template void pxtran<float>(
+template void pxtran_op<float>(
                            const int m,
                            const int n,
                            const float alpha,
@@ -198,9 +202,10 @@ template void pxtran<float>(
                            float *c,
                            const int ic,
                            const int jc,
-                           const int *descc);
+                           const int *descc,
+                           char op);
 
-template void pxtran<zdouble_t>(
+template void pxtran_op<zdouble_t>(
                                const int m,
                                const int n,
                                const zdouble_t alpha,
@@ -212,9 +217,10 @@ template void pxtran<zdouble_t>(
                                zdouble_t *c,
                                const int ic,
                                const int jc,
-                               const int *descc);
+                               const int *descc,
+                               char op);
 
-template void pxtran<zfloat_t>(
+template void pxtran_op<zfloat_t>(
                               const int m,
                               const int n,
                               const zfloat_t alpha,
@@ -226,5 +232,6 @@ template void pxtran<zfloat_t>(
                               zfloat_t *c,
                               const int ic,
                               const int jc,
-                              const int *descc);
+                              const int *descc,
+                              char op);
 } // namespace costa

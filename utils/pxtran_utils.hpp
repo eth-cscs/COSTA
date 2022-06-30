@@ -10,8 +10,8 @@
 // from costa
 #include <costa/blacs.hpp>
 #include <costa/scalapack.hpp>
-#include <costa/pxtran/costa_pxtran.hpp>
-#include <costa/pxtran/pxtran_params.hpp>
+#include <costa/pxtran_op/costa_pxtran_op.hpp>
+#include <costa/pxtran_op/pxtran_op_params.hpp>
 #include <costa/random_generator.hpp>
 
 #include "general.hpp"
@@ -57,32 +57,50 @@ extern "C" {
                   const double *beta , double *c , 
                   const int *ic , const int *jc ,
                   const int *descc );
+
+    void pctranc_(const int *m , const int *n , 
+                  const float *alpha , const float *a , 
+                  const int *ia , const int *ja , 
+                  const int *desca , 
+                  const float *beta , float *c , 
+                  const int *ic , const int *jc ,
+                  const int *descc );
+
+    void pztranc_(const int *m , const int *n , 
+                  const double *alpha , const double *a , 
+                  const int *ia , const int *ja , 
+                  const int *desca , 
+                  const double *beta , double *c , 
+                  const int *ic , const int *jc ,
+                  const int *descc );
 #ifdef __cplusplus
 }
 #endif
 }
 
 // *************************************
-//    templated scalapack pxgemm calls
+//    templated scalapack pxtran calls
 // *************************************
 // this is just for the convenience
 template <typename T>
-struct scalapack_pxtran {
-  static inline void pxtran(
+struct scalapack_pxtran_op {
+  static inline void pxtran_op(
               const int* m, const int* n,
               const T* alpha, const T* a,
               const int* ia, const int* ja, const int* desca,
               const T* beta, T* c, 
-              const int* ic, const int* jc, const int* descc);
+              const int* ic, const int* jc, const int* descc,
+              char op);
 };
 
 template <>
-inline void scalapack_pxtran<float>::pxtran(
+inline void scalapack_pxtran_op<float>::pxtran_op(
               const int* m, const int* n,
               const float* alpha, const float* a, 
               const int* ia, const int* ja, const int* desca,
               const float* beta, float* c, 
-              const int* ic, const int* jc, const int* descc) {
+              const int* ic, const int* jc, const int* descc,
+              char op) {
     scalapack::pstran_(
                        m, n,
                        alpha, a,
@@ -92,12 +110,13 @@ inline void scalapack_pxtran<float>::pxtran(
 }
 
 template <>
-inline void scalapack_pxtran<double>::pxtran(
+inline void scalapack_pxtran_op<double>::pxtran_op(
               const int* m, const int* n,
               const double* alpha, const double* a, 
               const int* ia, const int* ja, const int* desca,
               const double* beta, double* c, 
-              const int* ic, const int* jc, const int* descc) {
+              const int* ic, const int* jc, const int* descc,
+              char op) {
     scalapack::pdtran_(
                        m, n,
                        alpha, a,
@@ -107,43 +126,77 @@ inline void scalapack_pxtran<double>::pxtran(
 }
 
 template <>
-inline void scalapack_pxtran<std::complex<float>>::pxtran(
+inline void scalapack_pxtran_op<std::complex<float>>::pxtran_op(
               const int* m, const int* n,
               const std::complex<float>* alpha, const std::complex<float>* a,
               const int* ia, const int* ja, const int* desca,
               const std::complex<float>* beta, std::complex<float>* c,
-              const int* ic, const int* jc, const int* descc) {
-    scalapack::pctranu_(
-                       m, n,
-                       reinterpret_cast<const float*>(alpha),
-                       reinterpret_cast<const float*>(a),
-                       ia, ja, desca,
-                       reinterpret_cast<const float*>(beta),
-                       reinterpret_cast<float*>(c),
-                       ic, jc, descc);
+              const int* ic, const int* jc, const int* descc,
+              char op) {
+    op = std::toupper(op);
+    if (op != 'T' && op != 'C') {
+        std::string error = "ERROR: scalapack_pxtran_op, argument op must be either T or C but got: " + std::to_string(op) + " instead!";
+        throw std::invalid_argument(error);
+    }
+    if (op == 'T') {
+        scalapack::pctranu_(
+                           m, n,
+                           reinterpret_cast<const float*>(alpha),
+                           reinterpret_cast<const float*>(a),
+                           ia, ja, desca,
+                           reinterpret_cast<const float*>(beta),
+                           reinterpret_cast<float*>(c),
+                           ic, jc, descc);
+    } else {
+        scalapack::pctranc_(
+                           m, n,
+                           reinterpret_cast<const float*>(alpha),
+                           reinterpret_cast<const float*>(a),
+                           ia, ja, desca,
+                           reinterpret_cast<const float*>(beta),
+                           reinterpret_cast<float*>(c),
+                           ic, jc, descc);
+    }
 }
 
 template <>
-inline void scalapack_pxtran<std::complex<double>>::pxtran(
+inline void scalapack_pxtran_op<std::complex<double>>::pxtran_op(
               const int* m, const int* n,
               const std::complex<double>* alpha, const std::complex<double>* a,
               const int* ia, const int* ja, const int* desca,
               const std::complex<double>* beta, std::complex<double>* c,
-              const int* ic, const int* jc, const int* descc) {
-    scalapack::pztranu_(
-                       m, n,
-                       reinterpret_cast<const double*>(alpha),
-                       reinterpret_cast<const double*>(a),
-                       ia, ja, desca,
-                       reinterpret_cast<const double*>(beta),
-                       reinterpret_cast<double*>(c),
-                       ic, jc, descc);
+              const int* ic, const int* jc, const int* descc,
+              char op) {
+    op = std::toupper(op);
+    if (op != 'T' && op != 'C') {
+        std::string error = "ERROR: scalapack_pxtran_op, argument op must be either T or C but got: " + std::to_string(op) + " instead!";
+        throw std::invalid_argument(error);
+    }
+    if (op == 'T') {
+        scalapack::pztranu_(
+                           m, n,
+                           reinterpret_cast<const double*>(alpha),
+                           reinterpret_cast<const double*>(a),
+                           ia, ja, desca,
+                           reinterpret_cast<const double*>(beta),
+                           reinterpret_cast<double*>(c),
+                           ic, jc, descc);
+    } else {
+        scalapack::pztranc_(
+                           m, n,
+                           reinterpret_cast<const double*>(alpha),
+                           reinterpret_cast<const double*>(a),
+                           ia, ja, desca,
+                           reinterpret_cast<const double*>(beta),
+                           reinterpret_cast<double*>(c),
+                           ic, jc, descc);
+    }
 }
 
 // runs costa or scalapack pdtran wrapper for n_rep times and returns
 // a vector of timings (in milliseconds) of size n_rep
 template <typename T>
-bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
+bool benchmark_pxtran(costa::pxtran_op_params<T>& params, MPI_Comm comm, int n_rep,
                     const std::string& algorithm,
                     std::vector<long>& costa_times, std::vector<long>& scalapack_times, 
                     bool test_correctness = false, bool exit_blacs = false) {
@@ -263,10 +316,10 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
             long time = 0;
             MPI_Barrier(comm);
             auto start = std::chrono::steady_clock::now();
-            costa::pxtran<T>(
+            costa::pxtran_op<T>(
                 params.m, params.n,
                 params.alpha, a.data(), params.ia, params.ja, &desca[0],
-                params.beta, c_costa.data(), params.ic, params.jc, &descc[0]);
+                params.beta, c_costa.data(), params.ic, params.jc, &descc[0], 'T');
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -275,16 +328,16 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
 
         if (algorithm == "both" || algorithm == "scalapack") {
             // ***********************************
-            //       run ScaLAPACK PXGEMR2D
+            //       run ScaLAPACK PXTRAN
             // ***********************************
             // running ScaLAPACK
             long time = 0;
             MPI_Barrier(comm);
             auto start = std::chrono::steady_clock::now();
-            scalapack_pxtran<T>::pxtran(
+            scalapack_pxtran_op<T>::pxtran_op(
                 &params.m, &params.n,
                 &params.alpha, a.data(), &params.ia, &params.ja, &desca[0],
-                &params.beta, c_scalapack.data(), &params.ic, &params.jc, &descc[0]);
+                &params.beta, c_scalapack.data(), &params.ic, &params.jc, &descc[0], 'T');
             MPI_Barrier(comm);
             auto end = std::chrono::steady_clock::now();
             time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -316,7 +369,7 @@ bool benchmark_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm, int n_rep,
 }
 
 template <typename T>
-bool test_pxtran(costa::pxtran_params<T>& params, MPI_Comm comm,
+bool test_pxtran(costa::pxtran_op_params<T>& params, MPI_Comm comm,
                  bool test_correctness = true, bool exit_blacs = false) {
     std::vector<long> t1;
     std::vector<long> t2;

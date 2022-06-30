@@ -18,19 +18,23 @@ if(NOT TARGET costa)
     set(costa_prefixed_scalapack_src_files 
                         scalapack.cpp
                         # templatized cpp implementations
-                        pxtran/costa_pxtran.cpp
+                        pxtran_op/costa_pxtran_op.cpp
                         pxgemr2d/costa_pxgemr2d.cpp
                         # scalapck api with costa prefix
                         pxtran/prefixed_pxtran.cpp
+                        pxtranu/prefixed_pxtranu.cpp
+                        pxtranc/prefixed_pxtranc.cpp
                         pxgemr2d/prefixed_pxgemr2d.cpp
     )
     set(costa_scalapack_src_files 
                         scalapack.cpp
                         # templatized cpp implementations
-                        pxtran/costa_pxtran.cpp
+                        pxtran_op/costa_pxtran_op.cpp
                         pxgemr2d/costa_pxgemr2d.cpp
                         # scalapck api overwritten
                         pxtran/pxtran.cpp
+                        pxtranu/pxtranu.cpp
+                        pxtranc/pxtranc.cpp
                         pxgemr2d/pxgemr2d.cpp
     )
 
@@ -39,7 +43,10 @@ if(NOT TARGET costa)
         $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/grid2grid>
         $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxgemr2d>
+        $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxtran_op>
         $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxtran>
+        $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxtranu>
+        $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxtranc>
     )
     target_compile_features(costa PUBLIC cxx_std_14)
     target_link_libraries(costa PUBLIC MPI::MPI_CXX

@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
         if (type == "double") {
             double alpha = double{1.0 * al};
             double beta = double{1.0 * be};
-            pxtran_params<double> params(m, n,
+            pxtran_op_params<double> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
                                          p_grid[0], p_grid[1],
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
         } else if (type == "float") {
             float alpha = float{1.0f * al};
             float beta = float{1.0f * be};
-            pxtran_params<float> params(m, n,
+            pxtran_op_params<float> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
                                          p_grid[0], p_grid[1],
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
         } else if (type == "zfloat") {
             std::complex<float> alpha = std::complex<float>{1.0f * al};
             std::complex<float> beta = std::complex<float>{1.0f * be};
-            pxtran_params<std::complex<float>> params(m, n,
+            pxtran_op_params<std::complex<float>> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
                                          p_grid[0], p_grid[1],
@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
         } else if (type == "zdouble") {
             std::complex<double> alpha = std::complex<double>{1.0 * al};
             std::complex<double> beta = std::complex<double>{1.0 * be};
-            pxtran_params<std::complex<double>> params(m, n,
+            pxtran_op_params<std::complex<double>> params(m, n,
                                          block_a[0], block_a[1],
                                          block_c[0], block_c[1],
                                          p_grid[0], p_grid[1],

@@ -8,7 +8,7 @@
 
 namespace costa {
 template <typename T>
-struct pxtran_params {
+struct pxtran_op_params {
     // ****************************************
     // *       INPUT PARAMETERS BEGIN         *
     // ****************************************
@@ -81,10 +81,12 @@ struct pxtran_params {
     int src_mc = 0; // rows
     int src_nc = 0; // cols
 
+    char op = 'T'; // T = Traspose, C = Conjugate-Transpose
+
     // ****************************************
     // *         INPUT PARAMETERS END         *
     // ****************************************
-    pxtran_params() = default;
+    pxtran_op_params() = default;
 
     void initialize(int mm, int nn,
                     int block_a1, int block_a2,
@@ -134,7 +136,7 @@ struct pxtran_params {
         src_mc = 0; src_nc = 0;
     }
 
-    pxtran_params(int m, int n,
+    pxtran_op_params(int m, int n,
                   int bm, int bn,
                   int prows, int pcols,
                   T a, T b) {
@@ -153,12 +155,12 @@ struct pxtran_params {
                    a, b);
         std::string info;
         if (!valid(info)) {
-            std::runtime_error("WRONG PXTRAN PARAMETER: " + info);
+            std::runtime_error("WRONG PXTRAN(U/C) PARAMETER: " + info);
         }
     }
 
 
-    pxtran_params(int m, int n,
+    pxtran_op_params(int m, int n,
                   int block_a1, int block_a2,
                   int block_c1, int block_c2,
                   int prows, int pcols,
@@ -170,11 +172,11 @@ struct pxtran_params {
                    a, b);
         std::string info;
         if (!valid(info)) {
-            std::runtime_error("WRONG PXTRAN PARAMETER: " + info);
+            std::runtime_error("WRONG PXTRAN(U/C) PARAMETER: " + info);
         }
     }
 
-    pxtran_params(
+    pxtran_op_params(
         // global sizes
         int ma, int na, // matrix A
         int mc, int nc, // matrix C
@@ -202,7 +204,9 @@ struct pxtran_params {
 
         // processor srcs
         int src_ma, int src_na, // matrix A
-        int src_mc, int src_nc // matrix C
+        int src_mc, int src_nc, // matrix C
+
+        char op // 'T' for Transpose and 'C' for Conjugate-Transpose
     ) :
         ma(ma), na(na),
         mc(mc), nc(nc),
@@ -224,11 +228,13 @@ struct pxtran_params {
         P(p_rows * p_cols),
 
         src_ma(src_ma), src_na(src_na),
-        src_mc(src_mc), src_nc(src_nc)
+        src_mc(src_mc), src_nc(src_nc),
+
+        op(std::toupper(op))
     {
         std::string info;
         if (!valid(info)) {
-            std::runtime_error("WRONG PXTRAN PARAMETER: " + info);
+            std::runtime_error("WRONG PXTRAN(U/C) PARAMETER: " + info);
         }
     }
 
@@ -370,11 +376,16 @@ struct pxtran_params {
             return false;
         }
 
+        if (op != 'T' && op != 'C') {
+            info = "op = " + std::to_string(op);
+            return false;
+        }
+
         return true;
     }
 
     friend std::ostream &operator<<(std::ostream &os,
-                                    const pxtran_params &obj) {
+                                    const pxtran_op_params &obj) {
         os << "=============================" << std::endl;
         os << "      GLOBAL MAT. SIZES" << std::endl;
         os << "=============================" << std::endl;
@@ -415,6 +426,16 @@ struct pxtran_params {
         os << "=============================" << std::endl;
         os << "lld_a = " << obj.lld_a << std::endl;
         os << "lld_c = " << obj.lld_c << std::endl;
+        os << "=============================" << std::endl;
+        os << "            OPERATION" << std::endl;
+        os << "=============================" << std::endl;
+        os << "Operation = ";
+        if (obj.op == 'T')
+            os << "Transpose" << std::endl;
+        else if (obj.op == 'C')
+            os << "Conjugate-Transpose" << std::endl;
+        else
+            os << "Unknown operation" << std::endl;
         os << "=============================" << std::endl;
         return os;
     }

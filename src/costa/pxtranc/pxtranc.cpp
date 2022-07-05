@@ -102,7 +102,7 @@ void pztranc__(const int *m , const int *n ,
 // Same as previously, but CAPITALIZED.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void PCTRANU(const int *m , const int *n , 
+void PCTRANC(const int *m , const int *n , 
              float *alpha , const float *a , 
              const int *ia , const int *ja , 
              const int *desca , 
@@ -112,7 +112,7 @@ void PCTRANU(const int *m , const int *n ,
     pctranc(m, n, alpha, a, ia, ja, desca, beta, c, ic, jc, descc);
 }
 
-void PZTRANU(const int *m , const int *n , 
+void PZTRANC(const int *m , const int *n , 
              double *alpha , const double *a , 
              const int *ia , const int *ja , 
              const int *desca , 

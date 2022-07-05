@@ -102,7 +102,7 @@ void costa_pztranc__(const int *m , const int *n ,
 // Same as previously, but CAPITALIZED.
 // This is used for fortran interfaces, in case fortran expects these symbols
 // *********************************************************************************
-void COSTA_PCTRANU(const int *m , const int *n , 
+void COSTA_PCTRANC(const int *m , const int *n , 
              float *alpha , const float *a , 
              const int *ia , const int *ja , 
              const int *desca , 
@@ -112,7 +112,7 @@ void COSTA_PCTRANU(const int *m , const int *n ,
     costa_pctranc(m, n, alpha, a, ia, ja, desca, beta, c, ic, jc, descc);
 }
 
-void COSTA_PZTRANU(const int *m , const int *n , 
+void COSTA_PZTRANC(const int *m , const int *n , 
              double *alpha , const double *a , 
              const int *ia , const int *ja , 
              const int *desca , 

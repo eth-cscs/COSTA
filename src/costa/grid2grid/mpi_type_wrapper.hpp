@@ -21,12 +21,12 @@ struct mpi_type_wrapper<float> {
 
 template <>
 struct mpi_type_wrapper<std::complex<double>> {
-    static MPI_Datatype type() { return MPI_CXX_DOUBLE_COMPLEX; }
+    static MPI_Datatype type() { return MPI_C_DOUBLE_COMPLEX; }
 };
 
 template <>
 struct mpi_type_wrapper<std::complex<float>> {
-    static MPI_Datatype type() { return MPI_CXX_FLOAT_COMPLEX; }
+    static MPI_Datatype type() { return MPI_C_FLOAT_COMPLEX; }
 };
 
 template <>
@@ -61,7 +61,7 @@ struct mpi_type_wrapper<unsigned long> {
 
 template <>
 struct mpi_type_wrapper<bool> {
-    static MPI_Datatype type() { return MPI_CXX_BOOL; }
+    static MPI_Datatype type() { return MPI_C_BOOL; }
 };
 
 template <>

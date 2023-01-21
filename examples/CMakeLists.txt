@@ -2,7 +2,7 @@
 #  Build test  #
 ################
 # COSTA-only executables
-set(executables "example0" "example1")
+set(executables "example0" "example1" "copy_bench")
 foreach(exec ${executables})
     add_executable(${exec} "${exec}.cpp")
     target_link_libraries(${exec} PRIVATE costa cxxopts)

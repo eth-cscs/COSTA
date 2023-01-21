@@ -17,6 +17,7 @@ struct threads_workspace {
 
     int block_dim = 0;
     int max_threads = 0;
+    std::unique_ptr<T[]> transpose_buffer;
     std::unique_ptr<T[]> buffer;
 };
 }}

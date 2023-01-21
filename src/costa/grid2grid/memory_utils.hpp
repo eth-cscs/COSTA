@@ -27,7 +27,29 @@ void copy(const std::size_t n, const elem_type *src_ptr,
                   "Element type must be trivially copyable!");
     bool perform_operation = std::abs(alpha - elem_type{1}) > 0 || std::abs(beta - elem_type{0}) > 0;
     if (!perform_operation && !should_conjugate) {
-        std::memcpy(dest_ptr, src_ptr, sizeof(elem_type) * n);
+        // std::memcpy(dest_ptr, src_ptr, sizeof(elem_type) * n);
+	
+        for (int i = 0; i < n/16; i += 16) {
+            dest_ptr[i] = src_ptr[i];
+            dest_ptr[i+1] = src_ptr[i+1];
+            dest_ptr[i+2] = src_ptr[i+2];
+            dest_ptr[i+3] = src_ptr[i+3];
+            dest_ptr[i+4] = src_ptr[i+4];
+            dest_ptr[i+5] = src_ptr[i+5];
+            dest_ptr[i+6] = src_ptr[i+6];
+            dest_ptr[i+7] = src_ptr[i+7];
+            dest_ptr[i+8] = src_ptr[i+8];
+            dest_ptr[i+9] = src_ptr[i+9];
+            dest_ptr[i+10] = src_ptr[i+10];
+            dest_ptr[i+11] = src_ptr[i+11];
+            dest_ptr[i+12] = src_ptr[i+12];
+            dest_ptr[i+13] = src_ptr[i+13];
+            dest_ptr[i+14] = src_ptr[i+14];
+            dest_ptr[i+15] = src_ptr[i+15];
+	}
+        for (int i = 16*(n/16); i < n; ++i) {
+            dest_ptr[i] = src_ptr[i];
+	}
         assert(dest_ptr[0] == src_ptr[0]);
     } else {
         for (int i = 0; i < n; ++i) {
@@ -70,14 +92,63 @@ void copy2D(int n_rows, int n_cols,
     } else {
         // if strided, copy column-by-column
         // #pragma omp task firstprivate(dim, src_ptr, ld_src, dest_ptr, ld_dest)
-        for (size_t col = 0; col < n_cols; ++col) {
+        for (size_t col = 0; col < n_cols/8; col += 8) {
             // #pragma omp task firstprivate(dim, src_ptr, ld_src, col, dest_ptr, ld_dest)
             copy(n_rows,
                  src_ptr + ld_src * col,
                  dest_ptr + ld_dest * col, 
                  should_conjugate, 
                  alpha, beta);
+
+            copy(n_rows,
+                 src_ptr + ld_src * (col+1),
+                 dest_ptr + ld_dest * (col+1), 
+                 should_conjugate, 
+                 alpha, beta);
+
+            copy(n_rows,
+                 src_ptr + ld_src * (col+2),
+                 dest_ptr + ld_dest * (col+2), 
+                 should_conjugate, 
+                 alpha, beta);
+
+            copy(n_rows,
+                 src_ptr + ld_src * (col+3),
+                 dest_ptr + ld_dest * (col+3), 
+                 should_conjugate, 
+                 alpha, beta);
+
+            copy(n_rows,
+                 src_ptr + ld_src * (col+4),
+                 dest_ptr + ld_dest * (col+4), 
+                 should_conjugate, 
+                 alpha, beta);
+
+            copy(n_rows,
+                 src_ptr + ld_src * (col+5),
+                 dest_ptr + ld_dest * (col+5), 
+                 should_conjugate, 
+                 alpha, beta);
+
+            copy(n_rows,
+                 src_ptr + ld_src * (col+6),
+                 dest_ptr + ld_dest * (col+6), 
+                 should_conjugate, 
+                 alpha, beta);
+
+            copy(n_rows,
+                 src_ptr + ld_src * (col+7),
+                 dest_ptr + ld_dest * (col+7), 
+                 should_conjugate, 
+                 alpha, beta);
         }
+        for (size_t col = 8*(n_cols/8); col < n_cols; col += 1) {
+            copy(n_rows,
+                 src_ptr + ld_src * col,
+                 dest_ptr + ld_dest * col, 
+                 should_conjugate, 
+                 alpha, beta);
+	}
     }
 }
 
@@ -129,14 +200,14 @@ void transpose_col_major(const int n_rows, const int n_cols,
                     // (j, i) in the send buffer, column-major
                     if (should_conjugate)
                         el = conjugate_f(el);
-                    workspace.buffer[b_offset + j-block_j] = el;
+                    workspace.transpose_buffer[b_offset + j-block_j] = el;
                 }
                 for (int j = block_j; j < upper_j; ++j) {
                     auto& dst = dest_ptr[i*dest_stride + j];
                     if (perform_operation) {
-                        dst = beta * dst + alpha * workspace.buffer[b_offset + j-block_j];
+                        dst = beta * dst + alpha * workspace.transpose_buffer[b_offset + j-block_j];
                     } else {
-                        dst = workspace.buffer[b_offset + j-block_j];
+                        dst = workspace.transpose_buffer[b_offset + j-block_j];
                     }
                 }
             }
@@ -212,14 +283,14 @@ void transpose_row_major(const int n_rows, const int n_cols,
                     if (should_conjugate) {
                         el = conjugate_f(el);
                     }
-                    workspace.buffer[b_offset + i-block_i] = el;
+                    workspace.transpose_buffer[b_offset + i-block_i] = el;
                 }
                 for (int i = block_i; i < upper_i; ++i) {
                     auto& dst = dest_ptr[j*dest_stride + i];
                     if (perform_operation) {
-                        dst = beta * dst + alpha * workspace.buffer[b_offset + i-block_i];
+                        dst = beta * dst + alpha * workspace.transpose_buffer[b_offset + i-block_i];
                     } else {
-                        dst = workspace.buffer[b_offset + i-block_i];
+                        dst = workspace.transpose_buffer[b_offset + i-block_i];
                     }
                 }
             }

@@ -40,7 +40,10 @@ std::vector<message<T>> decompose_block(const block<T> &b,
     int col_first = b_cover.cols_cover.start_index;
     int col_last = b_cover.cols_cover.end_index;
 
+    int n_blocks = (col_last - col_first) * (row_last - row_first);
+
     std::vector<message<T>> decomposed_blocks;
+    decomposed_blocks.reserve(n_blocks);
 
     // use start of the interval to get the rank and the end of the interval
     // to get the block which has to be sent

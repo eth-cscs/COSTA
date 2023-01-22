@@ -40,7 +40,10 @@ std::vector<message<T>> decompose_block(const block<T> &b,
     int col_first = b_cover.cols_cover.start_index;
     int col_last = b_cover.cols_cover.end_index;
 
+    int n_blocks = (col_last - col_first) * (row_last - row_first);
+
     std::vector<message<T>> decomposed_blocks;
+    decomposed_blocks.reserve(n_blocks);
 
     // use start of the interval to get the rank and the end of the interval
     // to get the block which has to be sent
@@ -134,7 +137,7 @@ communication_data<T> prepare_to_send(grid_layout<T> &init_layout,
                          alpha, beta, transpose, conjugate);
     merge_messages(messages);
 
-    return communication_data<T>(messages, rank, std::max(final_layout.num_ranks(), init_layout.num_ranks()));
+    return communication_data<T>(messages, rank, std::max(final_layout.num_ranks(), init_layout.num_ranks()), costa::CommType::send);
 }
 
 template <typename T>
@@ -160,7 +163,7 @@ communication_data<T> prepare_to_send(
         n_ranks = std::max(n_ranks, std::max(final_layout.num_ranks(), init_layout.num_ranks()));
     }
     merge_messages(messages);
-    return communication_data<T>(messages, rank, n_ranks);
+    return communication_data<T>(messages, rank, n_ranks, costa::CommType::send);
 }
 template <typename T> 
 communication_data<T> prepare_to_recv(grid_layout<T> &final_layout,
@@ -173,7 +176,7 @@ communication_data<T> prepare_to_recv(grid_layout<T> &final_layout,
                          alpha, beta, transpose, conjugate);
     merge_messages(messages);
 
-    return communication_data<T>(messages, rank, std::max(init_layout.num_ranks(), final_layout.num_ranks()));
+    return communication_data<T>(messages, rank, std::max(init_layout.num_ranks(), final_layout.num_ranks()), costa::CommType::recv);
 }
 
 template <typename T>
@@ -199,7 +202,7 @@ communication_data<T> prepare_to_recv(
         n_ranks = std::max(n_ranks, std::max(init_layout.num_ranks(), final_layout.num_ranks()));
     }
     merge_messages(messages);
-    return communication_data<T>(messages, rank, n_ranks);
+    return communication_data<T>(messages, rank, n_ranks, costa::CommType::recv);
 }
 } // namespace utils
 } // namespace costa

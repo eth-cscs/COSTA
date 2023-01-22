@@ -47,8 +47,6 @@ template <typename T>
 void exchange_async(communication_data<T>& send_data, 
                     communication_data<T>& recv_data,
                     MPI_Comm comm) {
-    memory::threads_workspace<T> workspace(128);
-
     PE(transform_irecv);
     MPI_Request* recv_reqs;
     // protect from empty data
@@ -72,7 +70,7 @@ void exchange_async(communication_data<T>& send_data,
 
     PE(transform_packing);
     // copy blocks to temporary send buffers
-    send_data.copy_to_buffer(workspace);
+    send_data.copy_to_buffer();
     PL();
 
     PE(transform_isend);
@@ -99,8 +97,7 @@ void exchange_async(communication_data<T>& send_data,
     // copy local data (that are on the same rank in both initial and final layout)
     // this is independent of MPI and can be executed in parallel
     copy_local_blocks(send_data.local_messages,
-                      recv_data.local_messages,
-                      workspace);
+                      recv_data.local_messages);
     PL();
 
     // wait for any package and immediately unpack it
@@ -114,10 +111,9 @@ void exchange_async(communication_data<T>& send_data,
         PL();
         PE(transform_unpacking);
         // unpack the package that arrived
-        recv_data.copy_from_buffer(idx, workspace);
+        recv_data.copy_from_buffer(idx);
         PL();
     }
-
     if (recv_data.n_packed_messages > 0) {
         delete[] recv_reqs;
     }

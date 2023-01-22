@@ -1,6 +1,6 @@
 #pragma once
 #include <costa/grid2grid/block.hpp>
-#include <costa/grid2grid/threads_workspace.hpp>
+#include <costa/grid2grid/workspace.hpp>
 
 #include <algorithm>
 #include <cstring>
@@ -30,6 +30,8 @@ void copy(const std::size_t n, const elem_type *src_ptr,
         std::memcpy(dest_ptr, src_ptr, sizeof(elem_type) * n);
         assert(dest_ptr[0] == src_ptr[0]);
     } else {
+	#pragma GCC ivdep
+	#pragma GCC unroll 32
         for (int i = 0; i < n; ++i) {
             auto el = src_ptr[i];
             if (should_conjugate) {
@@ -69,7 +71,8 @@ void copy2D(int n_rows, int n_cols,
         copy(block_size, src_ptr, dest_ptr, should_conjugate, alpha, beta);
     } else {
         // if strided, copy column-by-column
-        // #pragma omp task firstprivate(dim, src_ptr, ld_src, dest_ptr, ld_dest)
+	#pragma GCC ivdep
+	#pragma GCC unroll 64
         for (size_t col = 0; col < n_cols; ++col) {
             // #pragma omp task firstprivate(dim, src_ptr, ld_src, col, dest_ptr, ld_dest)
             copy(n_rows,
@@ -88,7 +91,7 @@ void transpose_col_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               threads_workspace<T>& workspace) {
+               costa::memory::workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -129,14 +132,14 @@ void transpose_col_major(const int n_rows, const int n_cols,
                     // (j, i) in the send buffer, column-major
                     if (should_conjugate)
                         el = conjugate_f(el);
-                    workspace.buffer[b_offset + j-block_j] = el;
+                    workspace.transpose_buffer[b_offset + j-block_j] = el;
                 }
                 for (int j = block_j; j < upper_j; ++j) {
                     auto& dst = dest_ptr[i*dest_stride + j];
                     if (perform_operation) {
-                        dst = beta * dst + alpha * workspace.buffer[b_offset + j-block_j];
+                        dst = beta * dst + alpha * workspace.transpose_buffer[b_offset + j-block_j];
                     } else {
-                        dst = workspace.buffer[b_offset + j-block_j];
+                        dst = workspace.transpose_buffer[b_offset + j-block_j];
                     }
                 }
             }
@@ -169,7 +172,7 @@ void transpose_row_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               threads_workspace<T>& workspace) {
+               workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -212,14 +215,14 @@ void transpose_row_major(const int n_rows, const int n_cols,
                     if (should_conjugate) {
                         el = conjugate_f(el);
                     }
-                    workspace.buffer[b_offset + i-block_i] = el;
+                    workspace.transpose_buffer[b_offset + i-block_i] = el;
                 }
                 for (int i = block_i; i < upper_i; ++i) {
                     auto& dst = dest_ptr[j*dest_stride + i];
                     if (perform_operation) {
-                        dst = beta * dst + alpha * workspace.buffer[b_offset + i-block_i];
+                        dst = beta * dst + alpha * workspace.transpose_buffer[b_offset + i-block_i];
                     } else {
-                        dst = workspace.buffer[b_offset + i-block_i];
+                        dst = workspace.transpose_buffer[b_offset + i-block_i];
                     }
                 }
             }
@@ -253,7 +256,7 @@ void transpose(const int n_rows, const int n_cols,
                const bool should_conjugate, 
                const T alpha, const T beta,
                const bool col_major,
-               threads_workspace<T>& workspace) {
+               workspace<T>& workspace) {
     if (col_major) {
         transpose_col_major(n_rows, n_cols, 
                             src_ptr, src_stride,
@@ -290,7 +293,7 @@ void copy_and_transform(const int n_rows, const int n_cols,
                         const bool should_transpose,
                         const bool should_conjugate,
                         const T alpha, const T beta,
-                        threads_workspace<T>& workspace) {
+                        costa::memory::workspace<T>& workspace) {
     // BE CAREFUL: transpose and different src and dest orderings might cancel out
     // ===========
     // Row-major + Transpose + Row-major = Transpose (Row-major)

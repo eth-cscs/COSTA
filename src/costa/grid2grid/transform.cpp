@@ -114,7 +114,6 @@ void exchange_async(communication_data<T>& send_data,
         recv_data.copy_from_buffer(idx);
         PL();
     }
-
     if (recv_data.n_packed_messages > 0) {
         delete[] recv_reqs;
     }

@@ -54,12 +54,17 @@ class communication_data {
     int my_rank;
     int n_packed_messages = 0;
 
+    CommType type;
+
     communication_data() = default;
 
-    communication_data(std::vector<message<T>> &msgs, int my_rank, int n_ranks);
+    communication_data(std::vector<message<T>> &msgs, 
+		       int my_rank, int n_ranks, 
+		       CommType type);
 
     // copy all mpi_messages to buffer
     void copy_to_buffer();
+    void copy_from_buffer();
 
     // copy mpi_messages within the idx-th package
     // a package includes all mpi_messages

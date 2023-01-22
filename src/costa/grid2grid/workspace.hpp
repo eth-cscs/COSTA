@@ -3,6 +3,9 @@
 #include <omp.h>
 
 namespace costa {
+
+enum CommType {send, recv};
+
 namespace memory {
 
 template <typename T>
@@ -15,10 +18,28 @@ struct workspace {
         transpose_buffer = std::vector<T>(block_dim * max_threads);
     }
 
+    void resize_buffer(CommType type, std::size_t size) {
+        switch(type) {
+	    case costa::CommType::send: send_buffer.resize(size);
+			 break;
+	    case costa::CommType::recv: recv_buffer.resize(size);
+			 break;
+        }
+    }
+
+    T* buffer_ptr(CommType type) {
+        switch(type) {
+	    case costa::CommType::send: return send_buffer.data();
+	    case costa::CommType::recv: return recv_buffer.data();
+        }
+        return nullptr;
+    }
+
     int block_dim = 0;
     int max_threads = 0;
     std::vector<T> transpose_buffer;
-    std::vector<T> buffer;
+    std::vector<T> send_buffer;
+    std::vector<T> recv_buffer;
 };
 
 template <typename Scalar>

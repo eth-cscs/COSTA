@@ -1,4 +1,5 @@
 #include <costa/grid2grid/communication_data.hpp>
+#include <costa/grid2grid/workspace.hpp>
 
 #include <complex>
 #include <omp.h>
@@ -104,7 +105,7 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
                                           int rank, int n_ranks)
     : n_ranks(n_ranks)
     , my_rank(rank) {
-    // std::cout << "constructor of communciation data invoked" << std::endl;
+    // std::cout << "constructor of communication data invoked" << std::endl;
     dspls = std::vector<int>(n_ranks);
     counts = std::vector<int>(n_ranks);
     mpi_messages.reserve(messages.size());
@@ -129,7 +130,6 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
             counts[target_rank] += b.total_size();
             total_size += b.total_size();
             prev_rank = target_rank;
-
         } else {
             /*
             if (rank == 0) {
@@ -145,8 +145,8 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
         std::cout << "==========================" <<std::endl;
     }
     */
+    memory::get_costa_context_instance<T>()->buffer.resize(total_size);  
 
-    buffer = std::unique_ptr<T[]>(new T[total_size]);
     for (unsigned i = 1; i < (unsigned)n_ranks; ++i) {
         dspls[i] = dspls[i - 1] + counts[i - 1];
     }
@@ -162,9 +162,10 @@ communication_data<T>::communication_data(std::vector<message<T>> &messages,
 }
 
 template <typename T>
-void communication_data<T>::copy_to_buffer(memory::threads_workspace<T>& workspace) {
+void communication_data<T>::copy_to_buffer() {
     if (mpi_messages.size() > 0) {
-#pragma omp parallel for shared(mpi_messages, workspace, offset_per_message, buffer)
+	auto& workspace = *memory::get_costa_context_instance<T>();
+#pragma omp parallel for shared(mpi_messages, workspace, offset_per_message)
         for (unsigned i = 0; i < mpi_messages.size(); ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
@@ -189,10 +190,11 @@ void communication_data<T>::copy_to_buffer(memory::threads_workspace<T>& workspa
 }
 
 template <typename T>
-void communication_data<T>::copy_from_buffer(int idx, memory::threads_workspace<T>& workspace) {
+void communication_data<T>::copy_from_buffer(int idx) {
     assert(idx >= 0 && idx+1 < package_ticks.size());
     if (package_ticks[idx+1] - package_ticks[idx] > 0) {
-#pragma omp parallel for shared(idx, package_ticks, mpi_messages, offset_per_message, buffer, workspace)
+	auto& workspace = *memory::get_costa_context_instance<T>();
+#pragma omp parallel for shared(idx, package_ticks, mpi_messages, offset_per_message, workspace)
         for (unsigned i = package_ticks[idx]; i < package_ticks[idx+1]; ++i) {
             const auto &m = mpi_messages[i];
             block<T> b = m.get_block();
@@ -216,15 +218,15 @@ void communication_data<T>::copy_from_buffer(int idx, memory::threads_workspace<
 
 template <typename T>
 T *communication_data<T>::data() {
-    return buffer.get();
+    return memory::get_costa_context_instance<T>()->buffer.data();
 }
 
 template <typename T>
 void copy_local_blocks(std::vector<message<T>>& from,
-                       std::vector<message<T>>& to,
-                       memory::threads_workspace<T>& workspace) {
+                       std::vector<message<T>>& to) {
     assert(from.size() == to.size());
     if (from.size() > 0) {
+	auto& workspace = *memory::get_costa_context_instance<T>();
 #pragma omp parallel for shared(from, to, workspace)
         for (unsigned i = 0u; i < from.size(); ++i) {
             /*
@@ -287,18 +289,18 @@ template class message<std::complex<float>>;
 // template instantiation for copy_local_blocks
 template void
 copy_local_blocks(std::vector<message<double>>& from, 
-                  std::vector<message<double>>& to,
-                  memory::threads_workspace<double>& workspace);
+                  std::vector<message<double>>& to);
+
 template void
 copy_local_blocks(std::vector<message<float>>& from, 
-                  std::vector<message<float>>& to,
-                  memory::threads_workspace<float>& workspace);
+                  std::vector<message<float>>& to);
+
 template void
 copy_local_blocks(std::vector<message<std::complex<float>>>& from, 
-                  std::vector<message<std::complex<float>>>& to,
-                  memory::threads_workspace<std::complex<float>>& workspace);
+                  std::vector<message<std::complex<float>>>& to);
+
 template void
 copy_local_blocks(std::vector<message<std::complex<double>>>& from, 
-                  std::vector<message<std::complex<double>>>& to,
-                  memory::threads_workspace<std::complex<double>>& workspace);
+                  std::vector<message<std::complex<double>>>& to);
+
 } // namespace costa

@@ -1,6 +1,6 @@
 #include "../gtest.h"
 #include <costa/grid2grid/memory_utils.hpp>
-#include <costa/grid2grid/threads_workspace.hpp>
+#include <costa/grid2grid/workspace.hpp>
 #include <vector>
 #include <cmath>
 
@@ -31,7 +31,7 @@ TEST(copy2D, row_major) {
 
     std::vector<int> out(result.size());
 
-    costa::memory::threads_workspace<int> workspace(256);
+    auto& workspace = *costa::memory::get_costa_context_instance<int>();
 
     int n_rows = 8; int n_cols = 3;
     int in_stride = 4;
@@ -99,7 +99,7 @@ TEST(copy2D, col_major) {
 
     std::vector<int> out(result.size());
 
-    costa::memory::threads_workspace<int> workspace(256);
+    auto& workspace = *costa::memory::get_costa_context_instance<int>();
 
     int n_rows = 3; int n_cols = 8;
     int in_stride = 4;
@@ -162,7 +162,7 @@ TEST(transpose, row_to_col_major) {
 
     std::vector<int> out(result.size());
 
-    costa::memory::threads_workspace<int> workspace(256);
+    auto& workspace = *costa::memory::get_costa_context_instance<int>();
 
     int n_rows = 8; int n_cols = 3;
     int in_stride = 4;
@@ -225,7 +225,7 @@ TEST(transpose, col_to_row_major) {
     // this is the output
     std::vector<int> out(n_rows * out_stride);
 
-    costa::memory::threads_workspace<int> workspace(256);
+    auto& workspace = *costa::memory::get_costa_context_instance<int>();
 
     // col -> row major ordering = transpose
     costa::memory::copy_and_transform(n_rows, n_cols,

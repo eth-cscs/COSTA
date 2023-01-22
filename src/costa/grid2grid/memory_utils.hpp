@@ -1,6 +1,6 @@
 #pragma once
 #include <costa/grid2grid/block.hpp>
-#include <costa/grid2grid/threads_workspace.hpp>
+#include <costa/grid2grid/workspace.hpp>
 
 #include <algorithm>
 #include <cstring>
@@ -159,7 +159,7 @@ void transpose_col_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               threads_workspace<T>& workspace) {
+               costa::memory::workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -240,7 +240,7 @@ void transpose_row_major(const int n_rows, const int n_cols,
                T* dest_ptr, const int dest_stride, 
                const bool should_conjugate, 
                const T alpha, const T beta,
-               threads_workspace<T>& workspace) {
+               workspace<T>& workspace) {
     static_assert(std::is_trivially_copyable<T>(),
             "Element type must be trivially copyable!");
     // n_rows and n_cols before transposing
@@ -324,7 +324,7 @@ void transpose(const int n_rows, const int n_cols,
                const bool should_conjugate, 
                const T alpha, const T beta,
                const bool col_major,
-               threads_workspace<T>& workspace) {
+               workspace<T>& workspace) {
     if (col_major) {
         transpose_col_major(n_rows, n_cols, 
                             src_ptr, src_stride,
@@ -361,7 +361,7 @@ void copy_and_transform(const int n_rows, const int n_cols,
                         const bool should_transpose,
                         const bool should_conjugate,
                         const T alpha, const T beta,
-                        threads_workspace<T>& workspace) {
+                        costa::memory::workspace<T>& workspace) {
     // BE CAREFUL: transpose and different src and dest orderings might cancel out
     // ===========
     // Row-major + Transpose + Row-major = Transpose (Row-major)

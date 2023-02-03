@@ -37,6 +37,10 @@ External dependencies are:
 - `OpenMP`: (required)
 - `SCALAPACK`: (optional)
 
+Optional External dependencies are:
+- semiprof
+- cxxopts
+
 ## Using COSTA
 
 There are two ways how you can use COSTA in your own project:
@@ -46,8 +50,10 @@ a) Using COSTA within another CMake project:
 COSTA is CMake friendly and provides a `costaConfig.cmake` module for easy integration into 3rd-party CMake projects with:
 ```cmake
 find_package(costa REQUIRED)
-target_link_libraries(... costa::costa)
+target_link_libraries(... costa::costa_scalapack costa::costa)
 ```
+The `costa::costa_scalapack` argument is only needed when costa is compiled with scalapack support
+
 COSTA's dependencies are taken care of internally, nothing else needs to be linked. Make sure to set `CMAKE_INSTALL_PREFIX` to COSTA's installation directory when building.
 
 b) Using COSTA in a general project:

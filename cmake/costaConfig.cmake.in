@@ -16,18 +16,14 @@ if(NOT TARGET costa::costa)
     find_package(MPI REQUIRED)
     find_package(OpenMP REQUIRED)
 
-    set(COSTA_SCALAPACK "@COSTA_SCALAPACK@")
+    set(COSTA_SCALAPACK_IMPLEMENTATION "@COSTA_SCALAPACK_IMPLEMENTATION@")
 
-    if (${COSTA_SCALAPACK} STREQUAL "MKL")
-        find_package(MKL)
-    elseif (${COSTA_SCALAPACK} STREQUAL "CRAY_LIBSCI")
-        find_package(CRAY_LIBSCI REQUIRED)
-    elseif (${COSTA_SCALAPACK} STREQUAL "CUSTOM")
-        find_package(SCALAPACK)
+    if (NOT COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "OFF")
+      find_package(SCALAPACK)
     endif ()
-
+    
     if ("@COSTA_WITH_PROFILING@")
-        find_dependency(semiprof)
+      find_dependency(semiprof)
     endif ()
 
     # Clean-up module path.

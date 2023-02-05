@@ -1,6 +1,6 @@
 set(INSTALLED_TARGETS_LIST "")
 # original grid2grid files
-set(costa_src_files 
+set(costa_src_files
   grid2grid/grid_layout.hpp
   grid2grid/block.cpp
   grid2grid/grid2D.cpp
@@ -14,7 +14,7 @@ set(costa_src_files
   grid2grid/transformer.hpp
   layout.cpp
 )
-set(costa_prefixed_scalapack_src_files 
+set(costa_prefixed_scalapack_src_files
   scalapack.cpp
   # templatized cpp implementations
   pxtran_op/costa_pxtran_op.cpp
@@ -25,7 +25,7 @@ set(costa_prefixed_scalapack_src_files
   pxtranc/prefixed_pxtranc.cpp
   pxgemr2d/prefixed_pxgemr2d.cpp
 )
-set(costa_scalapack_src_files 
+set(costa_scalapack_src_files
   scalapack.cpp
   # templatized cpp implementations
   pxtran_op/costa_pxtran_op.cpp
@@ -38,8 +38,8 @@ set(costa_scalapack_src_files
 )
 
 add_library(costa ${costa_src_files})
-target_include_directories(costa PUBLIC 
-  
+target_include_directories(costa PUBLIC
+
   $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/grid2grid>
   $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxgemr2d>
@@ -57,7 +57,7 @@ target_link_libraries(costa PUBLIC MPI::MPI_CXX
 # for shared libraries, but for static libraries it has
 # to be added manually. It's not needed for COSTA when built in isolation.
 # However, if a 3rd-party library that is shared and built with the -fPIC
-# flags is using COSTA built as a static library, it might be a problem 
+# flags is using COSTA built as a static library, it might be a problem
 # if COSTA is not compiled with this flag.
 # if needed, can be enforced by -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 
@@ -83,7 +83,7 @@ if(NOT COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "OFF")
     costa::scalapack
     $<$<BOOL:${COSTA_WITH_PROFILING}>:semiprof::semiprof>)
 
-  target_link_libraries(costa_prefixed_scalapack PUBLIC costa 
+  target_link_libraries(costa_prefixed_scalapack PUBLIC costa
     costa::scalapack
     $<$<BOOL:${COSTA_WITH_PROFILING}>:semiprof::semiprof>)
 
@@ -95,7 +95,7 @@ if(NOT COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "OFF")
       $<BUILD_INTERFACE:COSTA_WITH_PROFILING>
     )
   endif()
-  
+
   list(APPEND INSTALLED_TARGETS_LIST "costa_scalapack")
   list(APPEND INSTALLED_TARGETS_LIST "costa_prefixed_scalapack")
 endif()
@@ -110,4 +110,3 @@ install(EXPORT costa_targets
   FILE costaTargets.cmake
   NAMESPACE costa::
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/costa")
-

@@ -5,10 +5,10 @@ find_package(MKL)
 find_package(CRAY_LIBSCI)
 
 if(COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "MKL")
-  get_target_property(COSTA_SCALAPACK_LINK_LIBRARIES costa::BLAS::MKL::scalapack_link
+  get_target_property(COSTA_SCALAPACK costa::BLAS::MKL::scalapack_link
     INTERFACE_LINK_LIBRARIES)
 elseif(COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "CRAY_LIBSCI")
-  get_target_property(COSTA_SCALAPACK_LINK_LIBRARIES costa::BLAS::SCI::scalapack_link
+  get_target_property(COSTA_SCALAPACK costa::BLAS::SCI::scalapack_link
     INTERFACE_LINK_LIBRARIES)
 elseif(COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "CUSTOM")
   pkg_search_module(_COSTA_SCALAPACK scalapack)

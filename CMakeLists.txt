@@ -12,7 +12,7 @@ project(costa
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(cmake/build_type.cmake)
 include(cmake/adjust_mpiexec_flags.cmake)
-
+include(GitSubmodule)
 # Options
 #
 
@@ -87,7 +87,7 @@ if (COSTA_WITH_TESTS)
 endif()
 
 if(COSTA_WITH_PROFILING)
-  find_package(semiprof REQUIRED)
+  add_git_submodule_or_find_external(semiprof libs/semiprof)
 endif()
 
 if (NOT COSTA_SCALAPACK STREQUAL "OFF")

@@ -71,8 +71,7 @@ endif()
 
 list(APPEND INSTALLED_TARGETS_LIST "costa")
 
-message("COSTA_SCALAPACK_IMPLEMENTATION: ${COSTA_SCALAPACK_IMPLEMENTATION}")
-if(NOT COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "OFF")
+if(NOT COSTA_SCALAPACK STREQUAL "OFF")
 
   add_library(costa_scalapack ${costa_scalapack_src_files})
   add_library(costa_prefixed_scalapack ${costa_prefixed_scalapack_src_files})

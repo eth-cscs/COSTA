@@ -24,17 +24,17 @@ option(COSTA_WITH_BENCHMARKS "Generate the benchmark targets." OFF)
 option(COSTA_WITH_PROFILING "Enable profiling." OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 
-set(COSTA_SCALAPACK_IMPLEMENTATION "OFF" CACHE STRING "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
-set_property(CACHE COSTA_SCALAPACK_IMPLEMENTATION PROPERTY STRINGS ${COSTA_SCALAPACK_IMPLEMENTATION_LIST})
+set(COSTA_SCALAPACK "OFF" CACHE STRING "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+set_property(CACHE COSTA_SCALAPACK PROPERTY STRINGS ${COSTA_SCALAPACK_IMPLEMENTATION_LIST})
 
 cmake_dependent_option(COSTA_CXXOPTS_BUILD_EXAMPLES "Enable examples build" OFF "COSTA_WITH_APPS" OFF)
 cmake_dependent_option(COSTA_CXXOPTS_BUILD_TESTS "Enable tests suite" OFF "COSTA_WITH_TESTS" OFF)
 
 # check if scalapack backend is valid
-message(STATUS "Selected ScaLAPACK backend (or implementation) for COSTA: ${COSTA_SCALAPACK_IMPLEMENTATION}")
+message(STATUS "Selected ScaLAPACK backend (or implementation) for COSTA: ${COSTA_SCALAPACK}")
 
-if(NOT COSTA_SCALAPACK_IMPLEMENTATION IN_LIST COSTA_SCALAPACK_IMPLEMENTATION_LIST)
-  message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK_IMPLEMENTATION! It should be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+if(NOT COSTA_SCALAPACK IN_LIST COSTA_SCALAPACK_IMPLEMENTATION_LIST)
+  message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK! It should be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
 endif()
 
 # preserve rpaths when installing and make the install folder relocatable
@@ -90,7 +90,7 @@ if(COSTA_WITH_PROFILING)
   find_package(semiprof REQUIRED)
 endif()
 
-if (NOT COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "OFF")
+if (NOT COSTA_SCALAPACK STREQUAL "OFF")
   find_package(SCALAPACK REQUIRED)
 endif()
 

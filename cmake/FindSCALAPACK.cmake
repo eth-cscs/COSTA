@@ -1,19 +1,15 @@
 include(FindPackageHandleStandardArgs)
-find_package(PkgConfig REQUIRED)
 
-find_package(MKL)
-find_package(CRAY_LIBSCI)
-
-if(COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "MKL")
-  get_target_property(COSTA_SCALAPACK costa::BLAS::MKL::scalapack_link
+if(COSTA_SCALAPACK STREQUAL "MKL")
+	find_package(MKL REQUIRED)
+  get_target_property(COSTA_SCALAPACK_LINK_LIBRARIES costa::BLAS::MKL::scalapack_link
     INTERFACE_LINK_LIBRARIES)
-elseif(COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "CRAY_LIBSCI")
-  get_target_property(COSTA_SCALAPACK costa::BLAS::SCI::scalapack_link
+elseif(COSTA_SCALAPACK STREQUAL "CRAY_LIBSCI")
+	find_package(CRAY_LIBSCI REQUIRED)
+	get_target_property(COSTA_SCALAPACK_LINK_LIBRARIES costa::BLAS::SCI::scalapack_link
     INTERFACE_LINK_LIBRARIES)
-elseif(COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "CUSTOM")
-  pkg_search_module(_COSTA_SCALAPACK scalapack)
-
-  find_library(COSTA_SCALAPACK
+elseif(COSTA_SCALAPACK STREQUAL "CUSTOM")
+  find_library(COSTA_SCALAPACK_LINK_LIBRARIES
     NAMES scalapack
     HINTS
     ${_COSTA_SCALAPACK_LIBRARY_DIRS}
@@ -26,14 +22,9 @@ elseif(COSTA_SCALAPACK_IMPLEMENTATION STREQUAL "CUSTOM")
     /usr/bin
     PATH_SUFFIXES lib
     DOC "Path to the scalapack library.")
-
-elseif()
-  message(ERROR "Unknown COSTA_SCALAPACK_IMPLEMENTATION: ${COSTA_SCALAPACK_IMPLEMENTATION}")
 endif()
 
-message(INFO "COSTA DEBUG : ${COSTA_SCALAPACK}")
-
-find_package_handle_standard_args(SCALAPACK REQUIRED_VARS COSTA_SCALAPACK)
+find_package_handle_standard_args(SCALAPACK REQUIRED_VARS COSTA_SCALAPACK_LINK_LIBRARIES)
 
 set(COSTA_SCALAPACK_FOUND "YES")
 

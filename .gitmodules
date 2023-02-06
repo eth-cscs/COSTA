@@ -1,3 +1,0 @@
-[submodule "libs/semiprof"]
-	path = libs/semiprof
-	url = https://github.com/bcumming/semiprof.git

@@ -42,7 +42,6 @@ add_library(costa ${costa_src_files})
 add_library(costa::costa ALIAS costa)
 
 target_include_directories(costa PUBLIC
-
   $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/grid2grid>
   $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src/pxgemr2d>
@@ -67,9 +66,7 @@ target_link_libraries(costa PUBLIC MPI::MPI_CXX
 set_property(TARGET costa PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(COSTA_WITH_PROFILING)
-  target_compile_definitions(costa PRIVATE
-    $<BUILD_INTERFACE:COSTA_WITH_PROFILING>
-  )
+  target_compile_definitions(costa PUBLIC COSTA_WITH_PROFILING)
 endif()
 
 list(APPEND INSTALLED_TARGETS_LIST "costa")
@@ -87,16 +84,15 @@ if(NOT COSTA_SCALAPACK STREQUAL "OFF")
   set_property(TARGET costa_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
 
   target_link_libraries(costa_scalapack PUBLIC costa
-    costa::scalapack
+    costa::scalapack::scalapack
     $<$<BOOL:${COSTA_WITH_PROFILING}>:semiprof::semiprof>)
 
   target_link_libraries(costa_prefixed_scalapack PUBLIC costa
-    costa::scalapack
+    costa::scalapack::scalapack
     $<$<BOOL:${COSTA_WITH_PROFILING}>:semiprof::semiprof>)
 
   if(COSTA_WITH_PROFILING)
-    target_compile_definitions(costa_scalapack PRIVATE
-      $<BUILD_INTERFACE:COSTA_WITH_PROFILING>
+    target_compile_definitions(costa_scalapack PRIVATE COSTA_WITH_PROFILING
     )
     target_compile_definitions(costa_prefixed_scalapack PRIVATE
       $<BUILD_INTERFACE:COSTA_WITH_PROFILING>

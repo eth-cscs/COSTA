@@ -28,12 +28,12 @@ find_package_handle_standard_args(SCALAPACK REQUIRED_VARS COSTA_SCALAPACK_LINK_L
 
 set(COSTA_SCALAPACK_FOUND "YES")
 
-if (NOT TARGET costa::scalapack)
-  add_library(costa::scalapack INTERFACE IMPORTED)
+if (NOT TARGET costa::scalapack::scalapack)
+  add_library(costa::scalapack::scalapack INTERFACE IMPORTED)
 endif()
 
 set_target_properties(
-  costa::scalapack PROPERTIES INTERFACE_LINK_LIBRARIES
+  costa::scalapack::scalapack PROPERTIES INTERFACE_LINK_LIBRARIES
   "${COSTA_SCALAPACK_LINK_LIBRARIES}")
 
 mark_as_advanced(COSTA_SCALAPACK_LINK_LIBRARIES COSTA_SCALAPACK_FOUND)

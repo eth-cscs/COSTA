@@ -94,10 +94,11 @@ endif()
 
 # COSTA
 #
-add_subdirectory(src/costa)
 
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
+
+add_subdirectory(src/costa)
 
 install(DIRECTORY "${costa_SOURCE_DIR}/src/costa"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"

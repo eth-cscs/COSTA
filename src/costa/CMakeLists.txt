@@ -38,6 +38,9 @@ set(costa_scalapack_src_files
 )
 
 add_library(costa ${costa_src_files})
+# alias targets for add_subdirectory dependency
+add_library(costa::costa ALIAS costa)
+
 target_include_directories(costa PUBLIC
 
   $<BUILD_INTERFACE:${costa_SOURCE_DIR}/src>
@@ -75,6 +78,10 @@ if(NOT COSTA_SCALAPACK STREQUAL "OFF")
 
   add_library(costa_scalapack ${costa_scalapack_src_files})
   add_library(costa_prefixed_scalapack ${costa_prefixed_scalapack_src_files})
+
+  # alias targets for add_subdirectory dependency
+  add_library(costa::costa_scalapack ALIAS costa_scalapack)
+  add_library(costa::costa_prefixed_scalapack ALIAS costa_prefixed_scalapack)
 
   set_property(TARGET costa_prefixed_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
   set_property(TARGET costa_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)

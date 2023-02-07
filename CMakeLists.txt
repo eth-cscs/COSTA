@@ -12,10 +12,8 @@ project(costa
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(cmake/build_type.cmake)
 include(cmake/adjust_mpiexec_flags.cmake)
-include(GitSubmodule)
-# Options
-#
 
+# Options
 set(COSTA_SCALAPACK_IMPLEMENTATION_LIST "OFF" "MKL" "CRAY_LIBSCI" "CUSTOM")
 
 option(COSTA_WITH_TESTS "Generate the test target." OFF)
@@ -87,7 +85,7 @@ if (COSTA_WITH_TESTS)
 endif()
 
 if(COSTA_WITH_PROFILING)
-  add_git_submodule_or_find_external(semiprof libs/semiprof)
+  find_package(semiprof)
 endif()
 
 if (NOT COSTA_SCALAPACK STREQUAL "OFF")

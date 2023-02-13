@@ -13,11 +13,14 @@ if(NOT TARGET costa::costa)
     set(MKL_ROOT "@MKL_ROOT@")
     set(MPI_CXX_COMPILER "@MPI_CXX_COMPILER@")
 
+    set(MPI_DETERMINE_LIBRARY_VERSION TRUE)
+    set(COSTA_SCALAPACK "@COSTA_SCALAPACK@")
+    
     find_package(MPI REQUIRED)
     find_package(OpenMP REQUIRED)
 
     set(COSTA_SCALAPACK "@COSTA_SCALAPACK@")
-
+    
     if (NOT COSTA_SCALAPACK STREQUAL "OFF")
       find_package(SCALAPACK)
     endif ()

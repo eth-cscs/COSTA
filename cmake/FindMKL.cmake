@@ -326,41 +326,41 @@ if(NOT TARGET costa::BLAS::MKL::blas)
   if(CMAKE_Fortran_COMPILER_LOADED
      AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU"
      AND NOT APPLE)
-    set(BLAS_mkl_INTFACE "gf")
+    set(COSTA_BLAS_mkl_INTFACE "gf")
   else()
-    set(BLAS_mkl_INTFACE "intel")
+    set(COSTA_BLAS_mkl_INTFACE "intel")
   endif()
 
 #  if(COSTA_BLAS_THREADING MATCHES "thread" OR CP2K_BLAS_THREADING MATCHES
 #                                             "gnu-thread")
-    set(BLAS_mkl_thread__ "omp")
+    set(COSTA_BLAS_mkl_thread__ "omp")
 #  endif()
 
 #  if(COSTA_BLAS_THREADING MATCHES "sequential")
-#    set(BLAS_mkl_thread__ "seq")
+#    set(COSTA_BLAS_mkl_thread__ "seq")
 #  endif()
 
 #  if(COSTA_BLAS_THREADING MATCHES "intel-thread")
-#    set(BLAS_mkl_thread__ "intel")
+#    set(COSTA_BLAS_mkl_thread__ "intel")
 #  endif()
 
 #  if(COSTA_BLAS_THREADING MATCHES "tbb")
-#    set(BLAS_mkl_thread__ "tbb")
+#    set(COSTA_BLAS_mkl_thread__ "tbb")
 #  endif()
 
 #  if(COSTA_BLAS_INTERFACE MATCHES "64bits")
-#    set(BLAS_mkl_ILP_MODE "64bit")
+#    set(COSTA_BLAS_mkl_ILP_MODE "64bit")
 #  else()
-    set(BLAS_mkl_ILP_MODE "32bit")
+    set(COSTA_BLAS_mkl_ILP_MODE "32bit")
 #  endif()
 
   get_target_property(
     MKL_BLAS_INCLUDE_DIRS
-    costa::BLAS::MKL::${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE}_${BLAS_mkl_thread__}_dyn
+    costa::BLAS::MKL::${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
     INTERFACE_INCLUDE_DIRECTORIES)
   get_target_property(
     MKL_BLAS_LIBRARIES
-    costa::BLAS::MKL::${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE}_${BLAS_mkl_thread__}_dyn
+    costa::BLAS::MKL::${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
     INTERFACE_LINK_LIBRARIES)
   if(NOT TARGET costa::BLAS::MKL::blas)
     add_library(costa::BLAS::MKL::blas INTERFACE IMPORTED)
@@ -385,19 +385,19 @@ if(NOT TARGET costa::BLAS::MKL::blas)
 
   get_target_property(
     __mkl_scalapack_inc
-    costa::BLAS::MKL::scalapack_${__mkl_mpi_ver_}_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE}_${BLAS_mkl_thread__}_dyn
+    costa::BLAS::MKL::scalapack_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
     INTERFACE_INCLUDE_DIRECTORIES)
   get_target_property(
     __mkl_scalapack_lib
-    costa::BLAS::MKL::scalapack_${__mkl_mpi_ver_}_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE}_${BLAS_mkl_thread__}_dyn
+    costa::BLAS::MKL::scalapack_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
     INTERFACE_LINK_LIBRARIES)
   get_target_property(
     __mkl_blacs_inc
-    costa::BLAS::MKL::blacs_${__mkl_mpi_ver_}_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE}_${BLAS_mkl_thread__}_dyn
+    costa::BLAS::MKL::blacs_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
     INTERFACE_INCLUDE_DIRECTORIES)
   get_target_property(
     __mkl_blacs_lib
-    costa::BLAS::MKL::blacs_${__mkl_mpi_ver_}_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE}_${BLAS_mkl_thread__}_dyn
+    costa::BLAS::MKL::blacs_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
     INTERFACE_LINK_LIBRARIES)
   if(NOT TARGET costa::BLAS::MKL::scalapack_link)
     add_library(costa::BLAS::MKL::scalapack_link INTERFACE IMPORTED)
@@ -409,11 +409,11 @@ if(NOT TARGET costa::BLAS::MKL::blas)
     PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${__mkl_scalapack_inc}"
     INTERFACE_LINK_LIBRARIES
     "${__mkl_scalapack_lib};${__mkl_blacs_lib}")
-  unset(BLAS_mkl_ILP_MODE)
-  unset(BLAS_mkl_INTFACE)
-  unset(BLAS_mkl_thread__)
-  unset(BLAS_mkl_OMP)
-  unset(BLAS_mkl_OS_NAME)
+  unset(COSTA_BLAS_mkl_ILP_MODE)
+  unset(COSTA_BLAS_mkl_INTFACE)
+  unset(COSTA_BLAS_mkl_thread__)
+  unset(COSTA_BLAS_mkl_OMP)
+  unset(COSTA_BLAS_mkl_OS_NAME)
   unset(__mkl_blacs_lib)
   unset(__mkl_blacs_inc)
   unset(__mkl_scalapack_lib)

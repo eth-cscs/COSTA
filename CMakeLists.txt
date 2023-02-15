@@ -85,7 +85,7 @@ if (COSTA_WITH_TESTS)
 endif()
 
 if(COSTA_WITH_PROFILING)
-  find_package(semiprof)
+  find_package(semiprof REQUIRED)
 endif()
 
 if (NOT COSTA_SCALAPACK STREQUAL "OFF")

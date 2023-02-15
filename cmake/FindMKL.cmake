@@ -408,7 +408,8 @@ if(NOT TARGET costa::BLAS::MKL::blas)
     costa::BLAS::MKL::scalapack_link
     PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${__mkl_scalapack_inc}"
     INTERFACE_LINK_LIBRARIES
-    "${__mkl_scalapack_lib};${__mkl_blacs_lib}")
+    "${__mkl_scalapack_lib};${__mkl_blacs_lib};${MKL_BLAS_LIBRARIES}")
+  
   unset(COSTA_BLAS_mkl_ILP_MODE)
   unset(COSTA_BLAS_mkl_INTFACE)
   unset(COSTA_BLAS_mkl_thread__)

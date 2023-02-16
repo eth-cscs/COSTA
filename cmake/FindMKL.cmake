@@ -403,7 +403,6 @@ if(NOT TARGET costa::BLAS::MKL::blas)
     add_library(costa::BLAS::MKL::scalapack_link INTERFACE IMPORTED)
   endif()
 
-  message(INFO "DEBUG: ${__mkl_scalapack_lib};${__mkl_blacs_lib}")
   set_target_properties(
     costa::BLAS::MKL::scalapack_link
     PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${__mkl_scalapack_inc}"

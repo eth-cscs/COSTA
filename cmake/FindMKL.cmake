@@ -95,7 +95,7 @@ Not supported
 
 #]=======================================================================]
 
-cmake_minimum_required(VERSION 3.12)
+include(FindPackageHandleStandardArgs)
 
 # check if compatible compiler is found
 if(CMAKE_C_COMPILER_LOADED OR
@@ -115,7 +115,7 @@ find_package(OpenMP COMPONENTS CXX)
 # If MKL_ROOT is not set, set it via the env variable MKLROOT.
 #
 if(NOT DEFINED MKL_ROOT)
-    set(MKL_ROOT $ENV{MKLROOT})
+  set(MKL_ROOT $ENV{MKLROOT} CACHE PATH "MKL's root directory.")
 endif()
 
 # Determine MKL's library folder
@@ -166,7 +166,7 @@ endfunction()
 find_path(MKL_INCLUDE_DIR mkl.h
     HINTS ${MKL_ROOT}/include
           ${MKL_ROOT}/mkl/include)
-mark_as_advanced(MKL_INCLUDE_DIR)
+mark_as_advanced(COSTA_MKL_INCLUDE_DIR)
 
 # Group flags for static libraries on Linux (GNU, PGI, ICC -> same linker)
 #
@@ -238,73 +238,191 @@ endif()
 # Define all blas, blacs and scalapack
 #
 foreach(_libtype "ST" "DYN")
-    set(_mkl_core_lib ${MKL_CORE_LIB_${_libtype}})
-    foreach(_bits "32BIT" "64BIT")
-        set(_mkl_scalapack_lib ${MKL_SCALAPACK_${_bits}_LIB_${_libtype}})
-        foreach(_iface "INTEL" "GF")
-            set(_mkl_interface_lib ${MKL_INTERFACE_${_iface}_${_bits}_LIB_${_libtype}})
-            foreach(_threading "SEQ" "OMP" "TBB")
-                set(_mkl_threading_lib ${MKL_${_threading}_LIB_${_libtype}})
+  set(_mkl_core_lib ${MKL_CORE_LIB_${_libtype}})
+  foreach(_bits "32BIT" "64BIT")
+    set(_mkl_scalapack_lib ${MKL_SCALAPACK_${_bits}_LIB_${_libtype}})
+    foreach(_iface "INTEL" "GF")
+      set(_mkl_interface_lib
+          ${MKL_INTERFACE_${_iface}_${_bits}_LIB_${_libtype}})
+      foreach(_threading "SEQ" "OMP" "TBB")
+        set(_mkl_threading_lib ${MKL_${_threading}_LIB_${_libtype}})
 
-                string(TOLOWER "${_iface}_${_bits}_${_threading}_${_libtype}" _tgt_config)
-                set(_mkl_tgt mkl::mkl_${_tgt_config})
+        string(TOLOWER "${_iface}_${_bits}_${_threading}_${_libtype}"
+                       _tgt_config)
+        set(_mkl_tgt costa::BLAS::MKL::${_tgt_config})
 
-                if(MKL_FOUND
-                   AND _mkl_interface_lib
-                   AND _mkl_threading_lib
-                   AND _mkl_core_lib
-                   AND _mkl_dep_found_${_threading}
-                   AND NOT TARGET ${_mkl_tgt})
-                    set(_mkl_libs "${_mkl_linker_pre_flags_${_threading}}"
-                                  "${_mkl_interface_lib}"
-                                  "${_mkl_threading_lib}"
-                                  "${_mkl_core_lib}"
-                                  "${_mkl_linker_post_flags_${_threading}}"
-                                  "${_mkl_dep_${_threading}}"
-                                  "Threads::Threads")
-                    add_library(${_mkl_tgt} INTERFACE IMPORTED)
-                    set_target_properties(${_mkl_tgt} PROPERTIES
-                      INTERFACE_INCLUDE_DIRECTORIES "${MKL_INCLUDE_DIR}"
-                      INTERFACE_LINK_LIBRARIES "${_mkl_libs}")
-                endif()
+        if(MKL_FOUND
+           AND _mkl_interface_lib
+           AND _mkl_threading_lib
+           AND _mkl_core_lib
+           AND _mkl_dep_found_${_threading}
+           AND NOT TARGET ${_mkl_tgt})
+          set(_mkl_libs
+              "${_mkl_linker_pre_flags_${_threading}}"
+              "${_mkl_interface_lib}"
+              "${_mkl_threading_lib}"
+              "${_mkl_core_lib}"
+              "${_mkl_linker_post_flags_${_threading}}"
+              "${_mkl_dep_${_threading}}"
+              "Threads::Threads")
+          add_library(${_mkl_tgt} INTERFACE IMPORTED)
+          set_target_properties(
+            ${_mkl_tgt}
+            PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CP2K_MKL_INCLUDE_DIRS}"
+                       INTERFACE_LINK_LIBRARIES "${_mkl_libs}")
+        endif()
 
-                foreach(_mpi_impl "MPICH" "OMPI")
-                    set(_mkl_blacs_lib ${MKL_BLACS_${_mpi_impl}_${_bits}_LIB_${_libtype}})
+        foreach(_mpi_impl "MPICH" "OMPI")
+          set(_mkl_blacs_lib ${MKL_BLACS_${_mpi_impl}_${_bits}_LIB_${_libtype}})
 
-                    string(TOLOWER "${_mpi_impl}_${_iface}_${_bits}_${_threading}_${_libtype}" _tgt_config)
-                    set(_blacs_tgt mkl::blacs_${_tgt_config})
-                    set(_scalapack_tgt mkl::scalapack_${_tgt_config})
+          string(
+            TOLOWER "${_mpi_impl}_${_iface}_${_bits}_${_threading}_${_libtype}"
+                    _tgt_config)
 
-                    if(_mkl_blacs_lib
-                       AND TARGET ${_mkl_tgt}
-                       AND TARGET MPI::MPI_CXX
-                       AND NOT TARGET ${_blacs_tgt})
-                        set(_blacs_libs "${_mkl_linker_pre_flags_${_libtype}}"
-                                        "${_mkl_interface_lib}"
-                                        "${_mkl_threading_lib}"
-                                        "${_mkl_core_lib}"
-                                        "${_mkl_blacs_lib}"
-                                        "${_mkl_linker_post_flags_${_libtype}}"
-                                        "MPI::MPI_CXX"
-                                        "${_mkl_dep_${_threading}}"
-                                        "Threads::Threads")
-                        add_library(${_blacs_tgt} INTERFACE IMPORTED)
-                        set_target_properties(${_blacs_tgt} PROPERTIES
-                            INTERFACE_INCLUDE_DIRECTORIES "${MKL_INCLUDE_DIR}"
-                            INTERFACE_LINK_LIBRARIES "${_blacs_libs}")
-                    endif()
+          set(_scalapack_tgt costa::BLAS::MKL::scalapack_${_tgt_config})
 
-                    if(_mkl_scalapack_lib
-                       AND TARGET ${_blacs_tgt}
-                       AND NOT TARGET ${_scalapack_tgt})
-                        set(_scalapack_libs "${_mkl_scalapack_lib}"
-                                            "${_blacs_tgt}")
-                        add_library(${_scalapack_tgt} INTERFACE IMPORTED)
-                        set_target_properties(${_scalapack_tgt} PROPERTIES
-                            INTERFACE_LINK_LIBRARIES "${_scalapack_libs}")
-                    endif()
-                endforeach()
-            endforeach()
+          if(_mkl_blacs_lib
+             AND TARGET ${_mkl_tgt}
+             AND TARGET MPI::MPI_CXX
+             AND NOT TARGET costa::BLAS::MKL::blacs_${_tgt_config})
+            set(_blacs_libs
+                "${_mkl_linker_pre_flags_${_libtype}}"
+                "${_mkl_interface_lib}"
+                "${_mkl_threading_lib}"
+                "${_mkl_core_lib}"
+                "${_mkl_blacs_lib}"
+                "${_mkl_linker_post_flags_${_libtype}}"
+                "MPI::MPI_CXX"
+                "${_mkl_dep_${_threading}}"
+                "Threads::Threads")
+            add_library(costa::BLAS::MKL::blacs_${_tgt_config} INTERFACE IMPORTED)
+            set_target_properties(
+              costa::BLAS::MKL::blacs_${_tgt_config}
+              PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                         "${CP2K_MKL_INCLUDE_DIRS}" INTERFACE_LINK_LIBRARIES
+                                                    "${_mkl_blacs_lib}")
+          endif()
+
+          if(_mkl_scalapack_lib AND NOT TARGET
+                                    costa::BLAS::MKL::scalapack_${_tgt_config})
+            set(_scalapack_libs "${_mkl_scalapack_lib}" "${_blacs_tgt}")
+            add_library(costa::BLAS::MKL::scalapack_${_tgt_config} INTERFACE IMPORTED)
+            set_target_properties(
+              costa::BLAS::MKL::scalapack_${_tgt_config}
+              PROPERTIES INTERFACE_LINK_LIBRARIES "${_scalapack_libs}")
+          endif()
         endforeach()
+      endforeach()
     endforeach()
+  endforeach()
 endforeach()
+
+if(NOT TARGET costa::BLAS::MKL::blas)
+  # BLAS in the Intel MKL 10+ library?
+
+  # the findMKL package finds all possible combination and define target for
+  # each of them we just need to find which compiler we use, mpi etc...
+
+  if(CMAKE_Fortran_COMPILER_LOADED
+     AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU"
+     AND NOT APPLE)
+    set(COSTA_BLAS_mkl_INTFACE "gf")
+  else()
+    set(COSTA_BLAS_mkl_INTFACE "intel")
+  endif()
+
+#  if(COSTA_BLAS_THREADING MATCHES "thread" OR CP2K_BLAS_THREADING MATCHES
+#                                             "gnu-thread")
+    set(COSTA_BLAS_mkl_thread__ "omp")
+#  endif()
+
+#  if(COSTA_BLAS_THREADING MATCHES "sequential")
+#    set(COSTA_BLAS_mkl_thread__ "seq")
+#  endif()
+
+#  if(COSTA_BLAS_THREADING MATCHES "intel-thread")
+#    set(COSTA_BLAS_mkl_thread__ "intel")
+#  endif()
+
+#  if(COSTA_BLAS_THREADING MATCHES "tbb")
+#    set(COSTA_BLAS_mkl_thread__ "tbb")
+#  endif()
+
+#  if(COSTA_BLAS_INTERFACE MATCHES "64bits")
+#    set(COSTA_BLAS_mkl_ILP_MODE "64bit")
+#  else()
+    set(COSTA_BLAS_mkl_ILP_MODE "32bit")
+#  endif()
+
+  get_target_property(
+    MKL_BLAS_INCLUDE_DIRS
+    costa::BLAS::MKL::${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
+    INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(
+    MKL_BLAS_LIBRARIES
+    costa::BLAS::MKL::${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
+    INTERFACE_LINK_LIBRARIES)
+  if(NOT TARGET costa::BLAS::MKL::blas)
+    add_library(costa::BLAS::MKL::blas INTERFACE IMPORTED)
+    add_library(costa::BLAS::MKL::MKL INTERFACE IMPORTED)
+    # create a empty lapack
+    add_library(costa::BLAS::MKL::lapack INTERFACE IMPORTED)
+  endif()
+  set_target_properties(
+    costa::BLAS::MKL::blas
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CP2K_MKL_INCLUDE_DIRS}"
+               INTERFACE_LINK_LIBRARIES "${MKL_BLAS_LIBRARIES}")
+  set_target_properties(
+    costa::BLAS::MKL::MKL
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CP2K_MKL_INCLUDE_DIRS}"
+               INTERFACE_LINK_LIBRARIES "${MKL_BLAS_LIBRARIES}")
+
+  if("${MPI_Fortran_LIBRARY_VERSION_STRING}" MATCHES "Open MPI")
+    set(__mkl_mpi_ver_ "ompi")
+  else()
+    set(__mkl_mpi_ver_ "mpich")
+  endif()
+
+  get_target_property(
+    __mkl_scalapack_inc
+    costa::BLAS::MKL::scalapack_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
+    INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(
+    __mkl_scalapack_lib
+    costa::BLAS::MKL::scalapack_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
+    INTERFACE_LINK_LIBRARIES)
+  get_target_property(
+    __mkl_blacs_inc
+    costa::BLAS::MKL::blacs_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
+    INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(
+    __mkl_blacs_lib
+    costa::BLAS::MKL::blacs_${__mkl_mpi_ver_}_${COSTA_BLAS_mkl_INTFACE}_${COSTA_BLAS_mkl_ILP_MODE}_${COSTA_BLAS_mkl_thread__}_dyn
+    INTERFACE_LINK_LIBRARIES)
+  if(NOT TARGET costa::BLAS::MKL::scalapack_link)
+    add_library(costa::BLAS::MKL::scalapack_link INTERFACE IMPORTED)
+  endif()
+
+  message(INFO "DEBUG: ${__mkl_scalapack_lib};${__mkl_blacs_lib}")
+  set_target_properties(
+    costa::BLAS::MKL::scalapack_link
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${__mkl_scalapack_inc}"
+    INTERFACE_LINK_LIBRARIES
+    "${__mkl_scalapack_lib};${__mkl_blacs_lib};${MKL_BLAS_LIBRARIES}")
+  
+  unset(COSTA_BLAS_mkl_ILP_MODE)
+  unset(COSTA_BLAS_mkl_INTFACE)
+  unset(COSTA_BLAS_mkl_thread__)
+  unset(COSTA_BLAS_mkl_OMP)
+  unset(COSTA_BLAS_mkl_OS_NAME)
+  unset(__mkl_blacs_lib)
+  unset(__mkl_blacs_inc)
+  unset(__mkl_scalapack_lib)
+  unset(__mkl_scalapack_inc)
+  set(COSTA_BLAS_VENDOR "MKL")
+  set(COSTA_MKL_SCALAPACK_VENDOR TRUE)
+  mark_as_advanced(COSTA_BLAS_VENDOR)
+  mark_as_advanced(COSTA_MKL_FOUND)
+  mark_as_advanced(COSTA_MKL_SCALAPACK_VENDOR)
+endif()
+

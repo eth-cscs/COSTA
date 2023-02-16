@@ -4,7 +4,7 @@
 // The header makes semiprof an optional dependency that needs not be shipped when costa is installed.
 //
 #ifdef COSTA_WITH_PROFILING
-#include <semiprof/semiprof.hpp>
+#include <semiprof.hpp>
 
 // prints the profiler summary
 #define PP() std::cout << semiprof::profiler_summary() << "\n"

@@ -2,24 +2,13 @@
 #  Build test  #
 ################
 # COSTA-only executables
-set(executables "example0" "example1" "copy_bench")
-foreach(exec ${executables})
-    add_executable(${exec} "${exec}.cpp")
-    target_link_libraries(${exec} PRIVATE costa cxxopts)
-    target_include_directories(${exec} PUBLIC "${cosma_SOURCE_DIR}/libs/cxxopts/include/")
-endforeach()
+add_executable(costa_example0 example0.cpp)
+target_link_libraries(costa_example0 PRIVATE costa cxxopts::cxxopts)
 
-# COSTA without scalapack executable
-set(scalapack_executables "")
+add_executable(costa_example1 example1.cpp)
+target_link_libraries(costa_example1 PRIVATE costa cxxopts::cxxopts)
 
-if (SCALAPACK_TARGET) 
-    foreach(exec ${scalapack_executables})
-        add_executable(${exec} "${exec}.cpp")
-        target_link_libraries(${exec} PRIVATE costa_scalapack cxxopts)
-        target_include_directories(${exec} PUBLIC "${cosma_SOURCE_DIR}/libs/cxxopts/include/")
-        if (COSTA_WITH_PROFILING)
-            target_link_libraries(${exec} PRIVATE semiprof)
-            target_compile_definitions(${exec} PRIVATE COSTA_WITH_PROFILING)
-        endif()
-    endforeach()
-endif()
+add_executable(costa_copy_bench copy_bench.cpp)
+target_link_libraries(costa_copy_bench PRIVATE costa cxxopts::cxxopts)
+
+install(TARGETS costa_example0 costa_example1 costa_copy_bench RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")

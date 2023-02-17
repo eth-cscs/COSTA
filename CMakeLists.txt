@@ -6,7 +6,7 @@ cmake_policy(SET CMP0048 NEW)
 project(costa
   DESCRIPTION "Communication Optimal Shuffle and Transpose Algorithms"
   HOMEPAGE_URL "https://github.com/eth-cscs/COSTA"
-  VERSION 2.1.1
+  VERSION 2.2
   LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

@@ -4,7 +4,7 @@ include(FindPackageHandleStandardArgs)
 set(_sciname "sci_gnu_mpi_mp")
 set(_sciname_acc "sci_acc_gnu_nv60")
 
-find_library(CRAY_LIBSCI_LIBRARIES
+find_library(COSTA_CRAY_LIBSCI_LIBRARIES
     NAMES ${_sciname_acc} ${_sciname}
     HINTS
     ${_SCALAPACK_LIBRARY_DIRS}
@@ -15,9 +15,9 @@ find_library(CRAY_LIBSCI_LIBRARIES
 
 message("CRAY_LIBSCI: ${CRAY_LIBSCI_LIBRARIES}")
 
-find_package_handle_standard_args(CRAY_LIBSCI DEFAULT_MSG CRAY_LIBSCI_LIBRARIES)
+find_package_handle_standard_args(CRAY_LIBSCI DEFAULT_MSG COSTA_CRAY_LIBSCI_LIBRARIES)
 
-if (CRAY_LIBSCI_LIBRARIES AND NOT TARGET costa::BLAS::SCI::scalapack)
+if (NOT TARGET costa::BLAS::SCI::scalapack)
   add_library(costa::BLAS::SCI::scalapack INTERFACE IMPORTED)
-  set_target_properties(costa::BLAS::SCI::scalapack PROPERTY INTERFACE_LINK_LIBRARIES "${CRAY_LIBSCI_LIBRARIES}")
+  set_target_properties(costa::BLAS::SCI::scalapack PROPERTIES INTERFACE_LINK_LIBRARIES "${COSTA_CRAY_LIBSCI_LIBRARIES}")
 endif()

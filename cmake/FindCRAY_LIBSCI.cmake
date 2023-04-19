@@ -17,7 +17,7 @@ message("CRAY_LIBSCI: ${CRAY_LIBSCI_LIBRARIES}")
 
 find_package_handle_standard_args(CRAY_LIBSCI DEFAULT_MSG COSTA_CRAY_LIBSCI_LIBRARIES)
 
-if (NOT TARGET costa::BLAS::SCI::scalapack)
-  add_library(costa::BLAS::SCI::scalapack INTERFACE IMPORTED)
-  set_target_properties(costa::BLAS::SCI::scalapack PROPERTIES INTERFACE_LINK_LIBRARIES "${COSTA_CRAY_LIBSCI_LIBRARIES}")
+if (NOT TARGET costa::BLAS::SCI::scalapack_link)
+  add_library(costa::BLAS::SCI::scalapack_link INTERFACE IMPORTED)
+  set_target_properties(costa::BLAS::SCI::scalapack_link PROPERTIES INTERFACE_LINK_LIBRARIES "${COSTA_CRAY_LIBSCI_LIBRARIES}")
 endif()

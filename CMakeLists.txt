@@ -6,7 +6,7 @@ cmake_policy(SET CMP0048 NEW)
 project(costa
   DESCRIPTION "Communication Optimal Shuffle and Transpose Algorithms"
   HOMEPAGE_URL "https://github.com/eth-cscs/COSTA"
-  VERSION 2.2.1
+  VERSION 2.2.2
   LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -58,7 +58,8 @@ adjust_mpiexec_flags()
 # OpenMP
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -funroll-loops -march=native -DNDEBUG")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops -DNDEBUG")
+
 
 # Bundled dependencies
 #

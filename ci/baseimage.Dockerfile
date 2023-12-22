@@ -27,6 +27,10 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
 # get latest version of spack
 RUN git clone -b v0.21.0 https://github.com/spack/spack.git
 
+COPY spack /costa-spack-repo
+
+RUN spack repo add /costa-spack-repo
+
 # set the location of packages built by spack
 RUN spack config add config:install_tree:root:/opt/local
 

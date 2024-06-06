@@ -25,6 +25,9 @@ option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 set(COSTA_SCALAPACK "OFF" CACHE STRING "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
 set_property(CACHE COSTA_SCALAPACK PROPERTY STRINGS ${COSTA_SCALAPACK_IMPLEMENTATION_LIST})
 
+# always generate compile_commands.json for IDEs
+set(CMAKE_EXPORT_COMPILE_COMMANDS "YES")
+
 # check if scalapack backend is valid
 message(STATUS "Selected ScaLAPACK backend (or implementation) for COSTA: ${COSTA_SCALAPACK}")
 
@@ -58,12 +61,11 @@ adjust_mpiexec_flags()
 # OpenMP
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops -DNDEBUG")
-
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -DDEBUG")
 
 # Bundled dependencies
 #
-
 # Do not install cxxopts when including it.
 
 if (COSTA_WITH_TESTS OR COSTA_WITH_APPS)

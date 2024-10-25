@@ -17,8 +17,6 @@ set(COSTA_SCALAPACK "@COSTA_SCALAPACK@")
 find_dependency(MPI)
 find_dependency(OpenMP)
 
-set(COSTA_SCALAPACK "@COSTA_SCALAPACK@")
-
 if (NOT COSTA_SCALAPACK STREQUAL "OFF")
   find_dependency(SCALAPACK)
 endif ()

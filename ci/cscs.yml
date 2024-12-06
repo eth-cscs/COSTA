@@ -7,7 +7,7 @@ stages:
   - test
 
 build base image:
-  extends: .container-builder-dynamic-name
+  extends: [.dynamic-image-name, .container-builder-cscs-gh200]
   stage: baseimage
   timeout: 2h
   variables:
@@ -17,7 +17,7 @@ build base image:
 
 
 build costa:
-  extends: .container-builder
+  extends: .container-builder-cscs-gh200
   needs: ["build base image"]
   stage: build
   variables:

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
+include(FetchContent)
 include(CMakeDependentOption)
 cmake_policy(SET CMP0048 NEW)
 
@@ -69,7 +70,12 @@ SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -DDEBUG")
 # Do not install cxxopts when including it.
 
 if (COSTA_WITH_TESTS OR COSTA_WITH_APPS)
-  find_package(cxxopts REQUIRED)
+  FetchContent_Declare(cxxopts
+                       GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
+                       GIT_TAG        4bf61f08697b110d9e3991864650a405b3dd515d # v3.2.1
+                       FIND_PACKAGE_ARGS NAMES cxxopts
+  )
+  FetchContent_MakeAvailable(cxxopts)
 endif()
 
 if (COSTA_WITH_TESTS)
@@ -78,7 +84,13 @@ if (COSTA_WITH_TESTS)
 endif()
 
 if(COSTA_WITH_PROFILING)
-  find_package(semiprof REQUIRED)
+  FetchContent_Declare(
+    semiprof
+    GIT_REPOSITORY  https://github.com/bcumming/semiprof.git
+    GIT_TAG         f132142ff2215dfa073e416fa7911d8877d62752
+    FIND_PACKAGE_ARGS NAMES semiprof
+  )
+  FetchContent_MakeAvailable(semiprof)
 endif()
 
 if (NOT COSTA_SCALAPACK STREQUAL "OFF")

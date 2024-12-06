@@ -14,6 +14,7 @@ build base image:
     DOCKERFILE: ci/baseimage.Dockerfile
     WATCH_FILECHANGES: ci/baseimage.Dockerfile
     PERSIST_IMAGE_NAME: $CSCS_REGISTRY_PATH/base/costa-ci
+    SLURM_RESERVATION: NCCL
 
 
 build costa:
@@ -23,5 +24,6 @@ build costa:
   variables:
     DOCKERFILE: ci/build.Dockerfile
     PERSIST_IMAGE_NAME: discard
+    SLURM_RESERVATION: NCCL
     ENVPATH: "/COSTA-env"
     DOCKER_BUILD_ARGS: '["BASE_IMAGE=${BASE_IMAGE}", "ENVPATH=$ENVPATH"]'

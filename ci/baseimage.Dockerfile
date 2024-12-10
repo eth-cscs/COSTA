@@ -15,7 +15,7 @@ RUN apt-get -y update
 RUN apt-get install -y apt-utils
 
 # install basic tools
-RUN apt-get install -y --no-install-recommends gcc g++ gfortran clang libomp-14-dev git make unzip file \
+RUN apt-get install -y --no-install-recommends gcc g++ gfortran git make unzip file \
   vim wget pkg-config python3-pip python3-dev cython3 python3-pythran curl tcl m4 cpio automake meson \
   xz-utils patch patchelf apt-transport-https ca-certificates gnupg software-properties-common perl tar bzip2 \
   liblzma-dev libbz2-dev
@@ -42,12 +42,6 @@ RUN spack compiler find
 
 # install yq (utility to manipulate the yaml files)
 RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64 && chmod a+x /usr/local/bin/yq
-
-# change the fortran compilers: for gcc the gfortran is already properly set and the change has no effect; add it for clang
-RUN yq -i '.compilers[0].compiler.paths.f77 = "/usr/bin/gfortran"' /root/.spack/linux/compilers.yaml && \
-    yq -i '.compilers[0].compiler.paths.fc = "/usr/bin/gfortran"' /root/.spack/linux/compilers.yaml  && \
-    yq -i '.compilers[1].compiler.paths.f77 = "/usr/bin/gfortran"' /root/.spack/linux/compilers.yaml && \
-    yq -i '.compilers[1].compiler.paths.fc = "/usr/bin/gfortran"' /root/.spack/linux/compilers.yaml
 
 # install MPICH
 RUN spack install mpich@${MPICH_VERSION} %gcc

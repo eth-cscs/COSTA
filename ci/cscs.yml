@@ -7,21 +7,23 @@ stages:
   - test
 
 build base image:
-  extends: .container-builder-dynamic-name
+  extends: [.dynamic-image-name, .container-builder-cscs-gh200]
   stage: baseimage
   timeout: 2h
   variables:
     DOCKERFILE: ci/baseimage.Dockerfile
     WATCH_FILECHANGES: ci/baseimage.Dockerfile
     PERSIST_IMAGE_NAME: $CSCS_REGISTRY_PATH/base/costa-ci
+    SLURM_RESERVATION: NCCL
 
 
 build costa:
-  extends: .container-builder
+  extends: .container-builder-cscs-gh200
   needs: ["build base image"]
   stage: build
   variables:
     DOCKERFILE: ci/build.Dockerfile
     PERSIST_IMAGE_NAME: discard
+    SLURM_RESERVATION: NCCL
     ENVPATH: "/COSTA-env"
     DOCKER_BUILD_ARGS: '["BASE_IMAGE=${BASE_IMAGE}", "ENVPATH=$ENVPATH"]'

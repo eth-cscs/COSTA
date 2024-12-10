@@ -71,14 +71,15 @@ endif()
 
 list(APPEND INSTALLED_TARGETS_LIST "costa")
 
-if(NOT COSTA_SCALAPACK STREQUAL "OFF")
+message("COSTA_SCALAPACK : ${COSTA_SCALAPACK}")
 
+if(NOT COSTA_SCALAPACK STREQUAL "OFF")
   add_library(costa_scalapack ${costa_scalapack_src_files})
   add_library(costa_prefixed_scalapack ${costa_prefixed_scalapack_src_files})
 
   # alias targets for add_subdirectory dependency
-  add_library(costa::costa_scalapack ALIAS costa_scalapack)
-  add_library(costa::costa_prefixed_scalapack ALIAS costa_prefixed_scalapack)
+#  add_library(costa::costa_scalapack ALIAS costa_scalapack)
+#  add_library(costa::costa_prefixed_scalapack ALIAS costa_prefixed_scalapack)
 
   set_property(TARGET costa_prefixed_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
   set_property(TARGET costa_scalapack PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -113,3 +114,13 @@ install(EXPORT costa_targets
   FILE costaTargets.cmake
   NAMESPACE costa::
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/costa")
+
+# FetchContent does use the config.cmake files at all, so we have
+# to define the costa::* targets if costa is build at the same time
+# than the main project.
+
+foreach(_target  costa_scalapack costa_prefixed_scalapack costa)
+  if (TARGET ${_target} AND NOT TARGET "costa::${_target}")
+    add_library(costa::${_target} ALIAS ${_target})
+  endif()
+endforeach()

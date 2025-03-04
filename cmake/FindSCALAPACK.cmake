@@ -8,6 +8,9 @@ elseif(COSTA_SCALAPACK STREQUAL "CRAY_LIBSCI")
   find_package(CRAY_LIBSCI REQUIRED)
   get_target_property(COSTA_SCALAPACK_LINK_LIBRARIES costa::BLAS::SCI::scalapack_link
     INTERFACE_LINK_LIBRARIES)
+elseif(COSTA_SCALAPACK STREQUAL "NVPL")
+  find_package(nvpl REQUIRED)
+  get_target_property(COSTA_SCALAPACK_LINK_LIBRARIES costa::BLAS::NVPL::scalapack_link)
 elseif(COSTA_SCALAPACK STREQUAL "CUSTOM")
   find_library(COSTA_SCALAPACK_LINK_LIBRARIES
     NAMES scalapack

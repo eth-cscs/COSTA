@@ -15,7 +15,7 @@ include(cmake/build_type.cmake)
 include(cmake/adjust_mpiexec_flags.cmake)
 
 # Options
-set(COSTA_SCALAPACK_IMPLEMENTATION_LIST "OFF" "MKL" "CRAY_LIBSCI" "CUSTOM")
+set(COSTA_SCALAPACK_IMPLEMENTATION_LIST "OFF" "MKL" "CRAY_LIBSCI" "NVPL" "CUSTOM")
 
 option(COSTA_WITH_TESTS "Generate the test target." OFF)
 option(COSTA_WITH_APPS "Generate the miniapp targets." OFF)
@@ -23,7 +23,7 @@ option(COSTA_WITH_BENCHMARKS "Generate the benchmark targets." OFF)
 option(COSTA_WITH_PROFILING "Enable profiling." OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 
-set(COSTA_SCALAPACK "OFF" CACHE STRING "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+set(COSTA_SCALAPACK "OFF" CACHE STRING "ScaLAPACK backend. Can be MKL, CRAY_LIBSCI, NVPL, CUSTOM or OFF.")
 set_property(CACHE COSTA_SCALAPACK PROPERTY STRINGS ${COSTA_SCALAPACK_IMPLEMENTATION_LIST})
 
 # always generate compile_commands.json for IDEs
@@ -33,7 +33,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS "YES")
 message(STATUS "Selected ScaLAPACK backend (or implementation) for COSTA: ${COSTA_SCALAPACK}")
 
 if(NOT COSTA_SCALAPACK IN_LIST COSTA_SCALAPACK_IMPLEMENTATION_LIST)
-  message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK! It should be MKL, CRAY_LIBSCI, CUSTOM or OFF.")
+  message(FATAL_ERROR "Invalid value for COSTA_SCALAPACK! It should be MKL, CRAY_LIBSCI, NVPL, CUSTOM or OFF.")
 endif()
 
 # preserve rpaths when installing and make the install folder relocatable
@@ -127,6 +127,7 @@ install(FILES "${costa_BINARY_DIR}/costaConfig.cmake"
   "${costa_BINARY_DIR}/costaConfigVersion.cmake"
   "${costa_SOURCE_DIR}/cmake/FindMKL.cmake"
   "${costa_SOURCE_DIR}/cmake/FindCRAY_LIBSCI.cmake"
+  "${costa_SOURCE_DIR}/cmake/Findnvpl.cmake"
   "${costa_SOURCE_DIR}/cmake/FindSCALAPACK.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/costa")
 

@@ -13,8 +13,8 @@ else()
   set(_nvpl_thread "_seq")
 endif()
 
-if(NOT TARGET "cosma::BLAS::NVPL::scalapack_link")
-  add_library("cosma::BLAS::NVPL::scalapack_link" INTERFACE IMPORTED)
-  target_link_libraries("cosma::BLAS::NVPL::scalapack_link" INTERFACE
+if(NOT TARGET "costa::BLAS::NVPL::scalapack_link")
+  add_library("costa::BLAS::NVPL::scalapack_link" INTERFACE IMPORTED)
+  target_link_libraries("costa::BLAS::NVPL::scalapack_link" INTERFACE
     "nvpl::blas${_nvpl_int}${_nvpl_thread}" "nvpl::lapack${_nvpl_int}${_nvpl_thread}")
 endif()

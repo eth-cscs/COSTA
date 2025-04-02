@@ -40,3 +40,4 @@ doc
 .idea*
 CMakeLists.txt.user
 .vscode*
+.cache

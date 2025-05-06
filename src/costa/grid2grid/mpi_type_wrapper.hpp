@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mpi.h>
-
+#include <cstdint>
 #include <complex>
 
 namespace costa {

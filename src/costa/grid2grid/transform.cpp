@@ -1,6 +1,7 @@
 #include <costa/grid2grid/transform.hpp>
 #include <costa/grid2grid/profiler.hpp>
 #include <costa/grid2grid/utils.hpp>
+#include <costa/bfloat16.hpp>
 #include <assert.h>
 #include <complex>
 
@@ -300,6 +301,10 @@ template void transform<std::complex<double>>(
     grid_layout<std::complex<double>> &final_layout,
     MPI_Comm comm);
 
+template void transform<bfloat16>(grid_layout<bfloat16> &initial_layout,
+                                 grid_layout<bfloat16> &final_layout,
+                                 MPI_Comm comm);
+
 // explicit instantiation of transforming a single pair of layouts
 // (with scaling parameters alpha and beta)
 template void transform<float>(grid_layout<float> &initial_layout,
@@ -328,6 +333,12 @@ template void transform<std::complex<double>>(
     const std::complex<double> alpha, const std::complex<double> beta,
     MPI_Comm comm);
 
+template void transform<bfloat16>(grid_layout<bfloat16> &initial_layout,
+                                grid_layout<bfloat16> &final_layout,
+                                const char trans,
+                                const bfloat16 alpha, const bfloat16 beta,
+                                MPI_Comm comm);
+
 // explicit instantiation of transform with vectors
 template void transform<float>(std::vector<layout_ref<float>>& initial_layouts,
                                std::vector<layout_ref<float>>& final_layouts,
@@ -346,6 +357,10 @@ template void transform<std::complex<double>>(
                                std::vector<layout_ref<std::complex<double>>>& initial_layouts,
                                std::vector<layout_ref<std::complex<double>>>& final_layouts,
                                MPI_Comm comm);
+
+template void transform<bfloat16>(std::vector<layout_ref<bfloat16>>& initial_layouts,
+                                 std::vector<layout_ref<bfloat16>>& final_layouts,
+                                 MPI_Comm comm);
 
 // explicit instantiation of transform with vectors
 // (with scaling parameters alpha and beta)
@@ -374,5 +389,11 @@ template void transform<std::complex<double>>(
                                const char* trans,
                                const std::complex<double>* alpha, const std::complex<double>* beta,
                                MPI_Comm comm);
+
+template void transform<bfloat16>(std::vector<layout_ref<bfloat16>>& initial_layouts,
+                                 std::vector<layout_ref<bfloat16>>& final_layouts,
+                                 const char* trans,
+                                 const bfloat16* alpha, const bfloat16* beta,
+                                 MPI_Comm comm);
 
 } // namespace costa

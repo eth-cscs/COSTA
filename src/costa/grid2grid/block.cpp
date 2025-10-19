@@ -1,4 +1,5 @@
 #include <costa/grid2grid/block.hpp>
+#include <costa/bfloat16.hpp>
 
 #include <complex>
 
@@ -21,6 +22,10 @@ std::complex<float> conjugate_f(std::complex<float> el) {
 
 std::complex<double> conjugate_f(std::complex<double> el) {
     return std::conj(el); 
+}
+
+bfloat16 conjugate_f(bfloat16 el) {
+    return el;
 }
 
 block_coordinates::block_coordinates(int r, int c)
@@ -344,10 +349,12 @@ template struct block<double>;
 template struct block<std::complex<double>>;
 template struct block<float>;
 template struct block<std::complex<float>>;
+template struct block<bfloat16>;
 
 template class local_blocks<double>;
 template class local_blocks<std::complex<double>>;
 template class local_blocks<float>;
 template class local_blocks<std::complex<float>>;
+template class local_blocks<bfloat16>;
 
 } // end namespace costa

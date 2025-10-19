@@ -1,6 +1,7 @@
 #pragma once
 #include <costa/grid2grid/grid2D.hpp>
 #include <costa/grid2grid/interval.hpp>
+#include <costa/bfloat16.hpp>
 
 #include <algorithm>
 #include <complex>
@@ -19,6 +20,11 @@ float conjugate_f(float el);
 std::complex<float> conjugate_f(std::complex<float> el);
 
 std::complex<double> conjugate_f(std::complex<double> el);
+
+bfloat16 conjugate_f(bfloat16 el);
+
+// abs function for bfloat16
+float abs(const bfloat16& x);
 
 struct block_coordinates {
     int row = 0;

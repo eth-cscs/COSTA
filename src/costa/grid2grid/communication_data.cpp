@@ -1,5 +1,6 @@
 #include <costa/grid2grid/communication_data.hpp>
 #include <costa/grid2grid/workspace.hpp>
+#include <costa/bfloat16.hpp>
 
 #include <complex>
 #include <omp.h>
@@ -66,14 +67,16 @@ int message<T>::get_rank() const {
 // implementing comparator
 template <typename T>
 bool message<T>::operator<(const message<T> &other) const {
+    using std::abs;  // ADL for abs() - allows custom types
+    
     int rank = get_rank();
     int other_rank = other.get_rank();
 
-    const double alpha = std::abs(this->alpha);
-    const double beta = std::abs(this->beta);
+    const double alpha = abs(this->alpha);
+    const double beta = abs(this->beta);
 
-    const double other_alpha = std::abs(other.alpha);
-    const double other_beta = std::abs(other.beta);
+    const double other_alpha = abs(other.alpha);
+    const double other_beta = abs(other.beta);
 
     return std::tie(rank, b, alpha, beta, transpose, conjugate)
            <
@@ -306,12 +309,14 @@ template class communication_data<double>;
 template class communication_data<std::complex<double>>;
 template class communication_data<float>;
 template class communication_data<std::complex<float>>;
+template class communication_data<bfloat16>;
 
 // template instantiation for message
 template class message<double>;
 template class message<std::complex<double>>;
 template class message<float>;
 template class message<std::complex<float>>;
+template class message<bfloat16>;
 
 // template instantiation for copy_local_blocks
 template void
@@ -329,5 +334,9 @@ copy_local_blocks(std::vector<message<std::complex<float>>>& from,
 template void
 copy_local_blocks(std::vector<message<std::complex<double>>>& from, 
                   std::vector<message<std::complex<double>>>& to);
+
+template void
+copy_local_blocks(std::vector<message<bfloat16>>& from, 
+                  std::vector<message<bfloat16>>& to);
 
 } // namespace costa

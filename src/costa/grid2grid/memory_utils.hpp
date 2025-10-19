@@ -14,6 +14,10 @@
 namespace costa {
 namespace memory {
 
+// Import abs from both std and costa namespaces for ADL
+using std::abs;
+using costa::abs;
+
 // copies n entries of elem_type from src_ptr to desc_ptr
 // if alpha!=1 or beta != 0, then also performs: 
 //     dest[i] = alpha * src[i] + beta*dest[i]

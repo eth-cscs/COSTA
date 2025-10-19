@@ -29,7 +29,7 @@ void copy(const std::size_t n, const elem_type *src_ptr,
           const elem_type beta=elem_type{0}) {
     static_assert(std::is_trivially_copyable<elem_type>(),
                   "Element type must be trivially copyable!");
-    bool perform_operation = std::abs(alpha - elem_type{1}) > 0 || std::abs(beta - elem_type{0}) > 0;
+    bool perform_operation = abs(alpha - elem_type{1}) > 0 || abs(beta - elem_type{0}) > 0;
     if (!perform_operation && !should_conjugate) {
         std::memcpy(dest_ptr, src_ptr, sizeof(elem_type) * n);
         assert(dest_ptr[0] == src_ptr[0]);
@@ -109,7 +109,7 @@ void transpose_col_major(const int n_rows, const int n_cols,
 
     bool inside_parallel_region = omp_in_parallel();
 
-    bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
+    bool perform_operation = abs(alpha - T{1}) > 0 || abs(beta - T{0}) > 0;
 
     int thread_id = omp_get_thread_num();
 
@@ -191,7 +191,7 @@ void transpose_row_major(const int n_rows, const int n_cols,
 
     bool inside_parallel_region = omp_in_parallel();
 
-    bool perform_operation = std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
+    bool perform_operation = abs(alpha - T{1}) > 0 || abs(beta - T{0}) > 0;
 
     int thread_id = omp_get_thread_num();
 

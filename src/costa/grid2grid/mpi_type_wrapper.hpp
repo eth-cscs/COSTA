@@ -4,6 +4,9 @@
 
 #include <complex>
 
+// Forward declare bfloat16 from COSMA
+namespace cosma { class bfloat16; }
+
 namespace costa {
 
 template <typename T>
@@ -67,5 +70,11 @@ struct mpi_type_wrapper<bool> {
 template <>
 struct mpi_type_wrapper<uint32_t> {
     static MPI_Datatype type() { return MPI_UINT32_T; }
+};
+
+template <>
+struct mpi_type_wrapper<cosma::bfloat16> {
+    // BF16 is 16 bits, use MPI_UINT16_T for raw byte transfer
+    static MPI_Datatype type() { return MPI_UINT16_T; }
 };
 } // namespace costa

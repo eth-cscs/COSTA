@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mpi.h>
 #include <costa/bfloat16.hpp>
+#include <mpi.h>
 
 #include <complex>
 

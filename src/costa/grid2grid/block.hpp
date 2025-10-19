@@ -1,7 +1,7 @@
 #pragma once
+#include <costa/bfloat16.hpp>
 #include <costa/grid2grid/grid2D.hpp>
 #include <costa/grid2grid/interval.hpp>
-#include <costa/bfloat16.hpp>
 
 #include <algorithm>
 #include <complex>
@@ -24,7 +24,7 @@ std::complex<double> conjugate_f(std::complex<double> el);
 bfloat16 conjugate_f(bfloat16 el);
 
 // abs function for bfloat16
-float abs(const bfloat16& x);
+float abs(const bfloat16 &x);
 
 struct block_coordinates {
     int row = 0;
@@ -93,7 +93,9 @@ struct block {
           T *ptr,
           const int stride);
 
-    block(const assigned_grid2D &grid, block_range &range, T *ptr,
+    block(const assigned_grid2D &grid,
+          block_range &range,
+          T *ptr,
           const int stride);
 
     block(const assigned_grid2D &grid,
@@ -108,8 +110,11 @@ struct block {
           T *ptr,
           const int stride);
 
-    block(block_range &range, block_coordinates coord, T *ptr, 
-          const int stride);;
+    block(block_range &range,
+          block_coordinates coord,
+          T *ptr,
+          const int stride);
+    ;
 
     // finds the index of the interval inter in splits
     int interval_index(const std::vector<int> &splits, interval inter);
@@ -130,7 +135,7 @@ struct block {
     size_t total_size() const { return n_rows() * n_cols(); }
 
     T local_element(int li, int lj) const;
-    T& local_element(int li, int lj);
+    T &local_element(int li, int lj);
 
     std::pair<int, int> local_to_global(int li, int lj) const;
     std::pair<int, int> global_to_local(int gi, int gj) const;
@@ -151,8 +156,7 @@ bool operator==(block<T> const &lhs, block<T> const &rhs) noexcept {
            lhs.coordinates.row == rhs.coordinates.row &&
            lhs.coordinates.col == rhs.coordinates.col &&
            lhs.stride == rhs.stride && lhs.data == rhs.data &&
-           lhs._ordering == rhs._ordering &&
-           lhs.tag == rhs.tag;
+           lhs._ordering == rhs._ordering && lhs.tag == rhs.tag;
 }
 
 template <typename T>

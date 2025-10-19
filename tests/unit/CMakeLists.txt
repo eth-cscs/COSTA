@@ -1,6 +1,7 @@
 
 set(unit_test_files
     test_utils.cpp
+    test_bfloat16.cpp
     test.cpp
 )
 

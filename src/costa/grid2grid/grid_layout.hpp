@@ -66,7 +66,7 @@ class grid_layout {
     void fill(const T beta) {
         for (unsigned i = 0u; i < blocks.num_blocks(); ++i) {
             auto &block = blocks.get_block(i);
-            block.set(beta);
+            block.fill(beta);
         }
     }
 

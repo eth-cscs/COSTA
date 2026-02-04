@@ -134,6 +134,8 @@ struct block {
 
     // scales the local block by beta
     void scale_by(T beta);
+    // fill local block with beta
+    void fill(T beta);
 };
 
 template <typename T>

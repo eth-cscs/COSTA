@@ -311,6 +311,17 @@ void block<T>::scale_by(T beta) {
 }
 
 template <typename T>
+void block<T>::fill(T beta) {
+    int num_rows = n_rows();
+    int num_cols = n_cols();
+
+    if (transposed) {
+        std::swap(num_rows, num_cols);
+    }
+    std::fill(data, data + stride*num_rows, beta);
+}
+
+template <typename T>
 local_blocks<T>::local_blocks(std::vector<block<T>> &&blocks)
     : blocks(std::forward<std::vector<block<T>>>(blocks)) {
     for (const auto &b : blocks) {

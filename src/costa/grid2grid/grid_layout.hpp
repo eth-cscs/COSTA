@@ -62,6 +62,14 @@ class grid_layout {
         }
     }
 
+    // fill values
+    void fill(const T beta) {
+        for (unsigned i = 0u; i < blocks.num_blocks(); ++i) {
+            auto &block = blocks.get_block(i);
+            block.fill(beta);
+        }
+    }
+
     // initializes the matrix based on the given lambda function
     // f that maps global coordinates (gi, gj) to the value of that element
     // f(gi, gj) := value of element with global coordinates (gi, gj)

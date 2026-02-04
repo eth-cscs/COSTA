@@ -318,13 +318,7 @@ void block<T>::fill(T beta) {
     if (transposed) {
         std::swap(num_rows, num_cols);
     }
-
-    for (int lj = 0; lj < num_cols; ++lj) {
-        for (int li = 0; li < num_rows; ++li) {
-            int offset = stride * lj + li;
-            data[offset] = beta;
-        }
-    }
+    std::fill(data, data + stride*num_rows, beta);
 }
 
 template <typename T>

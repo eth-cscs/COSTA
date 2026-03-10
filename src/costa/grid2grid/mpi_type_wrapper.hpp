@@ -1,5 +1,6 @@
 #pragma once
 
+#include <costa/bfloat16.hpp>
 #include <mpi.h>
 #include <cstdint>
 #include <complex>
@@ -67,5 +68,11 @@ struct mpi_type_wrapper<bool> {
 template <>
 struct mpi_type_wrapper<uint32_t> {
     static MPI_Datatype type() { return MPI_UINT32_T; }
+};
+
+template <>
+struct mpi_type_wrapper<bfloat16> {
+    // BF16 is 16 bits, use MPI_UINT16_T for raw byte transfer
+    static MPI_Datatype type() { return MPI_UINT16_T; }
 };
 } // namespace costa

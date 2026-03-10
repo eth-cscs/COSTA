@@ -1,35 +1,30 @@
+#include <costa/bfloat16.hpp>
 #include <costa/grid2grid/block.hpp>
 
 #include <complex>
 
 namespace costa {
-int conjugate_f(int el) {
-    return el; 
-}
+int conjugate_f(int el) { return el; }
 
-double conjugate_f(double el) {
-    return el; 
-}
+double conjugate_f(double el) { return el; }
 
-float conjugate_f(float el) {
-    return el; 
-}
+float conjugate_f(float el) { return el; }
 
 std::complex<float> conjugate_f(std::complex<float> el) {
-    return std::conj(el); 
+    return std::conj(el);
 }
 
 std::complex<double> conjugate_f(std::complex<double> el) {
-    return std::conj(el); 
+    return std::conj(el);
 }
+
+bfloat16 conjugate_f(bfloat16 el) { return el; }
 
 block_coordinates::block_coordinates(int r, int c)
     : row(r)
     , col(c) {}
 
-void block_coordinates::transpose() {
-    std::swap(row, col);
-}
+void block_coordinates::transpose() { std::swap(row, col); }
 
 block_range::block_range(interval r, interval c)
     : rows_interval(r)
@@ -90,8 +85,7 @@ block<T>::block(const assigned_grid2D &grid,
     , cols_interval(grid.cols_interval(coord.col))
     , coordinates(coord)
     , data(ptr)
-    , stride(stride)
-{}
+    , stride(stride) {}
 
 template <typename T>
 block<T>::block(const assigned_grid2D &grid,
@@ -109,8 +103,7 @@ block<T>::block(const assigned_grid2D &grid,
     : rows_interval(r_inter)
     , cols_interval(c_inter)
     , data(ptr)
-    , stride(stride)
-{
+    , stride(stride) {
     // compute the coordinates based on the grid and intervals
     int row_coord = interval_index(grid.grid().rows_split, rows_interval);
     int col_coord = interval_index(grid.grid().cols_split, cols_interval);
@@ -127,14 +120,14 @@ block<T>::block(interval r_inter,
     , cols_interval(c_inter)
     , coordinates(coord)
     , data(ptr)
-    , stride(stride)
-{}
+    , stride(stride) {}
 
 template <typename T>
-block<T>::block(block_range &range, block_coordinates coord, T *ptr, 
+block<T>::block(block_range &range,
+                block_coordinates coord,
+                T *ptr,
                 const int stride)
     : block(range.rows_interval, range.cols_interval, coord, ptr, stride) {}
-
 
 // finds the index of the interval inter in splits
 template <typename T>
@@ -173,7 +166,7 @@ block<T> block<T>::subblock(interval r_range, interval c_range) const {
         offset = (c_range.start - c_interval.start) * stride +
                  (r_range.start - r_interval.start);
     }
-    T * ptr = data + offset;
+    T *ptr = data + offset;
     // std::cout << "stride = " << stride << std::endl;
     // std::cout << "ptr offset = " << (ptr - data) << std::endl;
     block<T> b(r_range, c_range, coord, ptr, stride); // correct
@@ -196,8 +189,7 @@ bool block<T>::non_empty() const {
 
 template <typename T>
 bool block<T>::operator<(const block &other) const {
-    return std::tie(tag, rows_interval, cols_interval)
-           <
+    return std::tie(tag, rows_interval, cols_interval) <
            std::tie(other.tag, other.rows_interval, other.cols_interval);
 }
 
@@ -220,7 +212,7 @@ T block<T>::local_element(int li, int lj) const {
 }
 
 template <typename T>
-T& block<T>::local_element(int li, int lj) {
+T &block<T>::local_element(int li, int lj) {
     int num_rows = n_rows();
     int num_cols = n_cols();
     if (transposed) {
@@ -293,7 +285,8 @@ void block<T>::set_ordering(const char ordering) {
 
 template <typename T>
 void block<T>::scale_by(T beta) {
-    if (beta == T{1}) return;
+    if (beta == T{1})
+        return;
 
     int num_rows = n_rows();
     int num_cols = n_cols();
@@ -346,7 +339,7 @@ size_t local_blocks<T>::size() const {
 
 template <typename T>
 void local_blocks<T>::transpose() {
-    for (auto& b: blocks) {
+    for (auto &b : blocks) {
         b.transpose();
     }
 }
@@ -355,10 +348,12 @@ template struct block<double>;
 template struct block<std::complex<double>>;
 template struct block<float>;
 template struct block<std::complex<float>>;
+template struct block<bfloat16>;
 
 template class local_blocks<double>;
 template class local_blocks<std::complex<double>>;
 template class local_blocks<float>;
 template class local_blocks<std::complex<float>>;
+template class local_blocks<bfloat16>;
 
 } // end namespace costa

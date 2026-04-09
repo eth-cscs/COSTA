@@ -116,9 +116,6 @@ void transpose_col_major(const int n_rows,
 
     bool inside_parallel_region = omp_in_parallel();
 
-    bool perform_operation =
-        std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
-
     int thread_id = omp_get_thread_num();
 
 #pragma omp parallel for num_threads(n_threads)                                \
@@ -150,13 +147,14 @@ void transpose_col_major(const int n_rows,
                 }
                 for (int j = block_j; j < upper_j; ++j) {
                     auto &dst = dest_ptr[i * dest_stride + j];
-                    if (perform_operation) {
+                    if (beta == T{0}) {
                         dst = beta * dst +
                               alpha *
                                   workspace
                                       .transpose_buffer[b_offset + j - block_j];
                     } else {
                         dst =
+                            alpha *
                             workspace.transpose_buffer[b_offset + j - block_j];
                     }
                 }
@@ -173,10 +171,10 @@ void transpose_col_major(const int n_rows,
                     if (should_conjugate)
                         el = conjugate_f(el);
                     auto &dst = dest_ptr[i * dest_stride + j];
-                    if (perform_operation) {
-                        dst = beta * dst + alpha * el;
+                    if (beta == T{0}) {
+                        dst = alpha * el;
                     } else {
-                        dst = el;
+                        dst = beta * dst + alpha * el;
                     }
                 }
             }

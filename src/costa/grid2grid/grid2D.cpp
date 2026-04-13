@@ -69,13 +69,13 @@ int assigned_grid2D::owner(int i, int j) const {
 }
 
 // returns a grid
-const grid2D &assigned_grid2D::grid() const { return g; }
+const grid2D &assigned_grid2D::grid() const noexcept { return g; }
 
 // returns a total number of MPI ranks in the communicator
 // which owns the whole matrix. However, not all ranks have
 // to own a block of the matrix. Thus, it might happen that
 // maximum(ranks[i][j]) < n_ranks - 1 over all i, j
-int assigned_grid2D::num_ranks() const { return n_ranks; }
+int assigned_grid2D::num_ranks() const noexcept { return n_ranks; }
 
 // returns index-th row interval
 interval assigned_grid2D::rows_interval(int index) const {

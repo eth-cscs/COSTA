@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as builder
+FROM ubuntu:24.04 as builder
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -8,7 +8,6 @@ ENV PATH="/spack/bin:${PATH}"
 
 ENV MPICH_VERSION=3.4.3
 
-ENV CMAKE_VERSION=3.30.3
 
 RUN apt-get -y update
 
@@ -20,16 +19,12 @@ RUN apt-get install -y --no-install-recommends gcc g++ gfortran git make unzip f
   xz-utils patch patchelf apt-transport-https ca-certificates gnupg software-properties-common perl tar bzip2 \
   liblzma-dev libbz2-dev
 
-# install CMake
-RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-aarch64.tar.gz -O cmake.tar.gz && \
-    tar zxvf cmake.tar.gz --strip-components=1 -C /usr
-
 # get latest version of spack
-RUN git clone -b v0.23.0 https://github.com/spack/spack.git
+RUN git clone -b releases/v1.1 https://github.com/spack/spack.git
 
-COPY spack /costa-spack-repo
+COPY spack_repo /spack_repo
 
-RUN spack repo add /costa-spack-repo
+RUN spack repo add /spack_repo/costa
 
 # set the location of packages built by spack
 RUN spack config add config:install_tree:root:/opt/local

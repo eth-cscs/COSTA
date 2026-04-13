@@ -30,7 +30,7 @@ struct block_coordinates {
     block_coordinates() = default;
     block_coordinates(int r, int c);
 
-    void transpose();
+    [[gnu::always_inline]] void transpose() { std::swap(row, col); }
 };
 
 struct block_range {
@@ -38,23 +38,50 @@ struct block_range {
     interval cols_interval;
 
     block_range() = default;
-    block_range(interval r, interval c);
 
-    bool outside_of(const block_range &range) const;
+    [[gnu::always_inline]] block_range(interval r, interval c)
+        : rows_interval(r), cols_interval(c) {}
 
-    bool inside(const block_range &range) const;
+    [[gnu::always_inline]] bool outside_of(const block_range &range) const {
+        return (rows_interval.end <= range.rows_interval.start ||
+                rows_interval.start >= range.rows_interval.end) &&
+               (cols_interval.end <= range.cols_interval.start ||
+                cols_interval.end <= range.cols_interval.start);
+    }
 
-    bool intersects(const block_range &range) const;
+    [[gnu::always_inline]] bool inside(const block_range &range) const {
+        return range.rows_interval.start < rows_interval.start &&
+               range.rows_interval.end > rows_interval.end &&
+               range.cols_interval.start < cols_interval.start &&
+               range.cols_interval.end > cols_interval.end;
+    }
 
-    block_range intersection(const block_range &other) const;
+    [[gnu::always_inline]] bool intersects(const block_range &range) const {
+        return !outside_of(range) && !inside(range);
+    }
 
-    bool non_empty() const;
+    [[gnu::always_inline]] block_range intersection(const block_range &other) const {
+        return {rows_interval.intersection(other.rows_interval),
+                cols_interval.intersection(other.cols_interval)};
+    }
 
-    bool empty() const;
+    [[gnu::always_inline]] bool non_empty() const {
+        return rows_interval.non_empty() && cols_interval.non_empty();
+    }
 
-    bool operator==(const block_range &other) const;
+    [[gnu::always_inline]] bool empty() const {
+        return rows_interval.empty() || cols_interval.empty();
+    }
 
-    bool operator!=(const block_range &other) const;
+    [[gnu::always_inline]] bool operator==(const block_range &other) const {
+        if (empty()) return other.empty();
+        return rows_interval == other.rows_interval &&
+               cols_interval == other.cols_interval;
+    }
+
+    [[gnu::always_inline]] bool operator!=(const block_range &other) const {
+        return !(*this == other);
+    }
 };
 
 inline std::ostream &operator<<(std::ostream &os, const block_range &other) {

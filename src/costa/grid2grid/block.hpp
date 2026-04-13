@@ -10,17 +10,17 @@
 
 namespace costa {
 
-[[gnu::const, gnu::always_inline]] inline int conjugate_f(int el) { return el; }
+[[gnu::always_inline]] inline int conjugate_f(int el) { return el; }
 
-[[gnu::const, gnu::always_inline]] inline double conjugate_f(double el) { return el; }
+[[gnu::always_inline]] inline double conjugate_f(double el) { return el; }
 
-[[gnu::const, gnu::always_inline]] inline float conjugate_f(float el) { return el; }
+[[gnu::always_inline]] inline float conjugate_f(float el) { return el; }
 
-[[gnu::const, gnu::always_inline]] inline std::complex<float> conjugate_f(std::complex<float> el) {
+[[gnu::always_inline]] inline std::complex<float> conjugate_f(std::complex<float> el) {
     return std::conj(el);
 }
 
-[[gnu::const, gnu::always_inline]] inline std::complex<double> conjugate_f(std::complex<double> el) {
+[[gnu::always_inline]] inline std::complex<double> conjugate_f(std::complex<double> el) {
     return std::conj(el);
 }
 

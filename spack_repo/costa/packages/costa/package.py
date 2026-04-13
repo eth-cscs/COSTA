@@ -49,6 +49,7 @@ class Costa(CMakePackage):
     depends_on("cxxopts", when="+apps")
     depends_on("cxxopts", when="+tests")
     depends_on("semiprof", when="+profiling")
+    depends_on("googletest", when="@2.4: +tests")
 
     def url_for_version(self, version):
         if version == Version("2.0"):

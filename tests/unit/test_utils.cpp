@@ -1,4 +1,4 @@
-#include "../gtest.h"
+#include <gtest/gtest.h>
 #include <costa/grid2grid/memory_utils.hpp>
 #include <costa/grid2grid/workspace.hpp>
 #include <vector>

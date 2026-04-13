@@ -10,15 +10,19 @@
 
 namespace costa {
 
-int conjugate_f(int el);
+[[gnu::const, gnu::always_inline]] inline int conjugate_f(int el) { return el; }
 
-double conjugate_f(double el);
+[[gnu::const, gnu::always_inline]] inline double conjugate_f(double el) { return el; }
 
-float conjugate_f(float el);
+[[gnu::const, gnu::always_inline]] inline float conjugate_f(float el) { return el; }
 
-std::complex<float> conjugate_f(std::complex<float> el);
+[[gnu::const, gnu::always_inline]] inline std::complex<float> conjugate_f(std::complex<float> el) {
+    return std::conj(el);
+}
 
-std::complex<double> conjugate_f(std::complex<double> el);
+[[gnu::const, gnu::always_inline]] inline std::complex<double> conjugate_f(std::complex<double> el) {
+    return std::conj(el);
+}
 
 struct block_coordinates {
     int row = 0;

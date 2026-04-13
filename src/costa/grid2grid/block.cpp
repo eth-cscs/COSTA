@@ -3,57 +3,55 @@
 #include <complex>
 
 namespace costa {
-int conjugate_f(int el) {
-    return el; 
+[[gnu::always_inline]] inline int conjugate_f(int el) { return el; }
+
+[[gnu::always_inline]] inline double conjugate_f(double el) { return el; }
+
+[[gnu::always_inline]] inline float conjugate_f(float el) { return el; }
+
+[[gnu::always_inline]] inline std::complex<float> conjugate_f(std::complex<float> el) {
+    return std::conj(el);
 }
 
-double conjugate_f(double el) {
-    return el; 
-}
-
-float conjugate_f(float el) {
-    return el; 
-}
-
-std::complex<float> conjugate_f(std::complex<float> el) {
-    return std::conj(el); 
-}
-
-std::complex<double> conjugate_f(std::complex<double> el) {
-    return std::conj(el); 
+[[gnu::always_inline]] inline std::complex<double> conjugate_f(std::complex<double> el) {
+    return std::conj(el);
 }
 
 block_coordinates::block_coordinates(int r, int c)
     : row(r)
     , col(c) {}
 
-void block_coordinates::transpose() {
+[[gnu::always_inline]] inline void block_coordinates::transpose() {
     std::swap(row, col);
 }
 
-block_range::block_range(interval r, interval c)
+[[gnu::always_inline]] inline block_range::block_range(interval r, interval c)
     : rows_interval(r)
     , cols_interval(c) {}
 
-bool block_range::outside_of(const block_range &range) const {
+[[gnu::always_inline]] inline bool
+block_range::outside_of(const block_range &range) const {
     return (rows_interval.end <= range.rows_interval.start ||
             rows_interval.start >= range.rows_interval.end) &&
            (cols_interval.end <= range.cols_interval.start ||
             cols_interval.end <= range.cols_interval.start);
 }
 
-bool block_range::inside(const block_range &range) const {
+[[gnu::always_inline]] inline bool
+block_range::inside(const block_range &range) const {
     return range.rows_interval.start < rows_interval.start &&
            range.rows_interval.end > rows_interval.end &&
            range.cols_interval.start < cols_interval.start &&
            range.cols_interval.end > cols_interval.end;
 }
 
-bool block_range::intersects(const block_range &range) const {
+[[gnu::always_inline]] inline bool
+block_range::intersects(const block_range &range) const {
     return !outside_of(range) && !inside(range);
 }
 
-block_range block_range::intersection(const block_range &other) const {
+[[gnu::always_inline]] inline block_range
+block_range::intersection(const block_range &other) const {
     interval rows_intersection =
         rows_interval.intersection(other.rows_interval);
     interval cols_intersection =
@@ -61,15 +59,16 @@ block_range block_range::intersection(const block_range &other) const {
     return {rows_intersection, cols_intersection};
 }
 
-bool block_range::non_empty() const {
+[[gnu::always_inline]] inline bool block_range::non_empty() const {
     return rows_interval.non_empty() && cols_interval.non_empty();
 }
 
-bool block_range::empty() const {
+[[gnu::always_inline]] inline bool block_range::empty() const {
     return rows_interval.empty() || cols_interval.empty();
 }
 
-bool block_range::operator==(const block_range &other) const {
+[[gnu::always_inline]] inline bool
+block_range::operator==(const block_range &other) const {
     if (empty()) {
         return other.empty();
     }
@@ -77,7 +76,8 @@ bool block_range::operator==(const block_range &other) const {
            cols_interval == other.cols_interval;
 }
 
-bool block_range::operator!=(const block_range &other) const {
+[[gnu::always_inline]] inline bool
+block_range::operator!=(const block_range &other) const {
     return !(*this == other);
 }
 

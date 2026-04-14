@@ -15,7 +15,7 @@ RUN apt-get install -y apt-utils
 
 # install basic tools
 RUN apt-get install -y --no-install-recommends gcc g++ gfortran git make unzip file \
-  vim wget pkg-config python3-pip python3-dev cython3 python3-pythran curl tcl m4 cpio automake meson \
+  vim wget pkg-config python3-pip python3-dev cython3 python3-pythran curl tcl m4 cpio automake \
   xz-utils patch patchelf apt-transport-https ca-certificates gnupg software-properties-common perl tar bzip2 \
   liblzma-dev libbz2-dev
 
@@ -30,7 +30,7 @@ RUN spack repo add /spack_repo/costa
 RUN spack config add config:install_tree:root:/opt/local
 
 # find all external packages
-RUN spack external find --all
+RUN spack external find --all --exclude meson --exclude python
 
 # find compilers
 RUN spack compiler find

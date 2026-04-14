@@ -47,6 +47,6 @@ RUN ldconfig
 
 # create environments for several configurations and install dependencies
 RUN spack env create -d /COSTA-env && \
-    spack -e /COSTA-env add "costa@master %gcc build_type=RelWithDebInfo +scalapack +tests +shared ^openblas threads=openmp" && \
+    spack -e /COSTA-env add "costa@master build_type=RelWithDebInfo +scalapack +tests +shared %gcc ^openblas threads=openmp" && \
     spack -e /COSTA-env develop -p /src costa@master && \
     spack -e /COSTA-env install --only=dependencies --fail-fast

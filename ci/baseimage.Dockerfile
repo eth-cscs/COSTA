@@ -15,7 +15,7 @@ RUN apt-get install -y apt-utils
 
 # install basic tools
 RUN apt-get install -y --no-install-recommends gcc g++ gfortran git make unzip file \
-  vim wget pkg-config python3-pip python3-dev cython3 python3-pythran curl tcl m4 cpio automake \
+  vim wget pkg-config python3-pip python3-dev cython3 python3-pythran tcl m4 cpio automake \
   xz-utils patch patchelf apt-transport-https ca-certificates gnupg software-properties-common perl tar bzip2 \
   liblzma-dev libbz2-dev
 

@@ -6,7 +6,7 @@ ENV FORCE_UNSAFE_CONFIGURE 1
 
 ENV PATH="/spack/bin:${PATH}"
 
-ENV MPICH_VERSION=3.4.3
+ENV MPICH_VERSION=4.3.2
 
 
 RUN apt-get -y update
@@ -34,9 +34,6 @@ RUN spack external find --all --exclude meson --exclude python
 
 # find compilers
 RUN spack compiler find
-
-# install yq (utility to manipulate the yaml files)
-RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64 && chmod a+x /usr/local/bin/yq
 
 # install MPICH
 RUN spack install mpich@${MPICH_VERSION} %gcc

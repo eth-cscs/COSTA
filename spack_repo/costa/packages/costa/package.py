@@ -1,8 +1,9 @@
-# Copyright 2013-2023 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+
+from spack_repo.builtin.build_systems.cmake import CMakePackage
 
 from spack.package import *
 
@@ -13,13 +14,20 @@ class Costa(CMakePackage):
     Based on the paper: https://arxiv.org/abs/2106.06601
     """
 
-    maintainers("haampie", "kabicm", "RMeli", "mtaillefumier")
+    maintainers("kabicm", "RMeli", "mtaillefumier", "simonpintarelli")
     homepage = "https://github.com/eth-cscs/COSTA"
+    url = "https://github.com/eth-cscs/COSTA/archive/refs/tags/v2.2.4.tar.gz"
     git = "https://github.com/eth-cscs/COSTA.git"
+    list_url = "https://github.com/eth-cscs/COSTA/releases"
+
+    license("BSD-3-Clause")
 
     # note: The default archives produced with github do not have the archives
     #       of the submodules.
     version("master", branch="master", submodules=True)
+    version("2.3.0", sha256="0413311a2821d4cd1f3f026672a75a5b5a2956f61305c07d7fc14565a126b517")
+    version("2.2.4", sha256="2155af3696cd0db1d18f9da7325de6fbcd87833c5b9e62445229e17151f7fd0b")
+    version("2.2.3", sha256="e0b74851603b9da1a104dfaf50504c8af748c73999610a37f9384ed0c23ae5df")
     version("2.2.2", sha256="e87bc37aad14ac0c5922237be5d5390145c9ac6aef0350ed17d86cb2d994e67c")
     version("2.2.1", sha256="aa8aa2a4a79de094f857c22293825de270ff72becd6bd736ff9f2dd8c192446d")
     version("2.2", sha256="3e7333f012af76ec3508276ea90800313f6136504667021fe229e710bf6acdc7")
@@ -27,11 +35,13 @@ class Costa(CMakePackage):
     version("2.0", sha256="de250197f31f7d23226c6956a687c3ff46fb0ff6c621a932428236c3f7925fe4")
 
     variant("scalapack", default=False, description="Build with ScaLAPACK API")
-    variant("shared", default=False, description="Build shared libraries")
+    variant("shared", default=True, description="Build shared libraries")
     variant("profiling", default=False, description="Enable profiling")
     variant("tests", default=False, description="Enable tests")
     variant("apps", default=False, description="Enable miniapp")
     variant("benchmarks", default=False, description="Enable benchmarks")
+
+    depends_on("cxx", type="build")  # generated
 
     depends_on("cmake@3.22:", type="build")
     depends_on("mpi@3:")
@@ -39,6 +49,7 @@ class Costa(CMakePackage):
     depends_on("cxxopts", when="+apps")
     depends_on("cxxopts", when="+tests")
     depends_on("semiprof", when="+profiling")
+    depends_on("googletest", when="@2.4: +tests")
 
     def url_for_version(self, version):
         if version == Version("2.0"):
@@ -47,17 +58,17 @@ class Costa(CMakePackage):
             )
         return "https://github.com/eth-cscs/COSTA/archive/refs/tags/v{0}.tar.gz".format(version)
 
-    def setup_build_environment(self, env):
+    def setup_build_environment(self, env: EnvironmentModifications) -> None:
         return
 
     def costa_scalapack_cmake_arg(self):
         spec = self.spec
 
-        if "~scalapack" in spec:
+        if spec.satisfies("~scalapack"):
             return "OFF"
-        elif "^intel-mkl" in spec or "^intel-oneapi-mkl" in spec:
+        elif spec.satisfies("^[virtuals=scalapack] intel-oneapi-mkl"):
             return "MKL"
-        elif "^cray-libsci" in spec:
+        elif spec.satisfies("^[virtuals=scalapack] cray-libsci"):
             return "CRAY_LIBSCI"
 
         return "CUSTOM"

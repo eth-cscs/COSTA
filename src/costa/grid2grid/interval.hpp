@@ -1,8 +1,6 @@
 #pragma once
 #include <cassert>
 #include <iostream>
-#include <stdexcept>
-#include <tuple>
 #include <vector>
 
 // A class describing the interval [start, end)

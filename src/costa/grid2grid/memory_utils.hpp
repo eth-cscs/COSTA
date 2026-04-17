@@ -148,14 +148,14 @@ void transpose_col_major(const int n_rows,
                 for (int j = block_j; j < upper_j; ++j) {
                     auto &dst = dest_ptr[i * dest_stride + j];
                     if (beta == T{0}) {
+                        dst =
+                            alpha *
+                            workspace.transpose_buffer[b_offset + j - block_j];
+                    } else {
                         dst = beta * dst +
                               alpha *
                                   workspace
                                       .transpose_buffer[b_offset + j - block_j];
-                    } else {
-                        dst =
-                            alpha *
-                            workspace.transpose_buffer[b_offset + j - block_j];
                     }
                 }
             }

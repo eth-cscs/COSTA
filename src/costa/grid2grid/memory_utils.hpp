@@ -39,7 +39,11 @@ void copy(const std::size_t n,
             if (should_conjugate) {
                 el = conjugate_f(el);
             }
-            dest_ptr[i] = beta * dest_ptr[i] + alpha * el;
+            if (beta == elem_type{0}) {
+                dest_ptr[i] = alpha * el;
+            } else {
+                dest_ptr[i] = beta * dest_ptr[i] + alpha * el;
+            }
         }
     }
 }

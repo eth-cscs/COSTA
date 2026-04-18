@@ -39,7 +39,13 @@ void copy(const std::size_t n,
             if (should_conjugate) {
                 el = conjugate_f(el);
             }
-            dest_ptr[i] = beta * dest_ptr[i] + alpha * el;
+            if (alpha == elem_type{0} && beta == elem_type{0}) {
+              dest_ptr[i] = elem_type{0};
+            } else if (beta == elem_type{0}) {
+                dest_ptr[i] = alpha * el;
+            } else {
+                dest_ptr[i] = beta * dest_ptr[i] + alpha * el;
+            }
         }
     }
 }
@@ -147,15 +153,17 @@ void transpose_col_major(const int n_rows,
                 }
                 for (int j = block_j; j < upper_j; ++j) {
                     auto &dst = dest_ptr[i * dest_stride + j];
-                    if (beta == T{0}) {
+                    if (alpha == T{0} && beta == T{0}) {
+                      dst = T{0};
+                    } else if (beta == T{0}) {
+                        dst =
+                            alpha *
+                            workspace.transpose_buffer[b_offset + j - block_j];
+                    } else {
                         dst = beta * dst +
                               alpha *
                                   workspace
                                       .transpose_buffer[b_offset + j - block_j];
-                    } else {
-                        dst =
-                            alpha *
-                            workspace.transpose_buffer[b_offset + j - block_j];
                     }
                 }
             }
@@ -171,7 +179,9 @@ void transpose_col_major(const int n_rows,
                     if (should_conjugate)
                         el = conjugate_f(el);
                     auto &dst = dest_ptr[i * dest_stride + j];
-                    if (beta == T{0}) {
+                    if (alpha == T{0} && beta == T{0}) {
+                      dst = T{0};
+                    } else if (beta == T{0}) {
                         dst = alpha * el;
                     } else {
                         dst = beta * dst + alpha * el;
@@ -208,9 +218,6 @@ void transpose_row_major(const int n_rows,
 
     bool inside_parallel_region = omp_in_parallel();
 
-    bool perform_operation =
-        std::abs(alpha - T{1}) > 0 || std::abs(beta - T{0}) > 0;
-
     int thread_id = omp_get_thread_num();
 
 #pragma omp parallel for num_threads(n_threads)                                \
@@ -243,14 +250,17 @@ void transpose_row_major(const int n_rows,
                 }
                 for (int i = block_i; i < upper_i; ++i) {
                     auto &dst = dest_ptr[j * dest_stride + i];
-                    if (perform_operation) {
+                    if (alpha == T{0} && beta == T{0}) {
+                      dst = 0;
+                    } else if (beta == T{0}) {
+                        dst =
+                            alpha *
+                            workspace.transpose_buffer[b_offset + i - block_i];
+                    } else {
                         dst = beta * dst +
                               alpha *
                                   workspace
                                       .transpose_buffer[b_offset + i - block_i];
-                    } else {
-                        dst =
-                            workspace.transpose_buffer[b_offset + i - block_i];
                     }
                 }
             }
@@ -267,10 +277,12 @@ void transpose_row_major(const int n_rows,
                         el = conjugate_f(el);
                     }
                     auto &dst = dest_ptr[j * dest_stride + i];
-                    if (perform_operation) {
-                        dst = beta * dst + alpha * el;
+                    if (alpha == T{0} && beta == T{0}) {
+                      dst = T{0};
+                    } else  if (beta == T{0}) {
+                        dst = alpha * el;
                     } else {
-                        dst = el;
+                        dst = beta * dst + alpha * el;
                     }
                 }
             }

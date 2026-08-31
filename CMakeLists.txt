@@ -62,7 +62,16 @@ adjust_mpiexec_flags()
 # OpenMP
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-funroll-loops" COSTA_HAS_FUNROLL_LOOPS)
+if(COSTA_HAS_FUNROLL_LOOPS)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
+else()
+    check_cxx_compiler_flag("-Munroll" COSTA_HAS_MUNROLL)
+    if(COSTA_HAS_MUNROLL)
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Munroll")
+    endif()
+endif()
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -DDEBUG")
 
 # Bundled dependencies
